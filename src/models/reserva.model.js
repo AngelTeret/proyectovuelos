@@ -21,8 +21,12 @@ export const crearReservaTransaccion = async (datos) => {
     telefono,
     vuelo_id,
     asiento_id,
-    monto_total,
     usuario_id,
+    pasajero_id,
+    equipaje_extra_kg = 0,
+    costo_servicios_extra = 0.00,
+    metodo_pago = 'tarjeta',
+    llave_idempotencia,
   } = datos;
 
   const connection = await pool.getConnection();
@@ -38,28 +42,82 @@ export const crearReservaTransaccion = async (datos) => {
       throw new Error('El asiento ya no está disponible o no existe');
     }
 
+    const [filasVuelo] = await connection.query(
+      'SELECT precio_base FROM vuelos WHERE id = ?',
+      [vuelo_id]
+    );
+    if (filasVuelo.length === 0) {
+      throw new Error('El vuelo no existe');
+    }
+    const precioBase = parseFloat(filasVuelo[0].precio_base ?? 0);
+    const montoTotal = precioBase;
+
+    if (metodo_pago === 'saldo') {
+      if (!usuario_id) {
+        throw new Error('Debes iniciar sesión para pagar con saldo');
+      }
+
+      const [usuarios] = await connection.query(
+        'SELECT saldo_virtual FROM usuarios WHERE id = ? FOR UPDATE',
+        [usuario_id]
+      );
+
+      if (usuarios.length === 0) {
+        throw new Error('Usuario no encontrado');
+      }
+
+      const saldo = parseFloat(usuarios[0].saldo_virtual);
+      if (saldo < montoTotal) {
+        throw new Error('Saldo insuficiente');
+      }
+
+      await connection.query(
+        'UPDATE usuarios SET saldo_virtual = saldo_virtual - ? WHERE id = ?',
+        [montoTotal, usuario_id]
+      );
+    }
+
     await connection.query(
       "UPDATE asientos SET estado = 'confirmado' WHERE id = ?",
       [asiento_id]
     );
 
-    const [pasajero] = await connection.query(
-      'INSERT INTO pasajeros (nombre, apellido, documento_identidad, email, telefono) VALUES (?, ?, ?, ?, ?)',
-      [nombre, apellido, documento_identidad, email, telefono]
-    );
+    let idPasajero = pasajero_id;
+    if (!idPasajero) {
+      const [pasajero] = await connection.query(
+        'INSERT INTO pasajeros (nombre, apellido, documento_identidad, email, telefono) VALUES (?, ?, ?, ?, ?)',
+        [nombre, apellido, documento_identidad, email, telefono]
+      );
+      idPasajero = pasajero.insertId;
+    }
 
     const codigoPnr = generarCodigoPnr();
 
-    const [reserva] = await connection.query(
-      "INSERT INTO reservas (codigo_pnr, pasajero_id, vuelo_id, asiento_id, estado_pago, monto_total, usuario_id) VALUES (?, ?, ?, ?, 'pendiente', ?, ?)",
-      [codigoPnr, pasajero.insertId, vuelo_id, asiento_id, monto_total, usuario_id]
+    const estadoPago = metodo_pago === 'saldo' ? 'aprobado' : 'pendiente';
+    const [resultadoReserva] = await connection.query(
+      'INSERT INTO reservas (codigo_pnr, pasajero_id, vuelo_id, asiento_id, estado_pago, monto_total, usuario_id, equipaje_extra_kg, costo_servicios_extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [codigoPnr, idPasajero, vuelo_id, asiento_id, estadoPago, montoTotal, usuario_id, equipaje_extra_kg, metodo_pago === 'saldo' ? 0 : costo_servicios_extra]
+    );
+
+    await connection.query(
+      "INSERT INTO idempotencia_pagos (llave_idempotencia, reserva_id, estado_respuesta, codigo_http, cuerpo_respuesta) VALUES (?, ?, 'COMPLETADO', 201, ?)",
+      [
+        llave_idempotencia,
+        resultadoReserva.insertId,
+        JSON.stringify({
+          mensaje: 'Reserva confirmada',
+          reservaId: resultadoReserva.insertId,
+          pnr: codigoPnr,
+          total: montoTotal,
+        }),
+      ]
     );
 
     await connection.commit();
 
     return {
       codigo_pnr: codigoPnr,
-      id: reserva.insertId,
+      id: resultadoReserva.insertId,
     };
   } catch (error) {
     await connection.rollback();
@@ -67,6 +125,26 @@ export const crearReservaTransaccion = async (datos) => {
   } finally {
     connection.release();
   }
+};
+
+export const obtenerTodas = async () => {
+  const [rows] = await pool.query(
+    `SELECT
+      r.codigo_pnr,
+      CONCAT(p.nombre, ' ', p.apellido) AS nombre_cliente,
+      v.origen,
+      v.destino,
+      a.numero_asiento,
+      r.monto_total AS total_pagado,
+      r.fecha_creacion
+    FROM reservas r
+    INNER JOIN pasajeros p ON r.pasajero_id = p.id
+    INNER JOIN vuelos v ON r.vuelo_id = v.id
+    INNER JOIN asientos a ON r.asiento_id = a.id
+    ORDER BY r.fecha_creacion DESC`
+  );
+
+  return rows;
 };
 
 export const obtenerPorPNR = async (codigo_pnr) => {

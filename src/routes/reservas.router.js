@@ -2,12 +2,15 @@ import { Router } from 'express';
 import {
   crearReserva,
   consultarReserva,
+  obtenerReservas,
   pagarReserva,
-} from '../controllers/reservas.controller.js';
+} from '../controller/reservas.controller.js';
+import { verificarIdempotencia } from '../middlewares/idempotencia.js';
 
 const router = Router();
 
-router.post('/', crearReserva);
+router.get('/', obtenerReservas);
+router.post('/', verificarIdempotencia, crearReserva);
 router.get('/pnr/:pnr', consultarReserva);
 router.put('/:id/pago', pagarReserva);
 
