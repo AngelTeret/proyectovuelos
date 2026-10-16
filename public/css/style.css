@@ -1,0 +1,49 @@
+body {
+  background: #f4f6f8;
+}
+
+.tarjeta-auth {
+  border: 0;
+  border-radius: 1rem;
+  box-shadow: 0 0.75rem 2rem rgba(15, 23, 42, 0.08);
+}
+
+.boarding-pass {
+  border: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: 0 0.75rem 2rem rgba(15, 23, 42, 0.12);
+}
+
+.boarding-pass .route {
+  letter-spacing: 0.04em;
+}
+
+.boarding-pass .pnr {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.18em;
+}
+
+.boarding-stub {
+  background: #0d6efd;
+  color: #fff;
+}
+
+.asiento {
+  width: 3.25rem;
+  height: 3.25rem;
+  padding: 0;
+}
+
+.asiento.seleccionado {
+  outline: 3px solid #212529;
+  outline-offset: 2px;
+}
+
+.consulta {
+  max-width: 720px;
+}
+
+.fila-asiento {
+  width: 1.5rem;
+}
