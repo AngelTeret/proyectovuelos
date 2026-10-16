@@ -5,13 +5,84 @@ const obtenerTodos = async () => {
   return rows;
 };
 
+const obtenerPorId = async (id) => {
+  const [rows] = await pool.query('SELECT * FROM vuelos WHERE id = ?', [id]);
+  return rows[0] || null;
+};
+
+const contarPorImagen = async (imagenUrl) => {
+  const [rows] = await pool.query(
+    'SELECT COUNT(*) AS total FROM vuelos WHERE imagen_url = ?',
+    [imagenUrl]
+  );
+  return Number(rows[0].total);
+};
+
 const crear = async (datos) => {
-  const { origen, destino, fecha_salida, estado } = datos;
+  const {
+    origen,
+    destino,
+    fecha_salida,
+    fecha_regreso = null,
+    precio_base,
+    estado = 'Programado',
+    imagen_url = '/imagenes/avion-fondo.webp',
+    capacidad_asientos = 30,
+  } = datos;
   const [result] = await pool.query(
-    'INSERT INTO vuelos (origen, destino, fecha_salida, estado) VALUES (?, ?, ?, ?)',
-    [origen, destino, fecha_salida, estado]
+    'INSERT INTO vuelos (origen, destino, fecha_salida, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [origen, destino, fecha_salida, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos]
   );
   return result;
 };
 
-export default { obtenerTodos, crear };
+const actualizar = async (id, datos) => {
+  const {
+    origen,
+    destino,
+    fecha_salida,
+    fecha_regreso = null,
+    precio_base,
+    imagen_url = '/imagenes/avion-fondo.webp',
+  } = datos;
+  const [resultado] = await pool.query(
+    'UPDATE vuelos SET origen = ?, destino = ?, fecha_salida = ?, fecha_regreso = ?, precio_base = ?, imagen_url = ? WHERE id = ?',
+    [origen, destino, fecha_salida, fecha_regreso, precio_base, imagen_url, id]
+  );
+  return resultado;
+};
+
+const eliminar = async (id) => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [reservas] = await connection.query(
+      'SELECT id FROM reservas WHERE vuelo_id = ?',
+      [id]
+    );
+    const reservaIds = reservas.map((reserva) => reserva.id);
+
+    if (reservaIds.length > 0) {
+      await connection.query(
+        'DELETE FROM idempotencia_pagos WHERE reserva_id IN (?)',
+        [reservaIds]
+      );
+      await connection.query('DELETE FROM reservas WHERE vuelo_id = ?', [id]);
+    }
+
+    await connection.query('DELETE FROM asientos WHERE vuelo_id = ?', [id]);
+    const [resultado] = await connection.query('DELETE FROM vuelos WHERE id = ?', [id]);
+
+    await connection.commit();
+    return resultado;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+export default { obtenerTodos, obtenerPorId, contarPorImagen, crear, actualizar, eliminar };

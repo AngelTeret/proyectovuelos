@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { obtenerAsientosDeVuelo } from '../controllers/asientos.controller.js';
+import { obtenerAsientosDeVuelo } from '../controller/asientos.controller.js';
 
 const router = Router();
 
