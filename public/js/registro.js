@@ -1,0 +1,31 @@
+document.getElementById('form-registro').addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+
+  try {
+    const respuesta = await fetch('/api/auth/registro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: document.getElementById('nombre').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+      }),
+    });
+    const data = await respuesta.json();
+
+    if (!respuesta.ok) {
+      Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje || 'No se pudo crear la cuenta' });
+      return;
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: '¡Bienvenido!',
+      text: 'Cuenta creada con éxito (Bono de Q15,000 acreditado)',
+    }).then(() => {
+      window.location.href = '/login.html';
+    });
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo crear la cuenta' });
+  }
+});

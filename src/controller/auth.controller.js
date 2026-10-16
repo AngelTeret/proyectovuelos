@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { buscarPorEmail, crearUsuario } from '../models/usuario.model.js';
+import { buscarPorEmail, buscarPorId, crearUsuario } from '../models/usuario.model.js';
 
 export const registro = async (req, res) => {
   try {
@@ -15,12 +15,13 @@ export const registro = async (req, res) => {
       return res.status(409).json({ mensaje: 'El email ya está registrado' });
     }
 
+    const passwordHash = await bcrypt.hash(password, 10);
     const usuario = await crearUsuario({
       nombre,
       email,
-      password,
+      password: passwordHash,
       rol: 'cliente',
-      saldo_virtual: 1000,
+      saldo_virtual: 15000,
     });
 
     res.status(201).json({
@@ -32,6 +33,32 @@ export const registro = async (req, res) => {
       mensaje: 'Error al registrar el usuario',
       error: error.message,
     });
+  }
+};
+
+export const perfil = async (req, res) => {
+  const encabezado = req.headers.authorization || '';
+  const token = encabezado.startsWith('Bearer ') ? encabezado.slice(7) : '';
+  if (!token) {
+    return res.status(401).json({ mensaje: 'No autorizado' });
+  }
+
+  try {
+    const datos = jwt.verify(token, process.env.JWT_SECRET);
+    const usuario = await buscarPorId(datos.id);
+    if (!usuario) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    }
+
+    res.status(200).json({
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      rol: usuario.rol,
+      saldo_virtual: usuario.saldo_virtual,
+    });
+  } catch (error) {
+    res.status(401).json({ mensaje: 'Sesión no válida' });
   }
 };
 
@@ -61,6 +88,7 @@ export const login = async (req, res) => {
 
     res.status(200).json({
       token,
+      rol: usuario.rol,
       usuario: {
         id: usuario.id,
         nombre: usuario.nombre,

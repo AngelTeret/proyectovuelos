@@ -1,13 +1,9 @@
-import bcrypt from 'bcrypt';
 import pool from '../config/db.js';
 
-const ROUNDS = 10;
-
-export const crearUsuario = async ({ nombre, email, password, rol = 'cliente', saldo_virtual = 1000 }) => {
-  const passwordHash = await bcrypt.hash(password, ROUNDS);
+export const crearUsuario = async ({ nombre, email, password, rol = 'cliente', saldo_virtual = 0 }) => {
   const [result] = await pool.query(
     'INSERT INTO usuarios (nombre, email, password, rol, saldo_virtual) VALUES (?, ?, ?, ?, ?)',
-    [nombre, email, passwordHash, rol, saldo_virtual]
+    [nombre, email, password, rol, saldo_virtual]
   );
 
   return {
@@ -17,6 +13,14 @@ export const crearUsuario = async ({ nombre, email, password, rol = 'cliente', s
     rol,
     saldo_virtual,
   };
+};
+
+export const buscarPorId = async (id) => {
+  const [rows] = await pool.query(
+    'SELECT id, nombre, email, rol, saldo_virtual FROM usuarios WHERE id = ?',
+    [id]
+  );
+  return rows[0] || null;
 };
 
 export const buscarPorEmail = async (email) => {
