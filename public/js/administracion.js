@@ -115,6 +115,8 @@ const prepararNuevoVuelo = () => {
   reiniciarNombreArchivo();
   document.getElementById('campo-capacidad').classList.remove('hidden');
   document.getElementById('capacidad-asientos').value = 30;
+  buscadorOrigen.limpiar();
+  buscadorDestino.limpiar();
   abrirModal();
 };
 
@@ -126,8 +128,8 @@ const editarVuelo = (id) => {
 
   document.getElementById('titulo-modal-vuelo').textContent = 'Editar Vuelo';
   document.getElementById('vuelo-id').value = vuelo.id;
-  document.getElementById('origen').value = vuelo.origen;
-  document.getElementById('destino').value = vuelo.destino;
+  buscadorOrigen.fijar(vuelo.origen);
+  buscadorDestino.fijar(vuelo.destino);
   document.getElementById('fecha-salida').value = aDatetimeLocal(vuelo.fecha_salida);
   document.getElementById('precio-base').value = Number(vuelo.precio_base);
   document.getElementById('imagen-archivo').value = '';
@@ -181,6 +183,101 @@ const eliminarVuelo = async (id) => {
   }
 };
 
+const sinAcentos = (texto) => texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+
+const prepararBuscador = (id) => {
+  const input = document.getElementById(id);
+  const lista = document.getElementById(`lista-${id}`);
+  let opciones = [...window.PAISES];
+  let indice = -1;
+
+  const cerrar = () => {
+    lista.classList.add('hidden');
+    lista.innerHTML = '';
+    input.setAttribute('aria-expanded', 'false');
+    indice = -1;
+  };
+
+  const pintar = (filtro) => {
+    const consulta = sinAcentos(filtro.trim());
+    const coincidencias = opciones.filter((pais) => sinAcentos(pais).includes(consulta));
+    lista.innerHTML = coincidencias.length
+      ? coincidencias.map((pais) => `<li role="option" class="cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-blue-50" data-valor="${escapar(pais)}">${escapar(pais)}</li>`).join('')
+      : '<li class="px-3 py-2 text-sm text-slate-400">Sin resultados</li>';
+    lista.classList.remove('hidden');
+    input.setAttribute('aria-expanded', 'true');
+    indice = -1;
+  };
+
+  const elegir = (valor) => {
+    input.value = valor;
+    cerrar();
+  };
+
+  input.addEventListener('focus', () => pintar(input.value));
+  input.addEventListener('input', () => pintar(input.value));
+  lista.addEventListener('mousedown', (evento) => {
+    const opcion = evento.target.closest('[data-valor]');
+    if (!opcion) {
+      return;
+    }
+    evento.preventDefault();
+    elegir(opcion.dataset.valor);
+  });
+  input.addEventListener('blur', () => {
+    const escrito = input.value.trim();
+    const exacto = opciones.find((pais) => sinAcentos(pais) === sinAcentos(escrito));
+    input.value = exacto || '';
+    cerrar();
+  });
+  input.addEventListener('keydown', (evento) => {
+    const items = [...lista.querySelectorAll('[data-valor]')];
+    if (evento.key === 'ArrowDown' && items.length) {
+      evento.preventDefault();
+      indice = Math.min(indice + 1, items.length - 1);
+    } else if (evento.key === 'ArrowUp' && items.length) {
+      evento.preventDefault();
+      indice = Math.max(indice - 1, 0);
+    } else if (evento.key === 'Enter' && !lista.classList.contains('hidden')) {
+      evento.preventDefault();
+      const elegido = items[indice] || (items.length === 1 ? items[0] : null);
+      if (elegido) {
+        elegir(elegido.dataset.valor);
+      }
+      return;
+    } else if (evento.key === 'Escape') {
+      cerrar();
+      return;
+    } else {
+      return;
+    }
+    items.forEach((item, posicion) => item.classList.toggle('bg-blue-50', posicion === indice));
+    items[indice]?.scrollIntoView({ block: 'nearest' });
+  });
+
+  return {
+    fijar(valor) {
+      const actual = String(valor || '').trim();
+      opciones = actual && !window.PAISES.includes(actual)
+        ? [...window.PAISES, actual].sort((a, b) => a.localeCompare(b, 'es'))
+        : [...window.PAISES];
+      input.value = actual;
+      cerrar();
+    },
+    limpiar() {
+      opciones = [...window.PAISES];
+      input.value = '';
+      cerrar();
+    },
+    valido() {
+      return opciones.includes(input.value.trim());
+    },
+  };
+};
+
+const buscadorOrigen = prepararBuscador('origen');
+const buscadorDestino = prepararBuscador('destino');
+
 const modal = document.getElementById('modal-vuelo');
 const formulario = document.getElementById('form-vuelo');
 
@@ -197,6 +294,8 @@ const cerrarModal = () => {
   document.getElementById('titulo-modal-vuelo').textContent = 'Agregar Nuevo Vuelo';
   mostrarVista('');
   reiniciarNombreArchivo();
+  buscadorOrigen.limpiar();
+  buscadorDestino.limpiar();
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -232,9 +331,16 @@ document.addEventListener('DOMContentLoaded', () => {
     evento.preventDefault();
 
     const id = document.getElementById('vuelo-id').value;
+    const origen = document.getElementById('origen').value.trim();
+    const destino = document.getElementById('destino').value.trim();
+    if (!buscadorOrigen.valido() || !buscadorDestino.valido()) {
+      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Elige un país de la lista para el origen y el destino.' });
+      return;
+    }
+
     const datos = new FormData();
-    datos.append('origen', document.getElementById('origen').value.trim());
-    datos.append('destino', document.getElementById('destino').value.trim());
+    datos.append('origen', origen);
+    datos.append('destino', destino);
     datos.append('fecha_salida', document.getElementById('fecha-salida').value);
     datos.append('precio_base', document.getElementById('precio-base').value);
     const archivo = document.getElementById('imagen-archivo').files[0];

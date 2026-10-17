@@ -12,8 +12,8 @@ const validarPasajero = ({ nombre, apellido, documento_identidad, email, telefon
   if (!letras.test(apellido) || apellido.length > 100) {
     return 'El apellido solo puede contener letras';
   }
-  if (!/^[A-Za-z0-9-]{6,50}$/.test(documento_identidad)) {
-    return 'El documento debe tener entre 6 y 50 letras o números';
+  if (!/^[A-Za-z0-9]{6,15}$/.test(documento_identidad)) {
+    return 'El documento debe tener entre 6 y 15 letras o números';
   }
   if (!correo.test(email) || email.length > 255) {
     return 'Ingresa un correo electrónico válido';

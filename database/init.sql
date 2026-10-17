@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS asientos (
   ) NOT NULL DEFAULT 'disponible',
   categoria VARCHAR(50) DEFAULT 'Económico',
   precio_adicional DECIMAL(10,2) DEFAULT 0.00,
+  bloqueo_hasta DATETIME NULL,
+  bloqueo_llave VARCHAR(64) NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uk_vuelo_numero_asiento (vuelo_id, numero_asiento),
   CONSTRAINT fk_asientos_vuelo

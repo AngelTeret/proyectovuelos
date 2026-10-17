@@ -43,6 +43,7 @@ export const crearReserva = async (req, res) => {
       equipaje_extra_kg,
       costo_servicios_extra,
       metodo_pago,
+      bloqueo_llave,
     } = req.body;
 
     const metodo = metodo_pago === 'saldo' ? 'saldo' : 'tarjeta';
@@ -78,6 +79,7 @@ export const crearReserva = async (req, res) => {
       costo_servicios_extra,
       metodo_pago: metodo,
       llave_idempotencia,
+      bloqueo_llave,
     });
 
     res.status(201).json({
@@ -85,7 +87,11 @@ export const crearReserva = async (req, res) => {
       id: reserva.id,
     });
   } catch (error) {
-    if (error.message === 'El asiento ya no está disponible o no existe' || error.message === 'El vuelo no existe') {
+    if (
+      error.message === 'El asiento ya no está disponible o no existe'
+      || error.message === 'El vuelo no existe'
+      || error.message.startsWith('El tiempo para completar el pago terminó')
+    ) {
       return res.status(400).json({ mensaje: error.message });
     }
     if (error.message === 'Saldo insuficiente') {
