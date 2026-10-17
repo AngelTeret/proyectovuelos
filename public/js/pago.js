@@ -72,10 +72,76 @@ const mostrarTotal = async () => {
   document.getElementById('total-pagar').textContent = quetzales(total);
 };
 
+let relojBloqueo = null;
+let bloqueoTerminado = false;
+
+const textoTiempo = (segundos) => {
+  const restante = Math.max(0, segundos);
+  const minutos = String(Math.floor(restante / 60)).padStart(2, '0');
+  const segs = String(restante % 60).padStart(2, '0');
+  return `Asiento reservado por ${minutos}:${segs}. Si el tiempo termina, vuelve a quedar libre.`;
+};
+
+const liberarPantalla = async () => {
+  if (bloqueoTerminado) {
+    return;
+  }
+  bloqueoTerminado = true;
+  if (relojBloqueo) {
+    clearInterval(relojBloqueo);
+  }
+  const pagar = document.getElementById('btnPagar');
+  if (pagar) {
+    pagar.disabled = true;
+  }
+  await Swal.fire({
+    icon: 'warning',
+    title: 'Asiento liberado',
+    text: 'El tiempo para completar el pago terminó. Vuelve a elegir un asiento.',
+  });
+  localStorage.removeItem('datosAsiento');
+  window.location.href = '/asientos.html';
+};
+
+const iniciarReloj = async () => {
+  const asiento = leer('datosAsiento');
+  const llave = localStorage.getItem('bloqueoLlave');
+  if (!asiento.asientoId || !llave) {
+    window.location.replace('/asientos.html');
+    return;
+  }
+
+  const respuesta = await fetch(`/api/asientos/${asiento.asientoId}/bloqueo`, {
+    headers: { 'x-bloqueo-llave': llave },
+  });
+  if (!respuesta.ok) {
+    await liberarPantalla();
+    return;
+  }
+
+  const data = await respuesta.json();
+  let segundos = Number(data.segundos) || 0;
+  const aviso = document.getElementById('tiempo-bloqueo');
+  const pintar = () => {
+    aviso.textContent = textoTiempo(segundos);
+    aviso.classList.remove('hidden');
+  };
+  pintar();
+  relojBloqueo = setInterval(() => {
+    segundos -= 1;
+    if (segundos <= 0) {
+      liberarPantalla();
+      return;
+    }
+    pintar();
+  }, 1000);
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   mostrarFormularioTarjeta();
   cargarSaldo();
   mostrarTotal();
+  iniciarReloj();
 
   document.querySelectorAll('input[name="metodo_pago"]').forEach((radio) => {
     radio.addEventListener('change', mostrarFormularioTarjeta);
@@ -114,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
       vuelo_id: Number(busqueda.vuelo_id),
       asiento_id: Number(asiento.asientoId),
       metodo_pago: metodo,
+      bloqueo_llave: localStorage.getItem('bloqueoLlave'),
     };
 
     try {
@@ -129,9 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await respuesta.json();
 
       if (respuesta.status === 201) {
+        if (relojBloqueo) {
+          clearInterval(relojBloqueo);
+        }
         localStorage.removeItem('busquedaVuelo');
         localStorage.removeItem('datosPasajeros');
         localStorage.removeItem('datosAsiento');
+        localStorage.removeItem('bloqueoLlave');
         Swal.fire({
           icon: 'success',
           title: '¡Reserva Confirmada!',
@@ -147,6 +218,14 @@ document.addEventListener('DOMContentLoaded', () => {
           icon: 'error',
           title: 'Saldo insuficiente',
           text: 'Tu saldo virtual no es suficiente para cubrir esta tarifa. Por favor, usa una tarjeta de crédito.',
+        });
+        return;
+      }
+
+      if (/tiempo para completar el pago|ya no está disponible/i.test(data.mensaje || '')) {
+        Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje }).then(() => {
+          localStorage.removeItem('datosAsiento');
+          window.location.href = '/asientos.html';
         });
         return;
       }

@@ -25,8 +25,8 @@ const reglas = {
     valido: (texto) => letras.test(texto),
   },
   documento_identidad: {
-    mensaje: 'El documento debe tener entre 6 y 50 letras o números',
-    valido: (texto) => /^[A-Za-z0-9-]{6,50}$/.test(texto),
+    mensaje: 'El documento debe tener entre 6 y 15 letras o números',
+    valido: (texto) => /^[A-Za-z0-9]{6,15}$/.test(texto),
   },
   email: {
     mensaje: 'Ingresa un correo electrónico válido',

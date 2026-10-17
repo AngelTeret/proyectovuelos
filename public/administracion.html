@@ -106,13 +106,15 @@
       <h2 id="titulo-modal-vuelo" class="text-xl font-bold text-slate-900">Agregar Nuevo Vuelo</h2>
       <form id="form-vuelo" class="mt-5 space-y-4">
         <input type="hidden" id="vuelo-id" name="vuelo_id">
-        <label class="block">
+        <label class="relative block">
           <span class="mb-1.5 block text-xs font-medium text-slate-600">Origen</span>
-          <input id="origen" name="origen" type="text" required class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+          <input id="origen" name="origen" type="text" required autocomplete="off" placeholder="Busca un país" role="combobox" aria-expanded="false" aria-controls="lista-origen" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+          <ul id="lista-origen" role="listbox" class="absolute z-20 mt-1 hidden max-h-48 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg"></ul>
         </label>
-        <label class="block">
+        <label class="relative block">
           <span class="mb-1.5 block text-xs font-medium text-slate-600">Destino</span>
-          <input id="destino" name="destino" type="text" required class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+          <input id="destino" name="destino" type="text" required autocomplete="off" placeholder="Busca un país" role="combobox" aria-expanded="false" aria-controls="lista-destino" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+          <ul id="lista-destino" role="listbox" class="absolute z-20 mt-1 hidden max-h-48 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg"></ul>
         </label>
         <label class="block">
           <span class="mb-1.5 block text-xs font-medium text-slate-600">Fecha y Hora de Salida</span>
@@ -143,6 +145,7 @@
       </form>
     </div>
   </div>
+  <script src="/js/paises.js"></script>
   <script src="/js/cabecera.js"></script>
   <script src="/js/administracion.js"></script>
 </body>

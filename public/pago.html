@@ -2,6 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <script>
+    if (!localStorage.getItem('token')) {
+      localStorage.setItem('redirectAfterLogin', '/pago.html');
+      location.replace('/login.html');
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pago - Sistema de Vuelos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -111,6 +117,7 @@
         <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.3fr)_380px]">
           <section class="rounded-2xl bg-white p-6 shadow-sm">
             <h1 class="text-lg font-semibold text-slate-900">Detalles de Pago</h1>
+            <p id="tiempo-bloqueo" class="mt-3 hidden rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800"></p>
             <form id="form-pago" class="mt-5 space-y-4">
               <fieldset class="space-y-2">
                 <legend class="mb-2 text-xs font-medium text-slate-600">Método de pago</legend>

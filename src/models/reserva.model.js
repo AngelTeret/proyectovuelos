@@ -27,18 +27,46 @@ export const crearReservaTransaccion = async (datos) => {
     costo_servicios_extra = 0.00,
     metodo_pago = 'tarjeta',
     llave_idempotencia,
+    bloqueo_llave,
   } = datos;
 
   const connection = await pool.getConnection();
   await connection.beginTransaction();
 
   try {
-    const [asientos] = await connection.query(
-      "SELECT * FROM asientos WHERE id = ? AND estado = 'disponible' FOR UPDATE",
+    await connection.query(
+      `UPDATE asientos
+       SET estado = 'disponible', bloqueo_hasta = NULL, bloqueo_llave = NULL
+       WHERE estado = 'reservado_temporal' AND bloqueo_hasta <= NOW() AND id <> ?`,
       [asiento_id]
     );
 
+    const [asientos] = await connection.query(
+      `SELECT *, bloqueo_hasta > NOW() AS vigente
+       FROM asientos
+       WHERE id = ? AND vuelo_id = ?
+       FOR UPDATE`,
+      [asiento_id, vuelo_id]
+    );
+
     if (asientos.length === 0) {
+      throw new Error('El asiento ya no está disponible o no existe');
+    }
+
+    const asiento = asientos[0];
+    const propio = asiento.estado === 'reservado_temporal' && asiento.bloqueo_llave === String(bloqueo_llave || '');
+
+    if (propio && Number(asiento.vigente) !== 1) {
+      await connection.query(
+        `UPDATE asientos
+         SET estado = 'disponible', bloqueo_hasta = NULL, bloqueo_llave = NULL
+         WHERE id = ?`,
+        [asiento_id]
+      );
+      throw new Error('El tiempo para completar el pago terminó. Vuelve a elegir un asiento.');
+    }
+
+    if (!propio) {
       throw new Error('El asiento ya no está disponible o no existe');
     }
 
@@ -78,7 +106,7 @@ export const crearReservaTransaccion = async (datos) => {
     }
 
     await connection.query(
-      "UPDATE asientos SET estado = 'confirmado' WHERE id = ?",
+      "UPDATE asientos SET estado = 'confirmado', bloqueo_hasta = NULL, bloqueo_llave = NULL WHERE id = ?",
       [asiento_id]
     );
 
