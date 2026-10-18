@@ -13,12 +13,16 @@ const carpetaImagenes = path.resolve(
 
 const rutaDeArchivo = (archivo) => (archivo ? `/imagenes/${archivo.filename}` : null);
 
+const CAPACIDAD_MINIMA = 6;
+const CAPACIDAD_MAXIMA = 102;
+
 const capacidadDeAsientos = (valor) => {
   const numero = Number(valor);
-  if (!Number.isFinite(numero) || numero < 6) {
-    return 30;
+  const esMultiploDeSeis = Number.isInteger(numero) && numero % CAPACIDAD_MINIMA === 0;
+  if (!esMultiploDeSeis || numero < CAPACIDAD_MINIMA || numero > CAPACIDAD_MAXIMA) {
+    return null;
   }
-  return Math.ceil(numero / 6) * 6;
+  return numero;
 };
 
 const borrarImagenSiNoSeUsa = async (rutaPublica) => {
@@ -53,6 +57,11 @@ export const crearVuelo = async (req, res) => {
   try {
     const { origen, destino, fecha_salida, fecha_regreso, precio_base, estado, capacidad_asientos } = req.body;
     const capacidad = capacidadDeAsientos(capacidad_asientos);
+    if (capacidad === null) {
+      return res.status(400).json({
+        mensaje: 'La capacidad debe ser un múltiplo de 6 y no puede pasar de 102 asientos.',
+      });
+    }
     const resultado = await Vuelo.crear({
       origen,
       destino,

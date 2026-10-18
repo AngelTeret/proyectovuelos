@@ -13,6 +13,8 @@ document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
 const clasesDisponible = ['border', 'border-blue-400', 'bg-white', 'text-blue-600'];
 const clasesSeleccionado = ['bg-blue-600', 'text-white', 'border-transparent'];
 const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
+const MAX_ASIENTOS = 102;
+const MAX_FILA = MAX_ASIENTOS / letras.length;
 
 let asientoElegido = null;
 
@@ -94,7 +96,10 @@ const pintarAsientos = (asientos) => {
     filas.get(fila).set(letra, asiento);
   });
 
-  const numeros = [...filas.keys()].sort((a, b) => a - b);
+  const numeros = [...filas.keys()]
+    .filter((fila) => fila >= 1 && fila <= MAX_FILA)
+    .sort((a, b) => a - b)
+    .slice(0, MAX_FILA);
   if (numeros.length === 0) {
     contenedor.innerHTML = '<p class="text-center text-sm text-slate-500">No hay asientos para este vuelo.</p>';
     return;

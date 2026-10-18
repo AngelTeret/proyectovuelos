@@ -128,7 +128,8 @@ export const idsConReserva = async (vuelo_id) => {
 
 export const generarAsientosParaVuelo = async (vuelo_id, capacidad = 30) => {
   const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
-  const filas = Math.ceil(Number(capacidad) / letras.length);
+  const filasPedidas = Math.floor(Number(capacidad) / letras.length);
+  const filas = Math.min(Math.max(filasPedidas, 0), 17);
 
   for (let fila = 1; fila <= filas; fila++) {
     for (const letra of letras) {
