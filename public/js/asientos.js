@@ -203,7 +203,9 @@ const mostrarPasajero = () => {
     pasajero = {};
   }
   const nombre = [pasajero.nombre, pasajero.apellido].filter(Boolean).join(' ');
-  document.getElementById('nombre-pasajero').textContent = nombre || 'Pasajero';
+  const elemento = document.getElementById('nombre-pasajero');
+  elemento.textContent = nombre || 'Pasajero';
+  elemento.title = nombre;
 };
 
 document.addEventListener('DOMContentLoaded', () => {

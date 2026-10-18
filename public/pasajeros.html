@@ -108,25 +108,28 @@
             </li>
           </ol>
 
-          <form id="form-pasajero" novalidate class="mt-6 rounded-xl border border-slate-200 px-5 py-5">
+          <form id="form-pasajero" novalidate class="mx-auto mt-6 max-w-3xl rounded-xl border border-slate-200 px-5 py-5">
             <div class="border-b border-slate-100 pb-4">
               <h2 class="text-sm font-semibold text-slate-900">Pasajero</h2>
             </div>
 
-            <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label>
                 <span class="mb-1.5 block text-xs font-medium text-slate-600">Nombre <span class="text-red-500">*</span></span>
                 <input id="nombre" name="nombre" type="text" required maxlength="100" autocomplete="given-name" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400">
+                <p id="contador-nombre" class="mt-1 text-xs text-slate-500" aria-live="polite">0/100 caracteres</p>
                 <p id="error-nombre" class="mt-1 hidden text-xs text-red-600"></p>
               </label>
               <label>
                 <span class="mb-1.5 block text-xs font-medium text-slate-600">Apellido <span class="text-red-500">*</span></span>
                 <input id="apellido" name="apellido" type="text" required maxlength="100" autocomplete="family-name" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400">
+                <p id="contador-apellido" class="mt-1 text-xs text-slate-500" aria-live="polite">0/100 caracteres</p>
                 <p id="error-apellido" class="mt-1 hidden text-xs text-red-600"></p>
               </label>
-              <label class="md:col-span-2">
+              <label>
                 <span class="mb-1.5 block text-xs font-medium text-slate-600">Documento de identidad <span class="text-red-500">*</span></span>
                 <input id="documento_identidad" name="documento_identidad" type="text" required minlength="6" maxlength="15" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400">
+                <p id="contador-documento_identidad" class="mt-1 text-xs text-slate-500" aria-live="polite">0/15 caracteres</p>
                 <p id="error-documento_identidad" class="mt-1 hidden text-xs text-red-600"></p>
               </label>
               <label>
@@ -134,16 +137,22 @@
                 <input id="email" name="email" type="email" required maxlength="255" autocomplete="email" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400">
                 <p id="error-email" class="mt-1 hidden text-xs text-red-600"></p>
               </label>
-              <label>
+              <div class="sm:col-span-2">
                 <span class="mb-1.5 block text-xs font-medium text-slate-600">Teléfono <span class="text-red-500">*</span></span>
-                <input id="telefono" name="telefono" type="tel" required maxlength="20" inputmode="numeric" autocomplete="tel" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400">
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,13.5rem)_minmax(0,1fr)]">
+                  <div class="relative">
+                    <input id="codigo-telefono" type="text" required autocomplete="off" placeholder="Busca un país" role="combobox" aria-expanded="false" aria-controls="lista-codigo-telefono" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400">
+                    <ul id="lista-codigo-telefono" role="listbox" class="absolute z-20 mt-1 hidden max-h-48 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg"></ul>
+                  </div>
+                  <input id="telefono" name="telefono" type="tel" required maxlength="15" inputmode="numeric" autocomplete="tel-national" placeholder="8 a 15 dígitos" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400">
+                </div>
                 <p id="error-telefono" class="mt-1 hidden text-xs text-red-600"></p>
-              </label>
+              </div>
             </div>
           </form>
         </section>
 
-        <div class="mt-5 flex items-center justify-between">
+        <div class="mx-auto mt-5 flex max-w-3xl items-center justify-between">
           <a id="btnVolver" href="/index.html" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50">
             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
             Volver
