@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { buscarPorEmail, buscarPorId, crearUsuario } from '../models/usuario.model.js';
+import { responderErrorInterno } from '../utils/errorInterno.js';
 
 export const registro = async (req, res) => {
   try {
@@ -29,10 +30,7 @@ export const registro = async (req, res) => {
       usuario,
     });
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al registrar el usuario',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -58,7 +56,10 @@ export const perfil = async (req, res) => {
       saldo_virtual: usuario.saldo_virtual,
     });
   } catch (error) {
-    res.status(401).json({ mensaje: 'Sesión no válida' });
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ mensaje: 'Sesión no válida' });
+    }
+    responderErrorInterno(res, error);
   }
 };
 
@@ -98,9 +99,6 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al iniciar sesión',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };

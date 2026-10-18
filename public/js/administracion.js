@@ -107,6 +107,34 @@ const mostrarVista = (url) => {
   imagen.classList.remove('hidden');
 };
 
+const CAPACIDAD_MAXIMA = 102;
+const CAPACIDAD_PASO = 6;
+
+const llenarCapacidades = () => {
+  const select = document.getElementById('capacidad-asientos');
+  select.replaceChildren();
+  for (let capacidad = CAPACIDAD_PASO; capacidad <= CAPACIDAD_MAXIMA; capacidad += CAPACIDAD_PASO) {
+    const opcion = document.createElement('option');
+    opcion.value = String(capacidad);
+    opcion.textContent = `${capacidad} asientos`;
+    opcion.selected = capacidad === 30;
+    select.appendChild(opcion);
+  }
+};
+
+const fechaMinimaLocal = () => {
+  const hoy = new Date();
+  const dosDigitos = (numero) => String(numero).padStart(2, '0');
+  return `${hoy.getFullYear()}-${dosDigitos(hoy.getMonth() + 1)}-${dosDigitos(hoy.getDate())}T00:00`;
+};
+
+const bloquearFechasPasadas = () => {
+  const minimo = fechaMinimaLocal();
+  document.querySelectorAll('#form-vuelo input[type="date"], #form-vuelo input[type="datetime-local"]').forEach((input) => {
+    input.min = minimo;
+  });
+};
+
 const prepararNuevoVuelo = () => {
   formulario.reset();
   document.getElementById('vuelo-id').value = '';
@@ -282,6 +310,7 @@ const modal = document.getElementById('modal-vuelo');
 const formulario = document.getElementById('form-vuelo');
 
 const abrirModal = () => {
+  bloquearFechasPasadas();
   modal.classList.remove('hidden');
   modal.classList.add('flex');
 };
@@ -302,6 +331,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!localStorage.getItem('token') || localStorage.getItem('rol') !== 'admin') {
     return;
   }
+
+  llenarCapacidades();
+  bloquearFechasPasadas();
 
   document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
     localStorage.removeItem('token');

@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import Vuelo from '../models/vuelo.model.js';
 import { generarAsientosParaVuelo } from '../models/asiento.model.js';
+import { responderErrorInterno } from '../utils/errorInterno.js';
 
 const IMAGEN_POR_DEFECTO = '/imagenes/avion-fondo.webp';
 const carpetaImagenes = path.resolve(
@@ -12,12 +13,16 @@ const carpetaImagenes = path.resolve(
 
 const rutaDeArchivo = (archivo) => (archivo ? `/imagenes/${archivo.filename}` : null);
 
+const CAPACIDAD_MINIMA = 6;
+const CAPACIDAD_MAXIMA = 102;
+
 const capacidadDeAsientos = (valor) => {
   const numero = Number(valor);
-  if (!Number.isFinite(numero) || numero < 6) {
-    return 30;
+  const esMultiploDeSeis = Number.isInteger(numero) && numero % CAPACIDAD_MINIMA === 0;
+  if (!esMultiploDeSeis || numero < CAPACIDAD_MINIMA || numero > CAPACIDAD_MAXIMA) {
+    return null;
   }
-  return Math.ceil(numero / 6) * 6;
+  return numero;
 };
 
 const borrarImagenSiNoSeUsa = async (rutaPublica) => {
@@ -44,10 +49,7 @@ export const obtenerVuelos = async (req, res) => {
     const vuelos = await Vuelo.obtenerTodos();
     res.status(200).json(vuelos);
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al obtener los vuelos',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -55,6 +57,11 @@ export const crearVuelo = async (req, res) => {
   try {
     const { origen, destino, fecha_salida, fecha_regreso, precio_base, estado, capacidad_asientos } = req.body;
     const capacidad = capacidadDeAsientos(capacidad_asientos);
+    if (capacidad === null) {
+      return res.status(400).json({
+        mensaje: 'La capacidad debe ser un múltiplo de 6 y no puede pasar de 102 asientos.',
+      });
+    }
     const resultado = await Vuelo.crear({
       origen,
       destino,
@@ -68,10 +75,7 @@ export const crearVuelo = async (req, res) => {
     await generarAsientosParaVuelo(resultado.insertId, capacidad);
     res.status(201).json({ mensaje: 'Vuelo creado correctamente', id: resultado.insertId });
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al crear el vuelo',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -103,10 +107,7 @@ export const actualizarVuelo = async (req, res) => {
 
     res.status(200).json({ mensaje: 'Vuelo actualizado correctamente' });
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al actualizar el vuelo',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -125,9 +126,6 @@ export const eliminarVuelo = async (req, res) => {
 
     res.status(200).json({ mensaje: 'Vuelo eliminado correctamente' });
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al eliminar el vuelo',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };

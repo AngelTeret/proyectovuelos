@@ -152,8 +152,29 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/asientos.html';
   });
 
+  const botonPagar = document.getElementById('btnPagar');
+  const textoPagar = botonPagar.textContent;
+
+  const marcarProcesando = () => {
+    botonPagar.disabled = true;
+    botonPagar.textContent = 'Procesando pago...';
+    botonPagar.classList.add('cursor-not-allowed', 'opacity-70');
+  };
+
+  const restaurarPagar = () => {
+    if (bloqueoTerminado) {
+      return;
+    }
+    botonPagar.disabled = false;
+    botonPagar.textContent = textoPagar;
+    botonPagar.classList.remove('cursor-not-allowed', 'opacity-70');
+  };
+
   document.getElementById('form-pago').addEventListener('submit', async (evento) => {
     evento.preventDefault();
+    if (botonPagar.disabled) {
+      return;
+    }
 
     const busqueda = leer('busquedaVuelo');
     const pasajero = leer('datosPasajeros');
@@ -166,6 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    marcarProcesando();
+    let pagoConfirmado = false;
     const idempotencyKey = crypto.randomUUID();
     const payload = {
       nombre: pasajero.nombre,
@@ -196,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await respuesta.json();
 
       if (respuesta.status === 201) {
+        pagoConfirmado = true;
         if (relojBloqueo) {
           clearInterval(relojBloqueo);
         }
@@ -223,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (/tiempo para completar el pago|ya no está disponible/i.test(data.mensaje || '')) {
+        pagoConfirmado = true;
         Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje }).then(() => {
           localStorage.removeItem('datosAsiento');
           window.location.href = '/asientos.html';
@@ -233,6 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
       Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje || data.error || 'No se pudo confirmar la reserva' });
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Oops...', text: error.message });
+    } finally {
+      if (!pagoConfirmado) {
+        restaurarPagar();
+      }
     }
   });
 });

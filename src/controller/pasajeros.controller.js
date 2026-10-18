@@ -1,9 +1,27 @@
+import { readFileSync } from 'node:fs';
 import { crear } from '../models/pasajero.model.js';
+import { responderErrorInterno } from '../utils/errorInterno.js';
 
 const letras = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '\-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
 const correo = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const codigosTelefono = JSON.parse(readFileSync(new URL('../../public/js/codigosTelefono.json', import.meta.url), 'utf8'));
+const prefijos = [...new Set(codigosTelefono.map((item) => item.codigo))]
+  .sort((a, b) => b.length - a.length);
 
 const limpiar = (valor) => String(valor ?? '').trim();
+
+const telefonoValido = (telefono) => {
+  const limpio = telefono.replace(/[\s()-]/g, '');
+  if (limpio.length > 20 || !limpio.startsWith('+')) {
+    return false;
+  }
+  const digitos = limpio.slice(1);
+  const prefijo = prefijos.find((codigo) => digitos.startsWith(codigo));
+  if (!prefijo) {
+    return false;
+  }
+  return /^\d{8,15}$/.test(digitos.slice(prefijo.length));
+};
 
 const validarPasajero = ({ nombre, apellido, documento_identidad, email, telefono }) => {
   if (!letras.test(nombre) || nombre.length > 100) {
@@ -18,8 +36,8 @@ const validarPasajero = ({ nombre, apellido, documento_identidad, email, telefon
   if (!correo.test(email) || email.length > 255) {
     return 'Ingresa un correo electrónico válido';
   }
-  if (!/^\+?\d{8,15}$/.test(telefono.replace(/[\s()-]/g, '')) || telefono.length > 20) {
-    return 'Ingresa un teléfono de 8 a 15 dígitos';
+  if (!telefonoValido(telefono)) {
+    return 'Ingresa un teléfono de 8 a 15 dígitos con un código de país válido';
   }
   return '';
 };
@@ -51,9 +69,6 @@ export const crearPasajero = async (req, res) => {
 
     res.status(201).json(pasajero);
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al crear el pasajero',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
