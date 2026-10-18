@@ -227,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('datosPasajeros');
         localStorage.removeItem('datosAsiento');
         localStorage.removeItem('bloqueoLlave');
+        sessionStorage.removeItem('tempPasajero');
         Swal.fire({
           icon: 'success',
           title: '¡Reserva Confirmada!',
