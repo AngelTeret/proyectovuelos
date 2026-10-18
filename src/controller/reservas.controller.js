@@ -5,6 +5,7 @@ import {
   obtenerPorPNR,
   actualizarPago,
 } from '../models/reserva.model.js';
+import { responderErrorInterno } from '../utils/errorInterno.js';
 
 const usuarioDesdeToken = (req) => {
   const encabezado = req.headers.authorization || '';
@@ -20,10 +21,7 @@ export const obtenerReservas = async (req, res) => {
     const reservas = await obtenerTodas();
     res.status(200).json(reservas);
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al obtener las reservas',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -98,10 +96,7 @@ export const crearReserva = async (req, res) => {
       return res.status(400).json({ mensaje: 'Saldo insuficiente para completar la reserva' });
     }
 
-    res.status(500).json({
-      mensaje: 'Error al crear la reserva',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -116,10 +111,7 @@ export const consultarReserva = async (req, res) => {
 
     res.status(200).json(reserva);
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al consultar la reserva',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -132,9 +124,6 @@ export const pagarReserva = async (req, res) => {
       saldo_virtual: pago.saldo_virtual,
     });
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al actualizar el pago',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };

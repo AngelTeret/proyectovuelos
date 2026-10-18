@@ -1,4 +1,5 @@
 import { crear } from '../models/pasajero.model.js';
+import { responderErrorInterno } from '../utils/errorInterno.js';
 
 const letras = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '\-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
 const correo = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -51,9 +52,6 @@ export const crearPasajero = async (req, res) => {
 
     res.status(201).json(pasajero);
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al crear el pasajero',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };

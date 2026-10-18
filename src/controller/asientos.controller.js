@@ -5,6 +5,7 @@ import {
   obtenerPorVuelo,
   reservarTemporal,
 } from '../models/asiento.model.js';
+import { responderErrorInterno } from '../utils/errorInterno.js';
 
 const llaveDe = (req) => {
   const llave = req.get('x-bloqueo-llave') || req.body?.llave || '';
@@ -39,10 +40,7 @@ export const obtenerAsientosPorVuelo = async (req, res) => {
     const asientos = await marcarDisponibilidad(req.params.id, llaveDe(req));
     res.status(200).json(asientos);
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al obtener los asientos del vuelo',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -51,10 +49,7 @@ export const obtenerAsientosDeVuelo = async (req, res) => {
     const asientos = await marcarDisponibilidad(req.params.vuelo_id, llaveDe(req));
     res.status(200).json(asientos);
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al obtener los asientos del vuelo',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -74,10 +69,7 @@ export const bloquearAsiento = async (req, res) => {
     if (error.message === 'El asiento ya no está disponible o no existe') {
       return res.status(409).json({ mensaje: 'Ese asiento acaba de ser reservado. Elige otro.' });
     }
-    res.status(500).json({
-      mensaje: 'No se pudo reservar el asiento',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };
 
@@ -96,9 +88,6 @@ export const verBloqueo = async (req, res) => {
 
     res.status(200).json(bloqueo);
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'No se pudo consultar la reserva del asiento',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };

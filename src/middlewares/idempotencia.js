@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { responderErrorInterno } from '../utils/errorInterno.js';
 
 export const verificarIdempotencia = async (req, res, next) => {
   const llave = req.get('idempotency-key');
@@ -26,9 +27,6 @@ export const verificarIdempotencia = async (req, res, next) => {
 
     next();
   } catch (error) {
-    res.status(500).json({
-      mensaje: 'Error al verificar la idempotencia',
-      error: error.message,
-    });
+    responderErrorInterno(res, error);
   }
 };

@@ -38,9 +38,17 @@ export const subirImagen = (req, res, next) => {
       return;
     }
 
-    const mensaje = error.code === 'LIMIT_FILE_SIZE'
+    const formatoInvalido = error.message === 'Solo se permiten imágenes JPG, PNG o WEBP';
+    const archivoGrande = error.code === 'LIMIT_FILE_SIZE';
+    if (!formatoInvalido && !archivoGrande) {
+      console.error(error);
+    }
+
+    const mensaje = archivoGrande
       ? 'La imagen no puede superar 2 MB'
-      : error.message;
+      : formatoInvalido
+        ? error.message
+        : 'No se pudo procesar la imagen. Por favor, intente más tarde.';
     res.status(400).json({ mensaje });
   });
 };
