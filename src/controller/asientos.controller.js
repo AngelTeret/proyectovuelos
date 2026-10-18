@@ -1,6 +1,7 @@
 import {
   consultarBloqueo,
   idsConReserva,
+  liberarBloqueo,
   liberarBloqueosVencidos,
   obtenerPorVuelo,
   reservarTemporal,
@@ -68,6 +69,29 @@ export const bloquearAsiento = async (req, res) => {
   } catch (error) {
     if (error.message === 'El asiento ya no está disponible o no existe') {
       return res.status(409).json({ mensaje: 'Ese asiento acaba de ser reservado. Elige otro.' });
+    }
+    responderErrorInterno(res, error);
+  }
+};
+
+export const liberarAsiento = async (req, res) => {
+  try {
+    const asientoId = Number(req.body.asiento_id);
+    const vueloId = Number(req.body.vuelo_id);
+    const llave = llaveDe(req);
+
+    if (!asientoId || !vueloId || !llave) {
+      return res.status(400).json({ mensaje: 'No se pudo liberar el asiento' });
+    }
+
+    const resultado = await liberarBloqueo({ asientoId, vueloId, llave });
+    res.status(200).json(resultado);
+  } catch (error) {
+    if (error.message === 'El asiento ya fue confirmado') {
+      return res.status(409).json({ mensaje: 'Ese asiento ya fue confirmado' });
+    }
+    if (error.message === 'El asiento ya no está disponible o no existe' || error.message === 'No se pudo liberar el asiento') {
+      return res.status(409).json({ mensaje: 'No se pudo liberar el asiento' });
     }
     responderErrorInterno(res, error);
   }

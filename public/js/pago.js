@@ -147,9 +147,51 @@ document.addEventListener('DOMContentLoaded', () => {
     radio.addEventListener('change', mostrarFormularioTarjeta);
   });
 
-  document.getElementById('btnVolver').addEventListener('click', (evento) => {
+  document.getElementById('btnVolver').addEventListener('click', async (evento) => {
     evento.preventDefault();
-    window.location.href = '/asientos.html';
+    if (document.getElementById('btnPagar').disabled) {
+      return;
+    }
+
+    const enlace = evento.currentTarget;
+    enlace.classList.add('pointer-events-none', 'opacity-70');
+    const asiento = leer('datosAsiento');
+    const busqueda = leer('busquedaVuelo');
+    const llave = localStorage.getItem('bloqueoLlave') || '';
+
+    try {
+      if (asiento.asientoId && llave) {
+        const respuesta = await fetch('/api/asientos/liberar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-bloqueo-llave': llave,
+          },
+          body: JSON.stringify({
+            asiento_id: asiento.asientoId,
+            vuelo_id: Number(busqueda.vuelo_id),
+            llave,
+          }),
+        });
+        const data = await respuesta.json().catch(() => ({}));
+        if (!respuesta.ok) {
+          Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje || 'No se pudo liberar el asiento' });
+          return;
+        }
+      }
+
+      if (relojBloqueo) {
+        clearInterval(relojBloqueo);
+      }
+      localStorage.removeItem('datosAsiento');
+      window.location.href = '/asientos.html';
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo liberar el asiento' });
+    } finally {
+      if (document.body) {
+        enlace.classList.remove('pointer-events-none', 'opacity-70');
+      }
+    }
   });
 
   const botonPagar = document.getElementById('btnPagar');
