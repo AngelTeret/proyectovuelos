@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Administración - Sistema de Vuelos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -74,9 +74,9 @@
       </header>
 
       <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
-        <div class="mb-6 flex items-center justify-between gap-4">
-          <h1 class="text-2xl font-bold text-slate-900">Gestión de Vuelos</h1>
-          <button id="btn-nuevo-vuelo" type="button" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">+ Nuevo Vuelo</button>
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Gestión de Vuelos</h1>
+          <button id="btn-nuevo-vuelo" type="button" class="h-11 shrink-0 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">+ Nuevo Vuelo</button>
         </div>
 
         <section class="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -101,8 +101,8 @@
       </main>
     </div>
   </div>
-  <div id="modal-vuelo" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4">
-    <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-vuelo">
+  <div id="modal-vuelo" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-slate-900/50 p-4">
+    <div class="my-auto max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl sm:p-6" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-vuelo">
       <h2 id="titulo-modal-vuelo" class="text-xl font-bold text-slate-900">Agregar Nuevo Vuelo</h2>
       <form id="form-vuelo" class="mt-5 space-y-4">
         <input type="hidden" id="vuelo-id" name="vuelo_id">

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Registro - Sistema de Vuelos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,8 +21,8 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body class="flex min-h-screen items-center justify-center bg-slate-50 px-4 font-sans text-slate-800 antialiased">
-  <main class="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm">
+<body class="flex min-h-[100dvh] items-center justify-center overflow-y-auto bg-slate-50 px-4 py-6 font-sans text-slate-800 antialiased" style="padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right));">
+  <main class="w-full max-w-md rounded-2xl bg-white p-5 shadow-sm sm:p-8">
     <div class="mb-8 flex items-center justify-center gap-2.5">
       <svg class="h-8 w-8 text-blue-950" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
@@ -46,7 +46,7 @@
         <span class="mb-1.5 block text-xs font-medium text-slate-600">Contraseña</span>
         <input id="password" name="password" type="password" required autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
       </label>
-      <button type="submit" class="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Crear Cuenta</button>
+      <button type="submit" class="h-11 w-full rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Crear Cuenta</button>
     </form>
 
     <p class="mt-6 text-center text-sm text-slate-500">

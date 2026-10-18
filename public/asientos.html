@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Selecciona tus asientos - Sistema de Vuelos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -105,20 +105,22 @@
         </ol>
 
         <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
-          <section class="rounded-2xl bg-white p-6 shadow-sm">
+          <section class="min-w-0 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
             <h1 class="text-lg font-semibold text-slate-900">Selecciona tus asientos</h1>
             <p class="mt-1 text-sm text-slate-500">Elige el asiento para el pasajero de tu reserva.</p>
-            <div class="mx-auto mt-6 max-w-md">
-              <div class="mb-2 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-400">
-                <span class="w-9 text-center">A</span>
-                <span class="w-9 text-center">B</span>
-                <span class="w-9 text-center">C</span>
-                <span class="w-6"></span>
-                <span class="w-9 text-center">D</span>
-                <span class="w-9 text-center">E</span>
-                <span class="w-9 text-center">F</span>
+            <div id="mapa-asientos" class="mx-auto mt-6 max-h-[min(32rem,70dvh)] w-full max-w-md overflow-auto">
+              <div class="mx-auto w-max pb-1">
+                <div class="mb-2 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-400">
+                  <span class="inline-flex h-10 w-10 items-center justify-center">A</span>
+                  <span class="inline-flex h-10 w-10 items-center justify-center">B</span>
+                  <span class="inline-flex h-10 w-10 items-center justify-center">C</span>
+                  <span class="w-6"></span>
+                  <span class="inline-flex h-10 w-10 items-center justify-center">D</span>
+                  <span class="inline-flex h-10 w-10 items-center justify-center">E</span>
+                  <span class="inline-flex h-10 w-10 items-center justify-center">F</span>
+                </div>
+                <div id="contenedor-asientos" class="flex flex-col gap-1.5" aria-label="Mapa de asientos"></div>
               </div>
-              <div id="contenedor-asientos" class="flex max-h-[28rem] flex-col gap-1.5 overflow-y-auto pr-1" aria-label="Mapa de asientos"></div>
             </div>
             <div class="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-500">
               <span class="inline-flex items-center gap-2"><span class="h-4 w-4 rounded border border-blue-400 bg-white"></span>Disponible</span>
@@ -135,7 +137,7 @@
               </svg>
             </div>
 
-            <section class="min-w-0 overflow-hidden rounded-2xl bg-white p-5 shadow-sm">
+            <section class="min-w-0 overflow-hidden rounded-2xl bg-white p-4 shadow-sm sm:p-5">
               <h2 class="text-base font-semibold text-slate-900">Resumen de asientos</h2>
               <div class="mt-4 border-t border-slate-100 pt-4">
                 <div class="flex min-w-0 items-start gap-2">

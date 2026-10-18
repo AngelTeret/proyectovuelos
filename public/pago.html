@@ -8,7 +8,7 @@
       location.replace('/login.html');
     }
   </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Pago - Sistema de Vuelos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -115,7 +115,7 @@
         </ol>
 
         <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.3fr)_380px]">
-          <section class="rounded-2xl bg-white p-6 shadow-sm">
+          <section class="min-w-0 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
             <h1 class="text-lg font-semibold text-slate-900">Detalles de Pago</h1>
             <p id="tiempo-bloqueo" class="mt-3 hidden rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800"></p>
             <form id="form-pago" class="mt-5 space-y-4">
@@ -172,7 +172,7 @@
             </form>
           </section>
 
-          <section class="rounded-2xl bg-white p-6 shadow-sm">
+          <section class="min-w-0 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
             <h2 class="text-lg font-semibold text-slate-900">Resumen de compra</h2>
             <dl class="mt-5 space-y-3 text-sm">
               <div class="flex items-center justify-between">
@@ -184,9 +184,9 @@
               <p class="text-sm font-medium text-slate-600">Total a pagar</p>
               <p id="total-pagar" class="text-2xl font-bold text-slate-900">Q 390.00</p>
             </div>
-            <div class="mt-6 flex items-center gap-3">
-              <a id="btnVolver" href="/asientos.html" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">Volver</a>
-              <button id="btnPagar" type="submit" form="form-pago" class="flex-1 rounded-lg bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600">Pagar y Confirmar Reserva</button>
+            <div class="mt-6 flex flex-col gap-3">
+              <button id="btnPagar" type="submit" form="form-pago" class="min-h-11 w-full min-w-0 whitespace-normal rounded-lg bg-emerald-500 px-4 py-2.5 text-center text-sm font-semibold leading-5 text-white shadow-sm hover:bg-emerald-600">Pagar y Confirmar Reserva</button>
+              <a id="btnVolver" href="/asientos.html" class="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-slate-700 hover:bg-slate-50">Volver</a>
             </div>
           </section>
         </div>

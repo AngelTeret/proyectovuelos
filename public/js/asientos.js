@@ -110,19 +110,19 @@ const pintarAsientos = (asientos) => {
     const celdas = letras.map((letra) => {
       const asiento = asientosFila.get(letra);
       if (!asiento) {
-        return '<span class="h-8 w-9"></span>';
+        return '<span class="h-10 w-10 shrink-0"></span>';
       }
       const codigo = escapar(asiento.numero_asiento);
       const precio = Number(asiento.precio_adicional) || 0;
       const categoria = escapar(asiento.categoria || 'Económico');
       if (estaOcupado(asiento)) {
-        return `<button type="button" disabled class="flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-semibold bg-slate-200 text-slate-400" aria-label="Asiento ${codigo}, ocupado">${codigo}</button>`;
+        return `<button type="button" disabled class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-semibold bg-slate-200 text-slate-400" aria-label="Asiento ${codigo}, ocupado">${codigo}</button>`;
       }
       const propio = asiento.propio ? '1' : '0';
-      return `<button type="button" class="asiento-disponible flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-semibold border border-blue-400 bg-white text-blue-600" data-codigo="${codigo}" data-precio="${precio}" data-categoria="${categoria}" data-propio="${propio}" aria-label="Asiento ${codigo}, disponible">${codigo}</button>`;
+      return `<button type="button" class="asiento-disponible flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-semibold border border-blue-400 bg-white text-blue-600" data-codigo="${codigo}" data-precio="${precio}" data-categoria="${categoria}" data-propio="${propio}" aria-label="Asiento ${codigo}, disponible">${codigo}</button>`;
     });
 
-    return `<div class="flex items-center justify-center gap-1.5">${celdas[0]}${celdas[1]}${celdas[2]}<span class="w-6 text-center text-xs text-slate-400">${fila}</span>${celdas[3]}${celdas[4]}${celdas[5]}</div>`;
+    return `<div class="flex w-max items-center justify-center gap-1.5">${celdas[0]}${celdas[1]}${celdas[2]}<span class="w-6 shrink-0 text-center text-xs text-slate-400">${fila}</span>${celdas[3]}${celdas[4]}${celdas[5]}</div>`;
   }).join('');
 
   const categorias = [...new Set(asientos.map((asiento) => asiento.categoria).filter(Boolean))];
