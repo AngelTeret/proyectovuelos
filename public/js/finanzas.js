@@ -1,7 +1,7 @@
 if (!localStorage.getItem('token')) {
-  window.location.href = '/login.html';
+  window.location.replace('/login.html');
 } else if (localStorage.getItem('rol') !== 'admin') {
-  window.location.href = '/index.html';
+  window.location.replace('/index.html');
 }
 
 const pintarReservas = (reservas) => {

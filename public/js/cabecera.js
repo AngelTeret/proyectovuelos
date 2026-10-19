@@ -134,7 +134,7 @@ if (cerrarSesion) {
     localStorage.removeItem('rol');
     localStorage.removeItem('nombre');
     localStorage.removeItem('usuario_id');
-    window.location.href = '/login.html';
+    window.location.replace('/login.html');
   });
 }
 

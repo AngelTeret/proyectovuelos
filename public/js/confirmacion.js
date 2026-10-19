@@ -35,7 +35,7 @@ const cargarConfirmacion = async () => {
     });
     if (respuesta.status === 401) {
       localStorage.setItem('redirectAfterLogin', '/confirmacion.html');
-      window.location.href = '/login.html';
+      window.location.replace('/login.html');
       return;
     }
     const data = await respuesta.json().catch(() => ({}));

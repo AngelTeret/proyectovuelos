@@ -2,6 +2,18 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <script>
+    if (localStorage.getItem('token')) {
+      const destino = localStorage.getItem('redirectAfterLogin');
+      const rol = localStorage.getItem('rol');
+      if (destino && destino.startsWith('/') && !destino.startsWith('//')) {
+        localStorage.removeItem('redirectAfterLogin');
+        location.replace(destino);
+      } else {
+        location.replace(rol === 'admin' ? '/administracion.html' : '/index.html');
+      }
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Iniciar sesión - Sistema de Vuelos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">

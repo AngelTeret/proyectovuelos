@@ -22,19 +22,19 @@ document.getElementById('form-login').addEventListener('submit', async (evento) 
     localStorage.setItem('nombre', data.usuario?.nombre || '');
 
     if (data.rol === 'admin') {
-      window.location.href = '/administracion.html';
+      window.location.replace('/administracion.html');
       return;
     }
 
     const destino = localStorage.getItem('redirectAfterLogin');
     if (destino && destino.startsWith('/') && !destino.startsWith('//')) {
       localStorage.removeItem('redirectAfterLogin');
-      window.location.href = destino;
+      window.location.replace(destino);
       return;
     }
 
     localStorage.removeItem('redirectAfterLogin');
-    window.location.href = '/index.html';
+    window.location.replace('/index.html');
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'Oops...', text: 'Credenciales incorrectas' });
   }

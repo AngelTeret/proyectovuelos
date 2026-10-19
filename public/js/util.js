@@ -64,7 +64,7 @@ const descargarBoleto = async (reservaId, boton) => {
     });
     if (respuesta.status === 401) {
       localStorage.setItem('redirectAfterLogin', window.location.pathname);
-      window.location.href = '/login.html';
+      window.location.replace('/login.html');
       return;
     }
     if (!respuesta.ok) {
@@ -82,7 +82,7 @@ const descargarBoleto = async (reservaId, boton) => {
     const url = URL.createObjectURL(archivo);
     const enlace = document.createElement('a');
     enlace.href = url;
-    enlace.download = coincidencia ? coincidencia[1] : 'boleto.pdf';
+    enlace.download = coincidencia ? coincidencia[1] : 'confirmacion.pdf';
     document.body.appendChild(enlace);
     enlace.click();
     enlace.remove();

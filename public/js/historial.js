@@ -123,7 +123,7 @@ const cancelarReserva = async (reserva, boton) => {
     const data = await respuesta.json().catch(() => ({}));
     if (respuesta.status === 401) {
       localStorage.setItem('redirectAfterLogin', '/mis-vuelos.html');
-      window.location.href = '/login.html';
+      window.location.replace('/login.html');
       return;
     }
     if (!respuesta.ok) {
@@ -232,7 +232,7 @@ const cargarHistorial = async (conservarPestana = false) => {
     });
     if (respuesta.status === 401) {
       localStorage.setItem('redirectAfterLogin', '/mis-vuelos.html');
-      window.location.href = '/login.html';
+      window.location.replace('/login.html');
       return;
     }
     if (!respuesta.ok) {

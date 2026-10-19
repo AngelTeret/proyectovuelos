@@ -232,7 +232,7 @@ export const descargarBoleto = async (req, res) => {
     const pdf = await crearPdfBoleto(boleto);
     const codigo = String(boleto.codigo_pnr || 'reserva').replace(/[^A-Za-z0-9]/g, '');
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="boleto-${codigo}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="confirmacion-${codigo}.pdf"`);
     res.status(200).send(pdf);
   } catch (error) {
     responderErrorBoleto(res, error);
