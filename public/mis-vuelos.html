@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    if (!localStorage.getItem('token')) {
+      localStorage.setItem('redirectAfterLogin', '/mis-vuelos.html');
+      location.replace('/login.html');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Mis vuelos - Sistema de Vuelos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="h-[100dvh] overflow-hidden bg-slate-50 font-sans text-slate-800 antialiased">
+  <div class="flex h-[100dvh] bg-slate-50">
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="flex h-16 shrink-0 items-center justify-end border-b border-slate-100 bg-white px-6">
+        <p id="nombre-usuario" class="text-sm font-semibold text-slate-800"></p>
+      </header>
+
+      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
+        <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Mis vuelos</h1>
+        <p class="mt-1 text-sm text-slate-500">Reservas asociadas a tu cuenta.</p>
+        <p id="estado-carga" class="mt-6 text-sm text-slate-500">Cargando tus vuelos...</p>
+        <div id="lista-vuelos" class="mt-6 hidden grid gap-4"></div>
+        <div id="vacio" class="mt-6 hidden rounded-2xl bg-white p-8 text-center shadow-sm">
+          <p class="text-sm text-slate-500">Todavía no tienes vuelos reservados.</p>
+          <a href="/index.html" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Buscar vuelos</a>
+        </div>
+        <p id="error-historial" class="mt-6 hidden rounded-2xl bg-white p-8 text-center text-sm text-red-600 shadow-sm">No se pudo cargar tu historial.</p>
+        <span class="hidden bg-emerald-50 text-emerald-700 bg-amber-50 text-amber-800 bg-red-50 text-red-700 bg-slate-100 text-slate-600"></span>
+      </main>
+    </div>
+  </div>
+  <template id="plantilla-vuelo">
+    <article class="rounded-2xl bg-white p-5 shadow-sm">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-medium text-slate-400">Código</p>
+          <p data-campo="pnr" class="text-sm font-semibold text-slate-900"></p>
+        </div>
+        <span data-campo="estado" class="rounded-full px-2.5 py-1 text-xs font-medium"></span>
+      </div>
+      <p data-campo="ruta" class="mt-4 text-lg font-semibold text-slate-900"></p>
+      <dl class="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+        <div>
+          <dt class="text-xs text-slate-400">Salida</dt>
+          <dd data-campo="salida" class="mt-0.5 font-medium text-slate-800"></dd>
+        </div>
+        <div>
+          <dt class="text-xs text-slate-400">Asiento</dt>
+          <dd data-campo="asiento" class="mt-0.5 font-medium text-slate-800"></dd>
+        </div>
+        <div>
+          <dt class="text-xs text-slate-400">Total</dt>
+          <dd data-campo="total" class="mt-0.5 font-medium text-slate-800"></dd>
+        </div>
+      </dl>
+    </article>
+  </template>
+  <script src="/js/util.js"></script>
+  <script src="/js/cabecera.js"></script>
+  <script src="/js/historial.js"></script>
+</body>
+</html>
