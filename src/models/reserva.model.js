@@ -166,6 +166,28 @@ export const obtenerTodas = async () => {
   return rows;
 };
 
+export const obtenerHistorialPorUsuario = async (usuarioId) => {
+  const [rows] = await pool.query(
+    `SELECT
+      r.codigo_pnr,
+      v.origen,
+      v.destino,
+      v.fecha_salida,
+      a.numero_asiento,
+      r.estado_pago,
+      r.monto_total,
+      r.fecha_creacion
+    FROM reservas r
+    INNER JOIN vuelos v ON r.vuelo_id = v.id
+    INNER JOIN asientos a ON r.asiento_id = a.id
+    WHERE r.usuario_id = ?
+    ORDER BY r.fecha_creacion DESC`,
+    [usuarioId]
+  );
+
+  return rows;
+};
+
 export const obtenerPorPNR = async (codigo_pnr) => {
   const [rows] = await pool.query(
     `SELECT

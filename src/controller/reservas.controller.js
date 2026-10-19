@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import {
   crearReservaTransaccion,
   obtenerTodas,
+  obtenerHistorialPorUsuario,
   obtenerPorPNR,
   actualizarPago,
 } from '../models/reserva.model.js';
@@ -96,6 +97,23 @@ export const crearReserva = async (req, res) => {
       return res.status(400).json({ mensaje: 'Saldo insuficiente para completar la reserva' });
     }
 
+    responderErrorInterno(res, error);
+  }
+};
+
+export const obtenerHistorialUsuario = async (req, res) => {
+  try {
+    const sesion = usuarioDesdeToken(req);
+    if (!sesion?.id) {
+      return res.status(401).json({ mensaje: 'Inicia sesión para ver tu historial' });
+    }
+
+    const historial = await obtenerHistorialPorUsuario(sesion.id);
+    res.status(200).json(historial);
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ mensaje: 'Sesión no válida' });
+    }
     responderErrorInterno(res, error);
   }
 };
