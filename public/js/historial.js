@@ -45,6 +45,11 @@ const clasificar = (reserva) => {
 const SEGUNDOS_DIA = 24 * 60 * 60;
 const SEGUNDOS_DOS_DIAS = 2 * SEGUNDOS_DIA;
 
+const puedeDescargar = (reserva) => (
+  reserva.estado_pago === 'aprobado'
+  && clasificar(reserva) !== 'cancelados'
+);
+
 const puedeCancelar = (reserva) => (
   clasificar(reserva) === 'proximos'
   && reserva.estado_pago === 'aprobado'
@@ -128,7 +133,11 @@ const cancelarReserva = async (reserva, boton) => {
     }
 
     const devuelto = quetzales(data.reembolso);
-    await Swal.fire({
+    reserva.estado_pago = 'reembolsado';
+    reserva.monto_reembolsado = data.reembolso;
+    pestanaActiva = 'cancelados';
+    pintarGrupo();
+    Swal.fire({
       toast: true,
       position: 'top-end',
       icon: 'success',
@@ -136,8 +145,7 @@ const cancelarReserva = async (reserva, boton) => {
       showConfirmButton: false,
       timer: 3200,
     });
-    pestanaActiva = 'cancelados';
-    await cargarHistorial(true);
+    cargarHistorial(true);
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'No se pudo cancelar', text: 'Intenta de nuevo.' });
     boton.disabled = false;
@@ -180,6 +188,11 @@ const pintarGrupo = () => {
     if (Number(reserva.monto_reembolsado) > 0) {
       reembolso.textContent = `Se devolvieron ${quetzales(reserva.monto_reembolsado)} a tu billetera.`;
       reembolso.classList.remove('hidden');
+    }
+    const boleto = nodo.querySelector('[data-boleto]');
+    if (puedeDescargar(reserva)) {
+      boleto.classList.remove('hidden');
+      boleto.addEventListener('click', () => descargarBoleto(reserva.id, boleto));
     }
     const boton = nodo.querySelector('[data-cancelar]');
     if (puedeCancelar(reserva)) {

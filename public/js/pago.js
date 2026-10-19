@@ -249,13 +249,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('datosAsiento');
         localStorage.removeItem('bloqueoLlave');
         sessionStorage.removeItem('tempPasajero');
-        Swal.fire({
-          icon: 'success',
-          title: '¡Reserva Confirmada!',
-          text: 'Tu pago ha sido procesado con éxito.',
-        }).then(() => {
-          window.location.href = '/index.html';
-        });
+        if (data.id) {
+          sessionStorage.setItem('reservaConfirmada', String(data.id));
+          window.location.href = '/confirmacion.html';
+          return;
+        }
+        window.location.href = '/mis-vuelos.html';
         return;
       }
 
