@@ -5,6 +5,7 @@ import {
   obtenerHistorialPorUsuario,
   obtenerPorPNR,
   actualizarPago,
+  cancelarReservaUsuario,
 } from '../models/reserva.model.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 
@@ -129,6 +130,36 @@ export const consultarReserva = async (req, res) => {
 
     res.status(200).json(reserva);
   } catch (error) {
+    responderErrorInterno(res, error);
+  }
+};
+
+export const cancelarReserva = async (req, res) => {
+  try {
+    const sesion = usuarioDesdeToken(req);
+    if (!sesion?.id) {
+      return res.status(401).json({ mensaje: 'Inicia sesión para cancelar la reserva' });
+    }
+
+    const reservaId = Number(req.params.id);
+    if (!reservaId) {
+      return res.status(400).json({ mensaje: 'No se pudo cancelar la reserva' });
+    }
+
+    const resultado = await cancelarReservaUsuario({ reservaId, usuarioId: sesion.id });
+    res.status(200).json({
+      mensaje: 'Reserva cancelada',
+      reembolso: resultado.reembolso,
+      parcial: resultado.parcial,
+      saldo_virtual: resultado.saldo_virtual,
+    });
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ mensaje: 'Sesión no válida' });
+    }
+    if (error.codigo === 404 || error.codigo === 400) {
+      return res.status(error.codigo).json({ mensaje: error.message });
+    }
     responderErrorInterno(res, error);
   }
 };

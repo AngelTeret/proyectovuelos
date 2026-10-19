@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   crearReserva,
   consultarReserva,
+  cancelarReserva,
   obtenerHistorialUsuario,
   obtenerReservas,
   pagarReserva,
@@ -14,6 +15,7 @@ router.get('/', obtenerReservas);
 router.get('/mi-historial', obtenerHistorialUsuario);
 router.post('/', verificarIdempotencia, crearReserva);
 router.get('/pnr/:pnr', consultarReserva);
+router.put('/:id/cancelar', cancelarReserva);
 router.put('/:id/pago', pagarReserva);
 
 export default router;

@@ -28,14 +28,120 @@ const mostrar = (id) => {
 };
 
 const clasificar = (reserva) => {
-  if (String(reserva.estado_vuelo || '').toLowerCase() === 'cancelado') {
+  if (reserva.estado_pago === 'reembolsado' || String(reserva.estado_vuelo || '').toLowerCase() === 'cancelado') {
     return 'cancelados';
+  }
+  const segundos = Number(reserva.segundos_para_salida);
+  if (Number.isFinite(segundos)) {
+    return segundos > 0 ? 'proximos' : 'pasados';
   }
   const salida = new Date(reserva.fecha_salida);
   if (Number.isNaN(salida.getTime()) || salida.getTime() >= Date.now()) {
     return 'proximos';
   }
   return 'pasados';
+};
+
+const SEGUNDOS_DIA = 24 * 60 * 60;
+const SEGUNDOS_DOS_DIAS = 2 * SEGUNDOS_DIA;
+
+const puedeCancelar = (reserva) => (
+  clasificar(reserva) === 'proximos'
+  && reserva.estado_pago === 'aprobado'
+  && reserva.metodo_pago === 'saldo'
+  && Number(reserva.segundos_para_salida) > 0
+);
+
+const compraReciente = (reserva) => {
+  const creada = new Date(reserva.fecha_creacion);
+  if (Number.isNaN(creada.getTime())) {
+    return false;
+  }
+  return Date.now() - creada.getTime() <= SEGUNDOS_DIA * 1000;
+};
+
+const reembolsoPrevisto = (reserva) => {
+  const total = Number(reserva.monto_total) || 0;
+  const segundos = Number(reserva.segundos_para_salida);
+  if (!Number.isFinite(segundos) || segundos <= 0) {
+    return { permitido: false, motivo: 'salio', parcial: false, reembolso: 0 };
+  }
+  if (segundos < SEGUNDOS_DIA) {
+    return { permitido: false, motivo: 'cercano', parcial: false, reembolso: 0 };
+  }
+  const parcial = segundos <= SEGUNDOS_DOS_DIAS;
+  const reembolso = parcial ? Math.round((total / 2) * 100) / 100 : total;
+  return { permitido: true, parcial, reembolso };
+};
+
+const textoSinDevolucion = (reserva) => {
+  const base = 'Por el poco tiempo que queda para el vuelo no se puede devolver el dinero.';
+  if (compraReciente(reserva)) {
+    return `${base} Aunque la compra sea reciente, no hay devolución.`;
+  }
+  return base;
+};
+
+const cancelarReserva = async (reserva, boton) => {
+  const previsto = reembolsoPrevisto(reserva);
+  if (!previsto.permitido) {
+    await Swal.fire({
+      icon: 'warning',
+      title: 'No se puede cancelar',
+      text: previsto.motivo === 'cercano' ? textoSinDevolucion(reserva) : 'El vuelo ya salió y no se puede cancelar.',
+      confirmButtonText: 'Entendido',
+    });
+    return;
+  }
+  const texto = previsto.parcial
+    ? `Faltan 2 días o menos. Solo se devolverán ${quetzales(previsto.reembolso)} a tu billetera.`
+    : `Se devolverán ${quetzales(previsto.reembolso)} a tu billetera.`;
+  const confirmacion = await Swal.fire({
+    icon: 'warning',
+    title: '¿Cancelar este vuelo?',
+    text: texto,
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cancelar',
+    cancelButtonText: 'No',
+    confirmButtonColor: '#dc2626',
+  });
+  if (!confirmacion.isConfirmed) {
+    return;
+  }
+
+  boton.disabled = true;
+  try {
+    const respuesta = await fetch(`/api/reservas/${reserva.id}/cancelar`, {
+      method: 'PUT',
+      headers: autorizacion(),
+    });
+    const data = await respuesta.json().catch(() => ({}));
+    if (respuesta.status === 401) {
+      localStorage.setItem('redirectAfterLogin', '/mis-vuelos.html');
+      window.location.href = '/login.html';
+      return;
+    }
+    if (!respuesta.ok) {
+      Swal.fire({ icon: 'error', title: 'No se pudo cancelar', text: data.mensaje || 'Intenta de nuevo.' });
+      boton.disabled = false;
+      return;
+    }
+
+    const devuelto = quetzales(data.reembolso);
+    await Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: `Reserva cancelada. Se devolvieron ${devuelto} a tu billetera.`,
+      showConfirmButton: false,
+      timer: 3200,
+    });
+    pestanaActiva = 'cancelados';
+    await cargarHistorial(true);
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'No se pudo cancelar', text: 'Intenta de nuevo.' });
+    boton.disabled = false;
+  }
 };
 
 const pintarGrupo = () => {
@@ -70,34 +176,43 @@ const pintarGrupo = () => {
     nodo.querySelector('[data-campo="salida"]').textContent = formatearSalida(reserva.fecha_salida);
     nodo.querySelector('[data-campo="asiento"]').textContent = reserva.numero_asiento || '';
     nodo.querySelector('[data-campo="total"]').textContent = quetzales(reserva.monto_total);
+    const reembolso = nodo.querySelector('[data-campo="reembolso"]');
+    if (Number(reserva.monto_reembolsado) > 0) {
+      reembolso.textContent = `Se devolvieron ${quetzales(reserva.monto_reembolsado)} a tu billetera.`;
+      reembolso.classList.remove('hidden');
+    }
+    const boton = nodo.querySelector('[data-cancelar]');
+    if (puedeCancelar(reserva)) {
+      boton.classList.remove('hidden');
+      boton.addEventListener('click', () => cancelarReserva(reserva, boton));
+    }
     lista.appendChild(nodo);
   });
   lista.classList.remove('hidden');
 };
 
-const prepararPestanas = () => {
-  document.querySelectorAll('[role="tab"]').forEach((boton) => {
-    boton.addEventListener('click', () => {
-      pestanaActiva = boton.dataset.pestana;
-      pintarGrupo();
-    });
+document.querySelectorAll('[role="tab"]').forEach((boton) => {
+  boton.addEventListener('click', () => {
+    pestanaActiva = boton.dataset.pestana;
+    pintarGrupo();
   });
-};
+});
 
-const pintarHistorial = (reservas) => {
+const pintarHistorial = (reservas, conservarPestana = false) => {
   if (reservas.length === 0) {
     mostrar('vacio');
     return;
   }
 
   reservasGuardadas = reservas;
-  pestanaActiva = 'proximos';
-  prepararPestanas();
+  if (!conservarPestana) {
+    pestanaActiva = 'proximos';
+  }
   mostrar('panel-historial');
   pintarGrupo();
 };
 
-const cargarHistorial = async () => {
+const cargarHistorial = async (conservarPestana = false) => {
   try {
     const respuesta = await fetch('/api/reservas/mi-historial', {
       headers: autorizacion(),
@@ -110,7 +225,7 @@ const cargarHistorial = async () => {
     if (!respuesta.ok) {
       throw new Error('No se pudo cargar el historial');
     }
-    pintarHistorial(await respuesta.json());
+    pintarHistorial(await respuesta.json(), conservarPestana);
   } catch (error) {
     mostrar('error-historial');
   }

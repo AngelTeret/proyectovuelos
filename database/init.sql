@@ -78,6 +78,8 @@ CREATE TABLE IF NOT EXISTS reservas (
     'reembolsado'
   ) NOT NULL DEFAULT 'pendiente',
   monto_total DECIMAL(10, 2) NOT NULL,
+  metodo_pago ENUM('saldo', 'tarjeta') NULL,
+  monto_reembolsado DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
   equipaje_extra_kg INT DEFAULT 0,
   costo_servicios_extra DECIMAL(10,2) DEFAULT 0.00,
   fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
