@@ -16,7 +16,14 @@
         } catch (error) {
           asiento = {};
         }
-        if (!asiento.asientoId || !localStorage.getItem('bloqueoLlave')) {
+        let lista = [];
+        try {
+          const guardados = JSON.parse(localStorage.getItem('datosAsientos')) || [];
+          lista = Array.isArray(guardados) ? guardados : [];
+        } catch (error) {
+          lista = [];
+        }
+        if ((!asiento.asientoId && !lista.length) || !localStorage.getItem('bloqueoLlave')) {
           location.replace('/asientos.html');
         }
       };
@@ -129,7 +136,7 @@
             </dl>
             <div class="mt-4 flex items-end justify-between border-t border-slate-200 pt-4">
               <p class="text-sm font-medium text-slate-600">Total a pagar</p>
-              <p id="total-pagar" class="text-2xl font-bold text-slate-900">Q 390.00</p>
+              <p id="total-pagar" class="text-2xl font-bold text-slate-900">Q 0.00</p>
             </div>
             <div class="mt-6 flex flex-col gap-3">
               <button id="btnPagar" type="submit" form="form-pago" class="min-h-11 w-full min-w-0 whitespace-normal rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-center text-sm font-medium leading-5 text-white shadow-md transition-all hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg">Pagar y Confirmar Reserva</button>

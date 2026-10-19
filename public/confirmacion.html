@@ -60,19 +60,14 @@
                   <p id="destino" class="mt-1 break-words text-2xl font-bold text-slate-900 sm:text-3xl"></p>
                 </div>
               </div>
-              <dl class="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 pt-6 lg:grid-cols-4">
+              <dl class="mt-6 grid grid-cols-1 gap-3 border-t border-slate-100 pt-6 sm:grid-cols-3">
                 <div class="rounded-xl bg-slate-50 px-4 py-3">
                   <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Salida</dt>
                   <dd id="salida" class="mt-1 font-semibold text-slate-900"></dd>
                 </div>
                 <div class="rounded-xl bg-slate-50 px-4 py-3">
-                  <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Asiento</dt>
+                  <dt id="etiqueta-asiento" class="text-xs font-medium uppercase tracking-wide text-slate-400">Asiento</dt>
                   <dd id="asiento" class="mt-1 font-semibold text-slate-900"></dd>
-                </div>
-                <div class="rounded-xl bg-slate-50 px-4 py-3">
-                  <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Pasajero</dt>
-                  <dd id="pasajero" class="mt-1 font-semibold text-slate-900"></dd>
-                  <dd id="documento" class="mt-0.5 text-sm text-slate-500"></dd>
                 </div>
                 <div class="rounded-xl bg-slate-50 px-4 py-3">
                   <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Pago</dt>
@@ -80,6 +75,10 @@
                   <dd id="pago" class="mt-0.5 text-sm text-slate-500"></dd>
                 </div>
               </dl>
+              <section class="mt-6 border-t border-slate-100 pt-6">
+                <h2 id="titulo-pasajeros" class="text-xs font-medium uppercase tracking-wide text-slate-400">Pasajeros</h2>
+                <div id="lista-pasajeros" class="mt-3 grid grid-cols-1 gap-3"></div>
+              </section>
               <div class="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p id="compra" class="text-sm text-slate-500"></p>

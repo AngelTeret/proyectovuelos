@@ -16,7 +16,7 @@ export const liberarBloqueosVencidos = async (ejecutor = pool, vueloId = null) =
   );
 };
 
-export const reservarTemporal = async ({ asientoId, vueloId, llave }) => {
+export const reservarTemporal = async ({ asientoId, vueloId, llave, conservarIds = [] }) => {
   if (!llaveValida(llave)) {
     throw new Error('No se pudo reservar el asiento');
   }
@@ -43,11 +43,14 @@ export const reservarTemporal = async ({ asientoId, vueloId, llave }) => {
       throw new Error('El asiento ya no está disponible o no existe');
     }
 
+    const conservar = [...new Set(conservarIds.map(Number).filter((id) => id > 0 && id !== Number(asientoId)))];
+    const marcas = conservar.map(() => '?').join(', ');
+    const excluir = marcas ? ` AND id NOT IN (${marcas})` : '';
     await connection.query(
       `UPDATE asientos
        SET estado = 'disponible', bloqueo_hasta = NULL, bloqueo_llave = NULL
-       WHERE bloqueo_llave = ? AND id <> ? AND estado = 'reservado_temporal'`,
-      [llave, asientoId]
+       WHERE bloqueo_llave = ? AND id <> ? AND estado = 'reservado_temporal'${excluir}`,
+      [llave, asientoId, ...conservar]
     );
 
     await connection.query(
@@ -56,6 +59,21 @@ export const reservarTemporal = async ({ asientoId, vueloId, llave }) => {
        WHERE id = ?`,
       [llave, MINUTOS_BLOQUEO, asientoId]
     );
+
+    await connection.query(
+      `UPDATE asientos
+       SET bloqueo_hasta = DATE_ADD(NOW(), INTERVAL ? MINUTE)
+       WHERE bloqueo_llave = ? AND estado = 'reservado_temporal'`,
+      [MINUTOS_BLOQUEO, llave]
+    );
+
+    const [cuantos] = await connection.query(
+      `SELECT COUNT(*) AS total FROM asientos WHERE bloqueo_llave = ? AND estado = 'reservado_temporal'`,
+      [llave]
+    );
+    if (Number(cuantos[0].total) > 4) {
+      throw new Error('No se puede reservar más de 4 asientos');
+    }
 
     const [tiempo] = await connection.query(
       'SELECT TIMESTAMPDIFF(SECOND, NOW(), bloqueo_hasta) AS segundos FROM asientos WHERE id = ?',
@@ -151,10 +169,29 @@ export const obtenerPorVuelo = async (vuelo_id) => {
 
 export const idsConReserva = async (vuelo_id) => {
   const [rows] = await pool.query(
-    'SELECT asiento_id FROM reservas WHERE vuelo_id = ?',
-    [vuelo_id]
+    `SELECT asiento_id AS id FROM reservas
+     WHERE vuelo_id = ? AND estado_pago <> 'reembolsado' AND asiento_id IS NOT NULL
+     UNION
+     SELECT rp.asiento_id AS id
+     FROM reserva_pasajeros rp
+     INNER JOIN reservas r ON r.id = rp.reserva_id
+     WHERE r.vuelo_id = ? AND r.estado_pago <> 'reembolsado' AND rp.asiento_id IS NOT NULL`,
+    [vuelo_id, vuelo_id]
   );
-  return rows.map((fila) => fila.asiento_id);
+  return rows.map((fila) => fila.id);
+};
+
+export const liberarBloqueosDeLlave = async ({ vueloId, llave }) => {
+  if (!llaveValida(llave)) {
+    throw new Error('No se pudo liberar el asiento');
+  }
+  await pool.query(
+    `UPDATE asientos
+     SET estado = 'disponible', bloqueo_hasta = NULL, bloqueo_llave = NULL
+     WHERE vuelo_id = ? AND bloqueo_llave = ? AND estado = 'reservado_temporal'`,
+    [vueloId, llave]
+  );
+  return { liberado: true };
 };
 
 const LETRAS = ['A', 'B', 'C', 'D', 'E', 'F'];

@@ -177,6 +177,9 @@ const pintarAsientos = (asientos) => {
       const precio = Number(asiento.precio_adicional) || 0;
       const categoria = escapar(asiento.categoria || 'Básica');
       const tono = (clasesPorCategoria[asiento.categoria] || clasesPorCategoria['Básica']).join(' ');
+      if (asientosGuardados().some((item) => item.codigo === asiento.numero_asiento)) {
+        return `<button type="button" disabled class="flex h-10 w-10 shrink-0 cursor-not-allowed items-center justify-center rounded-xl border-2 border-emerald-400 bg-emerald-500 text-xs font-semibold text-white" aria-label="Asiento ${codigo}, ya elegido">${codigo}</button>`;
+      }
       if (estaOcupado(asiento)) {
         return `<button type="button" disabled class="flex h-10 w-10 shrink-0 cursor-not-allowed items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-400 opacity-60" aria-label="Asiento ${codigo}, ocupado"><span aria-hidden="true">×</span></button>`;
       }
@@ -227,6 +230,9 @@ const pintarAsientos = (asientos) => {
     actualizarResumen('', '');
   }
 
+  if (asientosGuardados().length) {
+    return;
+  }
   const propio = asientos.find((asiento) => asiento.propio);
   const botonPropio = propio
     ? contenedor.querySelector(`.asiento-disponible[data-codigo="${CSS.escape(propio.numero_asiento)}"]`)
@@ -257,19 +263,71 @@ const cargarAsientos = async () => {
   pintarAsientos(await respuesta.json());
 };
 
+const viajerosSentados = () => {
+  const datos = leerJson('datosPasajeros');
+  const lista = Array.isArray(datos.viajeros) ? datos.viajeros : [];
+  return lista.filter((viajero) => viajero.tipo !== 'infante');
+};
+
+const asientosGuardados = () => {
+  const lista = leerJson('datosAsientos');
+  return Array.isArray(lista) ? lista : [];
+};
+
+const asientosCompletos = () => asientosGuardados().length >= viajerosSentados().length && viajerosSentados().length > 0;
+
 const mostrarPasajero = () => {
-  const pasajero = leerJson('datosPasajeros');
-  const nombre = [pasajero.nombre, pasajero.apellido].filter(Boolean).join(' ');
+  const sentados = viajerosSentados();
+  const guardados = asientosGuardados().length;
+  const completo = guardados >= sentados.length && sentados.length > 0;
+  const indice = completo ? sentados.length - 1 : guardados;
+  const actual = sentados[indice];
+  const nombre = actual ? [actual.nombre, actual.apellido].filter(Boolean).join(' ') : '';
+  const datos = leerJson('datosPasajeros');
+  const infantes = Array.isArray(datos.viajeros) ? datos.viajeros.filter((viajero) => viajero.tipo === 'infante').length : 0;
   const elemento = document.getElementById('nombre-pasajero');
-  elemento.textContent = nombre || 'Pasajero';
+  const progreso = sentados.length ? `asiento ${indice + 1} de ${sentados.length}` : '';
+  const regazo = infantes ? (infantes === 1 ? ' El infante va en el regazo y no elige asiento.' : ` Los ${infantes} infantes van en el regazo y no eligen asiento.`) : '';
+  elemento.textContent = nombre ? `${nombre} · ${progreso}.${regazo}` : 'Pasajero';
   elemento.title = nombre;
+  const boton = document.getElementById('btnConfirmarAsiento');
+  if (boton && sentados.length) {
+    boton.textContent = indice + 1 >= sentados.length ? 'Continuar al pago' : 'Siguiente pasajero';
+  }
+};
+
+const liberarAsiento = async (asientoId) => {
+  const busqueda = leerBusqueda();
+  const llave = localStorage.getItem('bloqueoLlave') || '';
+  if (!asientoId || !llave) {
+    return;
+  }
+  await fetch('/api/asientos/liberar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
+    body: JSON.stringify({
+      asiento_id: asientoId,
+      vuelo_id: Number(busqueda.vuelo_id),
+      llave,
+    }),
+  });
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  const sentados = viajerosSentados();
+  if (!sentados.length) {
+    window.location.replace('/pasajeros.html');
+    return;
+  }
   mostrarPasajero();
 
   document.getElementById('btnConfirmarAsiento').addEventListener('click', async (evento) => {
     evento.preventDefault();
+
+    if (asientosCompletos()) {
+      window.location.href = '/pago.html';
+      return;
+    }
 
     if (!asientoElegido) {
       document.getElementById('asiento-seleccionado').textContent = 'Elige un asiento disponible';
@@ -288,6 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const busqueda = leerBusqueda();
+      const previos = asientosGuardados();
       const respuesta = await fetch('/api/asientos/bloquear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
@@ -295,6 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
           asiento_id: asientoElegido.asientoId,
           vuelo_id: Number(busqueda.vuelo_id),
           llave,
+          conservar_ids: previos.map((item) => item.asientoId),
         }),
       });
       const data = await respuesta.json();
@@ -311,17 +371,28 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      localStorage.setItem('datosAsiento', JSON.stringify({
+      const elegido = {
         codigo: asientoElegido.codigo,
         precioAdicional: asientoElegido.precioAdicional,
         categoria: asientoElegido.categoria,
         asientoId: asientoElegido.asientoId,
         segundos: data.segundos,
-      }));
+      };
+      const acumulados = [...previos, elegido];
+      localStorage.setItem('datosAsientos', JSON.stringify(acumulados));
+      localStorage.setItem('datosAsiento', JSON.stringify(acumulados[0]));
 
       if (!localStorage.getItem('token')) {
         localStorage.setItem('redirectAfterLogin', '/pago.html');
         window.location.replace('/login.html');
+        return;
+      }
+
+      if (acumulados.length < viajerosSentados().length) {
+        asientoElegido = null;
+        actualizarResumen('', '');
+        mostrarPasajero();
+        await cargarAsientos();
         return;
       }
 
@@ -333,8 +404,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.getElementById('btnVolver').addEventListener('click', (evento) => {
+  document.getElementById('btnVolver').addEventListener('click', async (evento) => {
     evento.preventDefault();
+    const guardados = asientosGuardados();
+    if (guardados.length) {
+      const ultimo = guardados[guardados.length - 1];
+      await liberarAsiento(ultimo.asientoId);
+      const restantes = guardados.slice(0, -1);
+      localStorage.setItem('datosAsientos', JSON.stringify(restantes));
+      if (restantes[0]) {
+        localStorage.setItem('datosAsiento', JSON.stringify(restantes[0]));
+      } else {
+        localStorage.removeItem('datosAsiento');
+      }
+      asientoElegido = null;
+      actualizarResumen('', '');
+      mostrarPasajero();
+      await cargarAsientos();
+      return;
+    }
     window.location.href = '/pasajeros.html';
   });
 

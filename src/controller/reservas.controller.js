@@ -46,6 +46,8 @@ export const crearReserva = async (req, res) => {
       costo_servicios_extra,
       metodo_pago,
       bloqueo_llave,
+      viajeros,
+      asientos,
     } = req.body;
 
     const metodo = metodo_pago === 'saldo' ? 'saldo' : 'tarjeta';
@@ -82,6 +84,8 @@ export const crearReserva = async (req, res) => {
       metodo_pago: metodo,
       llave_idempotencia,
       bloqueo_llave,
+      viajeros,
+      asientos,
     });
 
     res.status(201).json({
@@ -98,6 +102,9 @@ export const crearReserva = async (req, res) => {
     }
     if (error.message === 'Saldo insuficiente') {
       return res.status(400).json({ mensaje: 'Saldo insuficiente para completar la reserva' });
+    }
+    if (error.codigo === 400) {
+      return res.status(400).json({ mensaje: error.message });
     }
 
     responderErrorInterno(res, error);
@@ -220,6 +227,7 @@ export const obtenerComprobante = async (req, res) => {
       monto_total: boleto.monto_total,
       metodo_pago: boleto.metodo_pago,
       fecha_creacion: boleto.fecha_creacion,
+      viajeros: boleto.viajeros,
     });
   } catch (error) {
     responderErrorBoleto(res, error);

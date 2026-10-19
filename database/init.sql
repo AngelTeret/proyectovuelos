@@ -52,6 +52,9 @@ CREATE TABLE IF NOT EXISTS pasajeros (
   documento_identidad VARCHAR(50) NOT NULL,
   email VARCHAR(255) NOT NULL,
   telefono VARCHAR(20) NOT NULL,
+  fecha_nacimiento DATE NULL,
+  nacionalidad VARCHAR(80) NULL,
+  tipo ENUM('adulto', 'nino', 'infante') NOT NULL DEFAULT 'adulto',
   PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
@@ -97,6 +100,22 @@ CREATE TABLE IF NOT EXISTS reservas (
   CONSTRAINT fk_usuario_reserva 
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) 
     ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS reserva_pasajeros (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  reserva_id INT UNSIGNED NOT NULL,
+  pasajero_id INT UNSIGNED NOT NULL,
+  asiento_id INT UNSIGNED NULL,
+  orden TINYINT UNSIGNED NOT NULL,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_reserva_pasajeros_reserva
+    FOREIGN KEY (reserva_id) REFERENCES reservas (id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_reserva_pasajeros_pasajero
+    FOREIGN KEY (pasajero_id) REFERENCES pasajeros (id),
+  CONSTRAINT fk_reserva_pasajeros_asiento
+    FOREIGN KEY (asiento_id) REFERENCES asientos (id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS idempotencia_pagos (

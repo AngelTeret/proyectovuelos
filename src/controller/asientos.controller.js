@@ -2,6 +2,7 @@ import {
   consultarBloqueo,
   idsConReserva,
   liberarBloqueo,
+  liberarBloqueosDeLlave,
   liberarBloqueosVencidos,
   obtenerPorVuelo,
   reservarTemporal,
@@ -64,11 +65,15 @@ export const bloquearAsiento = async (req, res) => {
       return res.status(400).json({ mensaje: 'No se pudo reservar el asiento' });
     }
 
-    const bloqueo = await reservarTemporal({ asientoId, vueloId, llave });
+    const conservar = Array.isArray(req.body.conservar_ids) ? req.body.conservar_ids : [];
+    const bloqueo = await reservarTemporal({ asientoId, vueloId, llave, conservarIds: conservar });
     res.status(200).json(bloqueo);
   } catch (error) {
     if (error.message === 'El asiento ya no está disponible o no existe') {
       return res.status(409).json({ mensaje: 'Ese asiento acaba de ser reservado. Elige otro.' });
+    }
+    if (error.message === 'No se puede reservar más de 4 asientos') {
+      return res.status(400).json({ mensaje: error.message });
     }
     responderErrorInterno(res, error);
   }
@@ -80,11 +85,13 @@ export const liberarAsiento = async (req, res) => {
     const vueloId = Number(req.body.vuelo_id);
     const llave = llaveDe(req);
 
-    if (!asientoId || !vueloId || !llave) {
+    if (!vueloId || !llave || (!asientoId && req.body.todos !== true)) {
       return res.status(400).json({ mensaje: 'No se pudo liberar el asiento' });
     }
 
-    const resultado = await liberarBloqueo({ asientoId, vueloId, llave });
+    const resultado = req.body.todos === true
+      ? await liberarBloqueosDeLlave({ vueloId, llave })
+      : await liberarBloqueo({ asientoId, vueloId, llave });
     res.status(200).json(resultado);
   } catch (error) {
     if (error.message === 'El asiento ya fue confirmado') {
