@@ -1,38 +1,8 @@
-if (localStorage.getItem('rol') !== 'admin') {
-  document.querySelectorAll('.solo-admin').forEach((enlace) => enlace.remove());
-}
-
-document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('rol');
-  localStorage.removeItem('nombre');
-  localStorage.removeItem('usuario_id');
-  window.location.href = '/login.html';
-});
-
 let vuelosCargados = [];
-
-const escapar = (texto) => String(texto ?? '')
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;');
 
 const fechaISO = (valor) => {
   const coincidencia = String(valor ?? '').match(/^(\d{4}-\d{2}-\d{2})/);
   return coincidencia ? coincidencia[1] : '';
-};
-
-const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-
-const formatearSalida = (valor) => {
-  const coincidencia = String(valor ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!coincidencia) {
-    return '';
-  }
-  const dia = Number(coincidencia[3]);
-  const mes = meses[Number(coincidencia[2]) - 1];
-  return `${dia} ${mes} ${coincidencia[1]}`;
 };
 
 const hoyISO = () => {
@@ -41,8 +11,6 @@ const hoyISO = () => {
   const dia = String(hoy.getDate()).padStart(2, '0');
   return `${hoy.getFullYear()}-${mes}-${dia}`;
 };
-
-const formatearPrecio = (monto) => Number(monto).toFixed(2);
 
 const llenarSelect = (select, lugares, seleccionado) => {
   select.innerHTML = lugares.map((lugar) => {
@@ -96,8 +64,8 @@ const pintarDestinos = (vuelos, mensajeVacio = 'No hay vuelos disponibles.') => 
       <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent"></div>
       <div class="absolute bottom-3 left-4 right-14 text-white">
         <p class="text-base font-semibold">${escapar(vuelo.destino)}</p>
-        <p class="text-xs text-white/80">${escapar(vuelo.origen)} · desde Q ${formatearPrecio(vuelo.precio_base)}</p>
-        <p class="text-xs text-white/90">Sale ${escapar(formatearSalida(vuelo.fecha_salida))}</p>
+        <p class="text-xs text-white/80">${escapar(vuelo.origen)} · desde ${quetzales(vuelo.precio_base)}</p>
+        <p class="text-xs text-white/90">Sale ${escapar(formatearDia(vuelo.fecha_salida))}</p>
       </div>
       <button type="button" data-vuelo-id="${vuelo.id}" class="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-700 shadow" aria-label="Ver ${escapar(vuelo.destino)}">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>

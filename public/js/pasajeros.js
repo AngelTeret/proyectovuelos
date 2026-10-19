@@ -1,15 +1,3 @@
-if (localStorage.getItem('rol') !== 'admin') {
-  document.querySelectorAll('.solo-admin').forEach((enlace) => enlace.remove());
-}
-
-document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('rol');
-  localStorage.removeItem('nombre');
-  localStorage.removeItem('usuario_id');
-  window.location.href = '/login.html';
-});
-
 const valor = (id) => document.getElementById(id).value.trim();
 
 const letras = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '\-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
@@ -37,14 +25,6 @@ const reglas = {
     valido: (texto) => /^\d{8,15}$/.test(texto),
   },
 };
-
-const escapar = (texto) => String(texto ?? '')
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;');
-
-const sinAcentos = (texto) => texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
 const etiquetaCodigo = (item) => `${item.pais} +${item.codigo}`;
 
@@ -254,7 +234,7 @@ const rellenarDesdePerfil = async () => {
 
   try {
     const respuesta = await fetch('/api/auth/perfil', {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: autorizacion(),
     });
     if (!respuesta.ok) {
       return;

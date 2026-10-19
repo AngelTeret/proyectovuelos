@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { conTransaccion } from '../utils/transaccion.js';
 
 const generarCodigoPnr = () => {
   const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -30,10 +31,7 @@ export const crearReservaTransaccion = async (datos) => {
     bloqueo_llave,
   } = datos;
 
-  const connection = await pool.getConnection();
-  await connection.beginTransaction();
-
-  try {
+  return conTransaccion(async (connection) => {
     await connection.query(
       `UPDATE asientos
        SET estado = 'disponible', bloqueo_hasta = NULL, bloqueo_llave = NULL
@@ -141,18 +139,11 @@ export const crearReservaTransaccion = async (datos) => {
       ]
     );
 
-    await connection.commit();
-
     return {
       codigo_pnr: codigoPnr,
       id: resultadoReserva.insertId,
     };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  });
 };
 
 export const obtenerTodas = async () => {
@@ -201,10 +192,7 @@ export const obtenerPorPNR = async (codigo_pnr) => {
 };
 
 export const actualizarPago = async (id) => {
-  const connection = await pool.getConnection();
-  await connection.beginTransaction();
-
-  try {
+  return conTransaccion(async (connection) => {
     const [reservas] = await connection.query(
       'SELECT monto_total, usuario_id FROM reservas WHERE id = ? FOR UPDATE',
       [id]
@@ -234,13 +222,6 @@ export const actualizarPago = async (id) => {
       [usuario_id]
     );
 
-    await connection.commit();
-
     return { saldo_virtual: usuarios[0].saldo_virtual };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  });
 };

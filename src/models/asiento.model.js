@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { conTransaccion } from '../utils/transaccion.js';
 
 export const MINUTOS_BLOQUEO = 5;
 
@@ -20,10 +21,7 @@ export const reservarTemporal = async ({ asientoId, vueloId, llave }) => {
     throw new Error('No se pudo reservar el asiento');
   }
 
-  const connection = await pool.getConnection();
-  await connection.beginTransaction();
-
-  try {
+  return conTransaccion(async (connection) => {
     const [filas] = await connection.query(
       `SELECT id, estado, bloqueo_llave, bloqueo_hasta > NOW() AS vigente
        FROM asientos
@@ -64,14 +62,8 @@ export const reservarTemporal = async ({ asientoId, vueloId, llave }) => {
       [asientoId]
     );
 
-    await connection.commit();
     return { segundos: Number(tiempo[0].segundos) || MINUTOS_BLOQUEO * 60 };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  });
 };
 
 export const liberarBloqueo = async ({ asientoId, vueloId, llave }) => {
@@ -79,10 +71,7 @@ export const liberarBloqueo = async ({ asientoId, vueloId, llave }) => {
     throw new Error('No se pudo liberar el asiento');
   }
 
-  const connection = await pool.getConnection();
-  await connection.beginTransaction();
-
-  try {
+  return conTransaccion(async (connection) => {
     const [filas] = await connection.query(
       `SELECT id, estado, bloqueo_llave
        FROM asientos
@@ -112,14 +101,8 @@ export const liberarBloqueo = async ({ asientoId, vueloId, llave }) => {
       );
     }
 
-    await connection.commit();
     return { liberado: true };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  });
 };
 
 export const consultarBloqueo = async ({ asientoId, llave }) => {

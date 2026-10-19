@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { conTransaccion } from '../utils/transaccion.js';
 
 const obtenerTodos = async () => {
   const [rows] = await pool.query('SELECT * FROM vuelos');
@@ -52,37 +53,24 @@ const actualizar = async (id, datos) => {
   return resultado;
 };
 
-const eliminar = async (id) => {
-  const connection = await pool.getConnection();
+const eliminar = async (id) => conTransaccion(async (connection) => {
+  const [reservas] = await connection.query(
+    'SELECT id FROM reservas WHERE vuelo_id = ?',
+    [id]
+  );
+  const reservaIds = reservas.map((reserva) => reserva.id);
 
-  try {
-    await connection.beginTransaction();
-
-    const [reservas] = await connection.query(
-      'SELECT id FROM reservas WHERE vuelo_id = ?',
-      [id]
+  if (reservaIds.length > 0) {
+    await connection.query(
+      'DELETE FROM idempotencia_pagos WHERE reserva_id IN (?)',
+      [reservaIds]
     );
-    const reservaIds = reservas.map((reserva) => reserva.id);
-
-    if (reservaIds.length > 0) {
-      await connection.query(
-        'DELETE FROM idempotencia_pagos WHERE reserva_id IN (?)',
-        [reservaIds]
-      );
-      await connection.query('DELETE FROM reservas WHERE vuelo_id = ?', [id]);
-    }
-
-    await connection.query('DELETE FROM asientos WHERE vuelo_id = ?', [id]);
-    const [resultado] = await connection.query('DELETE FROM vuelos WHERE id = ?', [id]);
-
-    await connection.commit();
-    return resultado;
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
+    await connection.query('DELETE FROM reservas WHERE vuelo_id = ?', [id]);
   }
-};
+
+  await connection.query('DELETE FROM asientos WHERE vuelo_id = ?', [id]);
+  const [resultado] = await connection.query('DELETE FROM vuelos WHERE id = ?', [id]);
+  return resultado;
+});
 
 export default { obtenerTodos, obtenerPorId, contarPorImagen, crear, actualizar, eliminar };

@@ -1,15 +1,3 @@
-if (localStorage.getItem('rol') !== 'admin') {
-  document.querySelectorAll('.solo-admin').forEach((enlace) => enlace.remove());
-}
-
-document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('rol');
-  localStorage.removeItem('nombre');
-  localStorage.removeItem('usuario_id');
-  window.location.href = '/login.html';
-});
-
 const clasesDisponible = ['border', 'border-blue-400', 'bg-white', 'text-blue-600'];
 const clasesSeleccionado = ['bg-blue-600', 'text-white', 'border-transparent'];
 const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -17,14 +5,6 @@ const MAX_ASIENTOS = 102;
 const MAX_FILA = MAX_ASIENTOS / letras.length;
 
 let asientoElegido = null;
-
-const escapar = (texto) => String(texto ?? '')
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;');
-
-const quetzales = (monto) => `Q ${Number(monto || 0).toFixed(2)}`;
 
 const estaOcupado = (asiento) => asiento.estado !== 'disponible' || Boolean(asiento.ocupado);
 
@@ -40,13 +20,7 @@ const marcarSeleccionado = (boton) => {
   boton.setAttribute('aria-label', `Asiento ${boton.dataset.codigo}, seleccionado`);
 };
 
-const leerBusqueda = () => {
-  try {
-    return JSON.parse(localStorage.getItem('busquedaVuelo')) || {};
-  } catch {
-    return {};
-  }
-};
+const leerBusqueda = () => leerJson('busquedaVuelo');
 
 const mostrarPrecioVuelo = async (vueloId) => {
   let precio = Number(leerBusqueda().precio_base);
@@ -196,12 +170,7 @@ const cargarAsientos = async () => {
 };
 
 const mostrarPasajero = () => {
-  let pasajero = {};
-  try {
-    pasajero = JSON.parse(localStorage.getItem('datosPasajeros')) || {};
-  } catch {
-    pasajero = {};
-  }
+  const pasajero = leerJson('datosPasajeros');
   const nombre = [pasajero.nombre, pasajero.apellido].filter(Boolean).join(' ');
   const elemento = document.getElementById('nombre-pasajero');
   elemento.textContent = nombre || 'Pasajero';
