@@ -119,7 +119,7 @@ export const crearReservaTransaccion = async (datos) => {
 
     const codigoPnr = generarCodigoPnr();
 
-    const estadoPago = metodo_pago === 'saldo' ? 'aprobado' : 'pendiente';
+    const estadoPago = 'aprobado';
     const [resultadoReserva] = await connection.query(
       'INSERT INTO reservas (codigo_pnr, pasajero_id, vuelo_id, asiento_id, estado_pago, monto_total, usuario_id, equipaje_extra_kg, costo_servicios_extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [codigoPnr, idPasajero, vuelo_id, asiento_id, estadoPago, montoTotal, usuario_id, equipaje_extra_kg, metodo_pago === 'saldo' ? 0 : costo_servicios_extra]
@@ -173,6 +173,7 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
       v.origen,
       v.destino,
       v.fecha_salida,
+      v.estado AS estado_vuelo,
       a.numero_asiento,
       r.estado_pago,
       r.monto_total,

@@ -38,7 +38,15 @@
         <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Mis vuelos</h1>
         <p class="mt-1 text-sm text-slate-500">Reservas asociadas a tu cuenta.</p>
         <p id="estado-carga" class="mt-6 text-sm text-slate-500">Cargando tus vuelos...</p>
-        <div id="lista-vuelos" class="mt-6 hidden grid gap-4"></div>
+        <div id="panel-historial" class="mt-6 hidden">
+          <div role="tablist" aria-label="Historial de vuelos" class="flex gap-2 overflow-x-auto pb-1">
+            <button type="button" role="tab" id="tab-proximos" data-pestana="proximos" aria-selected="true" aria-controls="lista-vuelos" class="h-11 shrink-0 rounded-lg bg-blue-950 px-4 text-sm font-semibold text-white">Vuelos próximos</button>
+            <button type="button" role="tab" id="tab-pasados" data-pestana="pasados" aria-selected="false" aria-controls="lista-vuelos" class="h-11 shrink-0 rounded-lg bg-white px-4 text-sm font-medium text-slate-500 hover:bg-slate-50">Vuelos pasados</button>
+            <button type="button" role="tab" id="tab-cancelados" data-pestana="cancelados" aria-selected="false" aria-controls="lista-vuelos" class="h-11 shrink-0 rounded-lg bg-white px-4 text-sm font-medium text-slate-500 hover:bg-slate-50">Cancelados</button>
+          </div>
+          <p id="vacio-pestana" class="mt-6 hidden rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm"></p>
+          <div id="lista-vuelos" class="mt-6 grid gap-4"></div>
+        </div>
         <div id="vacio" class="mt-6 hidden rounded-2xl bg-white p-8 text-center shadow-sm">
           <p class="text-sm text-slate-500">Todavía no tienes vuelos reservados.</p>
           <a href="/index.html" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Buscar vuelos</a>
