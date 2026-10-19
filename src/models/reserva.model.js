@@ -76,7 +76,8 @@ export const crearReservaTransaccion = async (datos) => {
       throw new Error('El vuelo no existe');
     }
     const precioBase = parseFloat(filasVuelo[0].precio_base ?? 0);
-    const montoTotal = precioBase;
+    const cargoAsiento = parseFloat(asiento.precio_adicional ?? 0);
+    const montoTotal = Math.round((precioBase + cargoAsiento) * 100) / 100;
 
     if (metodo_pago === 'saldo') {
       if (!usuario_id) {

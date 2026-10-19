@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS asientos (
     'confirmado',
     'bloqueado_mantenimiento'
   ) NOT NULL DEFAULT 'disponible',
-  categoria VARCHAR(50) DEFAULT 'Económico',
+  categoria VARCHAR(50) NOT NULL DEFAULT 'Básica',
   precio_adicional DECIMAL(10,2) DEFAULT 0.00,
   bloqueo_hasta DATETIME NULL,
   bloqueo_llave VARCHAR(64) NULL,

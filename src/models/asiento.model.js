@@ -157,17 +157,87 @@ export const idsConReserva = async (vuelo_id) => {
   return rows.map((fila) => fila.asiento_id);
 };
 
-export const generarAsientosParaVuelo = async (vuelo_id, capacidad = 30) => {
-  const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
-  const filasPedidas = Math.floor(Number(capacidad) / letras.length);
-  const filas = Math.min(Math.max(filasPedidas, 0), 17);
+const LETRAS = ['A', 'B', 'C', 'D', 'E', 'F'];
+const CATEGORIAS = ['Premium', 'Estándar', 'Básica'];
+
+const dinero = (monto) => Math.round((Number(monto) || 0) * 100) / 100;
+
+export const repartirFilas = (filas) => {
+  const total = Math.max(3, Number(filas) || 3);
+  let premium = Math.max(1, Math.round(total * 0.25));
+  let basica = Math.max(1, Math.round(total * 0.35));
+  let estandar = total - premium - basica;
+  while (estandar < 1 && (premium > 1 || basica > 1)) {
+    if (premium >= basica && premium > 1) {
+      premium -= 1;
+    } else if (basica > 1) {
+      basica -= 1;
+    }
+    estandar = total - premium - basica;
+  }
+  return { premium, estandar, basica };
+};
+
+export const categoriaDeFila = (fila, reparto) => {
+  if (fila <= reparto.premium) {
+    return 'Premium';
+  }
+  if (fila <= reparto.premium + reparto.estandar) {
+    return 'Estándar';
+  }
+  return 'Básica';
+};
+
+export const cargoDeCategoria = (precioBase, categoria) => {
+  const base = Number(precioBase) || 0;
+  if (categoria === 'Premium') {
+    return dinero(base * 0.5);
+  }
+  if (categoria === 'Estándar') {
+    return dinero(base * 0.2);
+  }
+  return 0;
+};
+
+const filaDeAsiento = (numero) => {
+  const coincidencia = String(numero ?? '').match(/^(\d+)/);
+  return coincidencia ? Number(coincidencia[1]) : 0;
+};
+
+export const actualizarCargosDelVuelo = async (vueloId, precioBase) => {
+  const [asientos] = await pool.query(
+    'SELECT id, numero_asiento, categoria FROM asientos WHERE vuelo_id = ?',
+    [vueloId]
+  );
+  if (asientos.length === 0) {
+    return;
+  }
+  const maxFila = Math.max(...asientos.map((asiento) => filaDeAsiento(asiento.numero_asiento)));
+  const reparto = repartirFilas(maxFila);
+  await Promise.all(asientos.map((asiento) => {
+    const conocida = CATEGORIAS.includes(asiento.categoria);
+    const categoria = conocida
+      ? asiento.categoria
+      : categoriaDeFila(filaDeAsiento(asiento.numero_asiento), reparto);
+    return pool.query(
+      'UPDATE asientos SET categoria = ?, precio_adicional = ? WHERE id = ?',
+      [categoria, cargoDeCategoria(precioBase, categoria), asiento.id]
+    );
+  }));
+};
+
+export const generarAsientosParaVuelo = async (vuelo_id, capacidad = 30, precioBase = 0) => {
+  const filasPedidas = Math.floor(Number(capacidad) / LETRAS.length);
+  const filas = Math.min(Math.max(filasPedidas, 3), 17);
+  const reparto = repartirFilas(filas);
 
   for (let fila = 1; fila <= filas; fila++) {
-    for (const letra of letras) {
-      const numeroAsiento = `${fila}${letra}`;
+    const categoria = categoriaDeFila(fila, reparto);
+    const cargo = cargoDeCategoria(precioBase, categoria);
+    for (const letra of LETRAS) {
       await pool.query(
-        'INSERT INTO asientos (vuelo_id, numero_asiento, estado) VALUES (?, ?, ?)',
-        [vuelo_id, numeroAsiento, 'disponible']
+        'INSERT INTO asientos (vuelo_id, numero_asiento, estado, categoria, precio_adicional) VALUES (?, ?, ?, ?, ?)',
+        [vuelo_id, `${fila}${letra}`, 'disponible', categoria, cargo]
       );
     }
   }

@@ -1,21 +1,27 @@
-const clasesDisponible = ['border', 'border-blue-400', 'bg-white', 'text-blue-600'];
 const clasesSeleccionado = ['bg-blue-600', 'text-white', 'border-transparent'];
+const clasesPorCategoria = {
+  Premium: ['border', 'border-amber-400', 'bg-amber-50', 'text-amber-800'],
+  'Estándar': ['border', 'border-blue-400', 'bg-white', 'text-blue-700'],
+  'Básica': ['border', 'border-slate-300', 'bg-white', 'text-slate-600'],
+};
+const clasesDeCategoria = (categoria) => clasesPorCategoria[categoria] || clasesPorCategoria['Básica'];
 const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
 const MAX_ASIENTOS = 102;
 const MAX_FILA = MAX_ASIENTOS / letras.length;
 
 let asientoElegido = null;
+let tarifaVuelo = 0;
 
 const estaOcupado = (asiento) => asiento.estado !== 'disponible' || Boolean(asiento.ocupado);
 
 const marcarDisponible = (boton) => {
-  boton.classList.remove('asiento-marcado', ...clasesSeleccionado);
-  boton.classList.add(...clasesDisponible);
-  boton.setAttribute('aria-label', `Asiento ${boton.dataset.codigo}, disponible`);
+  boton.classList.remove('asiento-marcado', ...clasesSeleccionado, ...Object.values(clasesPorCategoria).flat());
+  boton.classList.add(...clasesDeCategoria(boton.dataset.categoria));
+  boton.setAttribute('aria-label', `Asiento ${boton.dataset.codigo}, ${boton.dataset.categoria || 'Básica'}, disponible`);
 };
 
 const marcarSeleccionado = (boton) => {
-  boton.classList.remove(...clasesDisponible);
+  boton.classList.remove(...Object.values(clasesPorCategoria).flat());
   boton.classList.add('asiento-marcado', ...clasesSeleccionado);
   boton.setAttribute('aria-label', `Asiento ${boton.dataset.codigo}, seleccionado`);
 };
@@ -32,7 +38,10 @@ const mostrarPrecioVuelo = async (vueloId) => {
       precio = Number(vuelo?.precio_base) || 0;
     }
   }
-  document.getElementById('precio-extra').textContent = quetzales(precio);
+  tarifaVuelo = precio || 0;
+  if (!asientoElegido) {
+    document.getElementById('precio-extra').textContent = quetzales(tarifaVuelo);
+  }
 };
 
 const mostrarCategoria = (categoria) => {
@@ -46,11 +55,22 @@ const mostrarCategoria = (categoria) => {
   elemento.classList.remove('hidden');
 };
 
-const actualizarResumen = (codigo, categoria) => {
+const actualizarResumen = (codigo, categoria, cargo = 0) => {
+  const detalle = document.getElementById('detalle-tarifa');
   document.getElementById('asiento-seleccionado').textContent = codigo
     ? `Asiento ${codigo}`
     : 'Elige un asiento disponible';
   mostrarCategoria(categoria);
+  if (!codigo) {
+    document.getElementById('precio-extra').textContent = quetzales(tarifaVuelo);
+    detalle.classList.add('hidden');
+    return;
+  }
+  document.getElementById('precio-extra').textContent = quetzales(tarifaVuelo + cargo);
+  detalle.textContent = cargo > 0
+    ? `Tarifa ${quetzales(tarifaVuelo)} + asiento ${quetzales(cargo)}`
+    : 'La tarifa del vuelo ya incluye este asiento';
+  detalle.classList.remove('hidden');
 };
 
 const pintarAsientos = (asientos) => {
@@ -88,12 +108,13 @@ const pintarAsientos = (asientos) => {
       }
       const codigo = escapar(asiento.numero_asiento);
       const precio = Number(asiento.precio_adicional) || 0;
-      const categoria = escapar(asiento.categoria || 'Económico');
+      const categoria = escapar(asiento.categoria || 'Básica');
+      const tono = (clasesPorCategoria[asiento.categoria] || clasesPorCategoria['Básica']).join(' ');
       if (estaOcupado(asiento)) {
         return `<button type="button" disabled class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-semibold bg-slate-200 text-slate-400" aria-label="Asiento ${codigo}, ocupado">${codigo}</button>`;
       }
       const propio = asiento.propio ? '1' : '0';
-      return `<button type="button" class="asiento-disponible flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-semibold border border-blue-400 bg-white text-blue-600" data-codigo="${codigo}" data-precio="${precio}" data-categoria="${categoria}" data-propio="${propio}" aria-label="Asiento ${codigo}, disponible">${codigo}</button>`;
+      return `<button type="button" class="asiento-disponible flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-semibold ${tono}" data-codigo="${codigo}" data-precio="${precio}" data-categoria="${categoria}" data-propio="${propio}" aria-label="Asiento ${codigo}, ${categoria}, disponible">${codigo}</button>`;
     });
 
     return `<div class="flex w-max items-center justify-center gap-1.5">${celdas[0]}${celdas[1]}${celdas[2]}<span class="w-6 shrink-0 text-center text-xs text-slate-400">${fila}</span>${celdas[3]}${celdas[4]}${celdas[5]}</div>`;
@@ -120,7 +141,7 @@ const pintarAsientos = (asientos) => {
         asientoElegido.precioAdicional = Number(asiento.precio_adicional) || 0;
         asientoElegido.categoria = asiento.categoria || asientoElegido.categoria;
       }
-      actualizarResumen(asientoElegido.codigo, asientoElegido.categoria);
+      actualizarResumen(asientoElegido.codigo, asientoElegido.categoria, asientoElegido.precioAdicional);
     });
   });
 

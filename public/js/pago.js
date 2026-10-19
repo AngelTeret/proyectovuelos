@@ -46,9 +46,15 @@ const mostrarTotal = async () => {
       precio = Number(vuelo?.precio_base) || 0;
     }
   }
-  const total = precio || 0;
-  document.getElementById('precio-vuelo').textContent = quetzales(total);
-  document.getElementById('total-pagar').textContent = quetzales(total);
+  const tarifa = precio || 0;
+  const asiento = leerJson('datosAsiento');
+  const cargo = Number(asiento.precioAdicional) || 0;
+  document.getElementById('precio-vuelo').textContent = quetzales(tarifa);
+  document.getElementById('etiqueta-asiento').textContent = asiento.categoria
+    ? `Asiento ${asiento.categoria}`
+    : 'Asiento';
+  document.getElementById('cargo-asiento').textContent = quetzales(cargo);
+  document.getElementById('total-pagar').textContent = quetzales(tarifa + cargo);
 };
 
 let relojBloqueo = null;
