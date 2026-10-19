@@ -2,27 +2,6 @@ if (!localStorage.getItem('token')) {
   localStorage.setItem('redirectAfterLogin', window.location.pathname);
   window.location.href = '/login.html';
 } else {
-if (localStorage.getItem('rol') !== 'admin') {
-  document.querySelectorAll('.solo-admin').forEach((enlace) => enlace.remove());
-}
-
-document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('rol');
-  localStorage.removeItem('nombre');
-  localStorage.removeItem('usuario_id');
-  window.location.href = '/login.html';
-});
-
-const leer = (clave) => {
-  try {
-    return JSON.parse(localStorage.getItem(clave)) || {};
-  } catch {
-    return {};
-  }
-};
-
-const quetzales = (monto) => `Q ${Number(monto || 0).toFixed(2)}`;
 
 const metodoSeleccionado = () => document.querySelector('input[name="metodo_pago"]:checked')?.value || 'saldo';
 
@@ -40,7 +19,7 @@ const cargarSaldo = async () => {
 
   try {
     const respuesta = await fetch('/api/auth/perfil', {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: autorizacion(),
     });
     if (!respuesta.ok) {
       saldo.textContent = '0.00';
@@ -57,7 +36,7 @@ const cargarSaldo = async () => {
 };
 
 const mostrarTotal = async () => {
-  const busqueda = leer('busquedaVuelo');
+  const busqueda = leerJson('busquedaVuelo');
   let precio = Number(busqueda.precio_base);
   if (!precio && busqueda.vuelo_id) {
     const respuesta = await fetch('/api/vuelos');
@@ -104,7 +83,7 @@ const liberarPantalla = async () => {
 };
 
 const iniciarReloj = async () => {
-  const asiento = leer('datosAsiento');
+  const asiento = leerJson('datosAsiento');
   const llave = localStorage.getItem('bloqueoLlave');
   if (!asiento.asientoId || !llave) {
     window.location.replace('/asientos.html');
@@ -147,9 +126,51 @@ document.addEventListener('DOMContentLoaded', () => {
     radio.addEventListener('change', mostrarFormularioTarjeta);
   });
 
-  document.getElementById('btnVolver').addEventListener('click', (evento) => {
+  document.getElementById('btnVolver').addEventListener('click', async (evento) => {
     evento.preventDefault();
-    window.location.href = '/asientos.html';
+    if (document.getElementById('btnPagar').disabled) {
+      return;
+    }
+
+    const enlace = evento.currentTarget;
+    enlace.classList.add('pointer-events-none', 'opacity-70');
+    const asiento = leerJson('datosAsiento');
+    const busqueda = leerJson('busquedaVuelo');
+    const llave = localStorage.getItem('bloqueoLlave') || '';
+
+    try {
+      if (asiento.asientoId && llave) {
+        const respuesta = await fetch('/api/asientos/liberar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-bloqueo-llave': llave,
+          },
+          body: JSON.stringify({
+            asiento_id: asiento.asientoId,
+            vuelo_id: Number(busqueda.vuelo_id),
+            llave,
+          }),
+        });
+        const data = await respuesta.json().catch(() => ({}));
+        if (!respuesta.ok) {
+          Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje || 'No se pudo liberar el asiento' });
+          return;
+        }
+      }
+
+      if (relojBloqueo) {
+        clearInterval(relojBloqueo);
+      }
+      localStorage.removeItem('datosAsiento');
+      window.location.href = '/asientos.html';
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo liberar el asiento' });
+    } finally {
+      if (document.body) {
+        enlace.classList.remove('pointer-events-none', 'opacity-70');
+      }
+    }
   });
 
   const botonPagar = document.getElementById('btnPagar');
@@ -176,9 +197,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const busqueda = leer('busquedaVuelo');
-    const pasajero = leer('datosPasajeros');
-    const asiento = leer('datosAsiento');
+    const busqueda = leerJson('busquedaVuelo');
+    const pasajero = leerJson('datosPasajeros');
+    const asiento = leerJson('datosAsiento');
     const metodo = metodoSeleccionado();
     const token = localStorage.getItem('token');
 
@@ -212,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: {
           'Content-Type': 'application/json',
           'idempotency-key': idempotencyKey,
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...autorizacion(),
         },
         body: JSON.stringify(payload),
       });
@@ -227,6 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('datosPasajeros');
         localStorage.removeItem('datosAsiento');
         localStorage.removeItem('bloqueoLlave');
+        sessionStorage.removeItem('tempPasajero');
         Swal.fire({
           icon: 'success',
           title: '¡Reserva Confirmada!',

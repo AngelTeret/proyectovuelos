@@ -1,4 +1,5 @@
 import pool from '../config/db.js';
+import { conTransaccion } from '../utils/transaccion.js';
 
 export const MINUTOS_BLOQUEO = 5;
 
@@ -20,10 +21,7 @@ export const reservarTemporal = async ({ asientoId, vueloId, llave }) => {
     throw new Error('No se pudo reservar el asiento');
   }
 
-  const connection = await pool.getConnection();
-  await connection.beginTransaction();
-
-  try {
+  return conTransaccion(async (connection) => {
     const [filas] = await connection.query(
       `SELECT id, estado, bloqueo_llave, bloqueo_hasta > NOW() AS vigente
        FROM asientos
@@ -64,14 +62,47 @@ export const reservarTemporal = async ({ asientoId, vueloId, llave }) => {
       [asientoId]
     );
 
-    await connection.commit();
     return { segundos: Number(tiempo[0].segundos) || MINUTOS_BLOQUEO * 60 };
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
+  });
+};
+
+export const liberarBloqueo = async ({ asientoId, vueloId, llave }) => {
+  if (!llaveValida(llave)) {
+    throw new Error('No se pudo liberar el asiento');
   }
+
+  return conTransaccion(async (connection) => {
+    const [filas] = await connection.query(
+      `SELECT id, estado, bloqueo_llave
+       FROM asientos
+       WHERE id = ? AND vuelo_id = ?
+       FOR UPDATE`,
+      [asientoId, vueloId]
+    );
+
+    if (filas.length === 0) {
+      throw new Error('El asiento ya no está disponible o no existe');
+    }
+
+    const asiento = filas[0];
+    if (asiento.estado === 'confirmado') {
+      throw new Error('El asiento ya fue confirmado');
+    }
+    if (asiento.estado === 'reservado_temporal' && asiento.bloqueo_llave !== llave) {
+      throw new Error('El asiento ya no está disponible o no existe');
+    }
+
+    if (asiento.estado === 'reservado_temporal' && asiento.bloqueo_llave === llave) {
+      await connection.query(
+        `UPDATE asientos
+         SET estado = 'disponible', bloqueo_hasta = NULL, bloqueo_llave = NULL
+         WHERE id = ? AND estado = 'reservado_temporal' AND bloqueo_llave = ?`,
+        [asientoId, llave]
+      );
+    }
+
+    return { liberado: true };
+  });
 };
 
 export const consultarBloqueo = async ({ asientoId, llave }) => {

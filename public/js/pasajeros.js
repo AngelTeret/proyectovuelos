@@ -1,15 +1,3 @@
-if (localStorage.getItem('rol') !== 'admin') {
-  document.querySelectorAll('.solo-admin').forEach((enlace) => enlace.remove());
-}
-
-document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('rol');
-  localStorage.removeItem('nombre');
-  localStorage.removeItem('usuario_id');
-  window.location.href = '/login.html';
-});
-
 const valor = (id) => document.getElementById(id).value.trim();
 
 const letras = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '\-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
@@ -38,17 +26,34 @@ const reglas = {
   },
 };
 
-const escapar = (texto) => String(texto ?? '')
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;');
-
-const sinAcentos = (texto) => texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-
 const etiquetaCodigo = (item) => `${item.pais} +${item.codigo}`;
 
 let codigoTelefono = '';
+let borradorActivo = false;
+const CLAVE_BORRADOR = 'tempPasajero';
+
+const guardarBorrador = () => {
+  if (!borradorActivo) {
+    return;
+  }
+  sessionStorage.setItem(CLAVE_BORRADOR, JSON.stringify({
+    nombre: document.getElementById('nombre').value,
+    apellido: document.getElementById('apellido').value,
+    documento_identidad: document.getElementById('documento_identidad').value,
+    email: document.getElementById('email').value,
+    telefono: document.getElementById('telefono').value,
+    codigo: codigoTelefono,
+    etiquetaCodigo: document.getElementById('codigo-telefono').value,
+  }));
+};
+
+const leerBorrador = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem(CLAVE_BORRADOR)) || null;
+  } catch {
+    return null;
+  }
+};
 
 const prepararCodigoTelefono = async () => {
   const respuesta = await fetch('/js/codigosTelefono.json');
@@ -68,6 +73,7 @@ const prepararCodigoTelefono = async () => {
     codigoTelefono = item.codigo;
     input.value = etiquetaCodigo(item);
     cerrar();
+    guardarBorrador();
     if (!document.getElementById('error-telefono').classList.contains('hidden')) {
       validarCampo('telefono');
     }
@@ -91,6 +97,7 @@ const prepararCodigoTelefono = async () => {
   input.addEventListener('input', () => {
     codigoTelefono = '';
     pintar(input.value);
+    guardarBorrador();
   });
   lista.addEventListener('mousedown', (evento) => {
     const opcion = evento.target.closest('[data-codigo]');
@@ -110,6 +117,7 @@ const prepararCodigoTelefono = async () => {
     codigoTelefono = '';
     input.value = '';
     cerrar();
+    guardarBorrador();
   });
   input.addEventListener('keydown', (evento) => {
     const items = [...lista.querySelectorAll('[data-codigo]')];
@@ -140,6 +148,8 @@ const prepararCodigoTelefono = async () => {
   if (guatemala) {
     elegir(guatemala);
   }
+
+  return { catalogo, aplicarCodigo: elegir };
 };
 
 const telefonoCompleto = () => `+${codigoTelefono}${valor('telefono')}`;
@@ -224,7 +234,7 @@ const rellenarDesdePerfil = async () => {
 
   try {
     const respuesta = await fetch('/api/auth/perfil', {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: autorizacion(),
     });
     if (!respuesta.ok) {
       return;
@@ -248,8 +258,12 @@ document.getElementById('btnVolver').addEventListener('click', (evento) => {
 
 Object.keys(reglas).forEach((id) => {
   const input = document.getElementById(id);
-  input.addEventListener('blur', () => validarCampo(id));
+  input.addEventListener('blur', () => {
+    validarCampo(id);
+    guardarBorrador();
+  });
   input.addEventListener('input', () => {
+    guardarBorrador();
     if (!document.getElementById(`error-${id}`).classList.contains('hidden')) {
       validarCampo(id);
     }
@@ -324,7 +338,35 @@ document.getElementById('form-pasajero').addEventListener('submit', async (event
   }
 });
 
-prepararCodigoTelefono().catch(() => {
+const restaurarBorrador = (catalogo, aplicarCodigo) => {
+  const borrador = leerBorrador();
+  if (!borrador) {
+    return;
+  }
+
+  ['nombre', 'apellido', 'documento_identidad', 'email', 'telefono'].forEach((id) => {
+    if (borrador[id] == null) {
+      return;
+    }
+    const input = document.getElementById(id);
+    input.value = String(borrador[id]);
+    input.dispatchEvent(new Event('input'));
+  });
+
+  const item = catalogo.find((pais) => etiquetaCodigo(pais) === borrador.etiquetaCodigo)
+    || catalogo.find((pais) => pais.codigo === borrador.codigo);
+  if (item) {
+    aplicarCodigo(item);
+  }
+};
+
+const iniciarFormulario = async () => {
+  const codigo = await prepararCodigoTelefono();
+  await rellenarDesdePerfil();
+  restaurarBorrador(codigo.catalogo, codigo.aplicarCodigo);
+  borradorActivo = true;
+};
+
+iniciarFormulario().catch(() => {
   marcarCampo('telefono', 'No se pudo cargar el catálogo de códigos');
 });
-rellenarDesdePerfil();

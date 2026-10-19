@@ -4,26 +4,6 @@ if (!localStorage.getItem('token')) {
   window.location.href = '/index.html';
 }
 
-const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-
-const escapar = (texto) => String(texto ?? '')
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;');
-
-const formatearSalida = (valor) => {
-  const coincidencia = String(valor).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!coincidencia) {
-    return '';
-  }
-  const dia = Number(coincidencia[3]);
-  const mes = meses[Number(coincidencia[2]) - 1];
-  return `${dia} ${mes} ${coincidencia[1]}, ${coincidencia[4]}:${coincidencia[5]}`;
-};
-
-const formatearPrecio = (monto) => `Q ${Number(monto).toFixed(2)}`;
-
 const miniatura = (url) => {
   const ruta = String(url ?? '').trim();
   if (!ruta) {
@@ -58,7 +38,7 @@ const pintarVuelos = (vuelos) => {
       <td class="px-5 py-4">${escapar(vuelo.destino)}</td>
       <td class="px-5 py-4">${escapar(formatearSalida(vuelo.fecha_salida))}</td>
       <td class="px-5 py-4">${escapar(vuelo.capacidad_asientos)}</td>
-      <td class="px-5 py-4">${escapar(formatearPrecio(vuelo.precio_base))}</td>
+      <td class="px-5 py-4">${escapar(quetzales(vuelo.precio_base))}</td>
       <td class="px-5 py-4">
         <div class="flex items-center gap-2">
           <button type="button" data-accion="editar" data-vuelo-id="${vuelo.id}" class="rounded-lg px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50">Editar</button>
@@ -211,8 +191,6 @@ const eliminarVuelo = async (id) => {
   }
 };
 
-const sinAcentos = (texto) => texto.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-
 const prepararBuscador = (id) => {
   const input = document.getElementById(id);
   const lista = document.getElementById(`lista-${id}`);
@@ -308,6 +286,18 @@ const buscadorDestino = prepararBuscador('destino');
 
 const modal = document.getElementById('modal-vuelo');
 const formulario = document.getElementById('form-vuelo');
+const botonGuardar = document.getElementById('btn-guardar-vuelo');
+const textoGuardar = botonGuardar.textContent;
+
+const marcarGuardando = () => {
+  botonGuardar.disabled = true;
+  botonGuardar.textContent = 'Guardando...';
+};
+
+const restaurarGuardar = () => {
+  botonGuardar.disabled = false;
+  botonGuardar.textContent = textoGuardar;
+};
 
 const abrirModal = () => {
   bloquearFechasPasadas();
@@ -318,6 +308,7 @@ const abrirModal = () => {
 const cerrarModal = () => {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
+  restaurarGuardar();
   formulario.reset();
   document.getElementById('vuelo-id').value = '';
   document.getElementById('titulo-modal-vuelo').textContent = 'Agregar Nuevo Vuelo';
@@ -335,13 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
   llenarCapacidades();
   bloquearFechasPasadas();
 
-  document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('rol');
-    localStorage.removeItem('nombre');
-    localStorage.removeItem('usuario_id');
-    window.location.href = '/login.html';
-  });
   document.getElementById('btn-nuevo-vuelo').addEventListener('click', prepararNuevoVuelo);
   document.getElementById('btn-cancelar-vuelo').addEventListener('click', cerrarModal);
   document.getElementById('imagen-archivo').addEventListener('change', () => {
@@ -361,6 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   formulario.addEventListener('submit', async (evento) => {
     evento.preventDefault();
+    if (botonGuardar.disabled) {
+      return;
+    }
 
     const id = document.getElementById('vuelo-id').value;
     const origen = document.getElementById('origen').value.trim();
@@ -369,6 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
       Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Elige un país de la lista para el origen y el destino.' });
       return;
     }
+
+    marcarGuardando();
 
     const datos = new FormData();
     datos.append('origen', origen);
@@ -391,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await respuesta.json();
 
       if (!respuesta.ok) {
+        restaurarGuardar();
         Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje || 'No se pudo guardar el vuelo' });
         return;
       }
@@ -399,6 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
       avisarExito(id ? 'Vuelo actualizado' : 'Vuelo creado');
       await cargarVuelos();
     } catch (error) {
+      restaurarGuardar();
       Swal.fire({ icon: 'error', title: 'Oops...', text: error.message });
     }
   });

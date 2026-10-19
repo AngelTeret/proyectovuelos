@@ -1,15 +1,3 @@
-if (localStorage.getItem('rol') !== 'admin') {
-  document.querySelectorAll('.solo-admin').forEach((enlace) => enlace.remove());
-}
-
-document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('rol');
-  localStorage.removeItem('nombre');
-  localStorage.removeItem('usuario_id');
-  window.location.href = '/login.html';
-});
-
 const valor = (id) => document.getElementById(id).value.trim();
 
 document.getElementById('btnVolver').addEventListener('click', (evento) => {

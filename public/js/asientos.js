@@ -1,15 +1,3 @@
-if (localStorage.getItem('rol') !== 'admin') {
-  document.querySelectorAll('.solo-admin').forEach((enlace) => enlace.remove());
-}
-
-document.getElementById('btn-cerrar-sesion').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('rol');
-  localStorage.removeItem('nombre');
-  localStorage.removeItem('usuario_id');
-  window.location.href = '/login.html';
-});
-
 const clasesDisponible = ['border', 'border-blue-400', 'bg-white', 'text-blue-600'];
 const clasesSeleccionado = ['bg-blue-600', 'text-white', 'border-transparent'];
 const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -17,14 +5,6 @@ const MAX_ASIENTOS = 102;
 const MAX_FILA = MAX_ASIENTOS / letras.length;
 
 let asientoElegido = null;
-
-const escapar = (texto) => String(texto ?? '')
-  .replaceAll('&', '&amp;')
-  .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;')
-  .replaceAll('"', '&quot;');
-
-const quetzales = (monto) => `Q ${Number(monto || 0).toFixed(2)}`;
 
 const estaOcupado = (asiento) => asiento.estado !== 'disponible' || Boolean(asiento.ocupado);
 
@@ -40,13 +20,7 @@ const marcarSeleccionado = (boton) => {
   boton.setAttribute('aria-label', `Asiento ${boton.dataset.codigo}, seleccionado`);
 };
 
-const leerBusqueda = () => {
-  try {
-    return JSON.parse(localStorage.getItem('busquedaVuelo')) || {};
-  } catch {
-    return {};
-  }
-};
+const leerBusqueda = () => leerJson('busquedaVuelo');
 
 const mostrarPrecioVuelo = async (vueloId) => {
   let precio = Number(leerBusqueda().precio_base);
@@ -110,19 +84,19 @@ const pintarAsientos = (asientos) => {
     const celdas = letras.map((letra) => {
       const asiento = asientosFila.get(letra);
       if (!asiento) {
-        return '<span class="h-8 w-9"></span>';
+        return '<span class="h-10 w-10 shrink-0"></span>';
       }
       const codigo = escapar(asiento.numero_asiento);
       const precio = Number(asiento.precio_adicional) || 0;
       const categoria = escapar(asiento.categoria || 'Económico');
       if (estaOcupado(asiento)) {
-        return `<button type="button" disabled class="flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-semibold bg-slate-200 text-slate-400" aria-label="Asiento ${codigo}, ocupado">${codigo}</button>`;
+        return `<button type="button" disabled class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-semibold bg-slate-200 text-slate-400" aria-label="Asiento ${codigo}, ocupado">${codigo}</button>`;
       }
       const propio = asiento.propio ? '1' : '0';
-      return `<button type="button" class="asiento-disponible flex h-8 w-9 items-center justify-center rounded-md text-[11px] font-semibold border border-blue-400 bg-white text-blue-600" data-codigo="${codigo}" data-precio="${precio}" data-categoria="${categoria}" data-propio="${propio}" aria-label="Asiento ${codigo}, disponible">${codigo}</button>`;
+      return `<button type="button" class="asiento-disponible flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-semibold border border-blue-400 bg-white text-blue-600" data-codigo="${codigo}" data-precio="${precio}" data-categoria="${categoria}" data-propio="${propio}" aria-label="Asiento ${codigo}, disponible">${codigo}</button>`;
     });
 
-    return `<div class="flex items-center justify-center gap-1.5">${celdas[0]}${celdas[1]}${celdas[2]}<span class="w-6 text-center text-xs text-slate-400">${fila}</span>${celdas[3]}${celdas[4]}${celdas[5]}</div>`;
+    return `<div class="flex w-max items-center justify-center gap-1.5">${celdas[0]}${celdas[1]}${celdas[2]}<span class="w-6 shrink-0 text-center text-xs text-slate-400">${fila}</span>${celdas[3]}${celdas[4]}${celdas[5]}</div>`;
   }).join('');
 
   const categorias = [...new Set(asientos.map((asiento) => asiento.categoria).filter(Boolean))];
@@ -196,12 +170,7 @@ const cargarAsientos = async () => {
 };
 
 const mostrarPasajero = () => {
-  let pasajero = {};
-  try {
-    pasajero = JSON.parse(localStorage.getItem('datosPasajeros')) || {};
-  } catch {
-    pasajero = {};
-  }
+  const pasajero = leerJson('datosPasajeros');
   const nombre = [pasajero.nombre, pasajero.apellido].filter(Boolean).join(' ');
   const elemento = document.getElementById('nombre-pasajero');
   elemento.textContent = nombre || 'Pasajero';
