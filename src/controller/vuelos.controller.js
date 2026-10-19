@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Vuelo from '../models/vuelo.model.js';
-import { generarAsientosParaVuelo } from '../models/asiento.model.js';
+import { actualizarCargosDelVuelo, generarAsientosParaVuelo } from '../models/asiento.model.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 
 const IMAGEN_POR_DEFECTO = '/imagenes/avion-fondo.webp';
@@ -13,12 +13,13 @@ const carpetaImagenes = path.resolve(
 
 const rutaDeArchivo = (archivo) => (archivo ? `/imagenes/${archivo.filename}` : null);
 
-const CAPACIDAD_MINIMA = 6;
+const ASIENTOS_POR_FILA = 6;
+const CAPACIDAD_MINIMA = 18;
 const CAPACIDAD_MAXIMA = 102;
 
 const capacidadDeAsientos = (valor) => {
   const numero = Number(valor);
-  const esMultiploDeSeis = Number.isInteger(numero) && numero % CAPACIDAD_MINIMA === 0;
+  const esMultiploDeSeis = Number.isInteger(numero) && numero % ASIENTOS_POR_FILA === 0;
   if (!esMultiploDeSeis || numero < CAPACIDAD_MINIMA || numero > CAPACIDAD_MAXIMA) {
     return null;
   }
@@ -59,7 +60,7 @@ export const crearVuelo = async (req, res) => {
     const capacidad = capacidadDeAsientos(capacidad_asientos);
     if (capacidad === null) {
       return res.status(400).json({
-        mensaje: 'La capacidad debe ser un múltiplo de 6 y no puede pasar de 102 asientos.',
+        mensaje: 'La capacidad debe ser un múltiplo de 6, entre 18 y 102 asientos.',
       });
     }
     const resultado = await Vuelo.crear({
@@ -72,7 +73,7 @@ export const crearVuelo = async (req, res) => {
       imagen_url: rutaDeArchivo(req.file) || IMAGEN_POR_DEFECTO,
       capacidad_asientos: capacidad,
     });
-    await generarAsientosParaVuelo(resultado.insertId, capacidad);
+    await generarAsientosParaVuelo(resultado.insertId, capacidad, precio_base);
     res.status(201).json({ mensaje: 'Vuelo creado correctamente', id: resultado.insertId });
   } catch (error) {
     responderErrorInterno(res, error);
@@ -99,6 +100,10 @@ export const actualizarVuelo = async (req, res) => {
 
     if (resultado.affectedRows === 0) {
       return res.status(404).json({ mensaje: 'El vuelo no existe' });
+    }
+
+    if (Number(precio_base) !== Number(actual.precio_base)) {
+      await actualizarCargosDelVuelo(req.params.id, precio_base);
     }
 
     if (imagenNueva && actual.imagen_url !== imagenNueva) {

@@ -87,13 +87,14 @@ const mostrarVista = (url) => {
   imagen.classList.remove('hidden');
 };
 
+const CAPACIDAD_MINIMA = 18;
 const CAPACIDAD_MAXIMA = 102;
 const CAPACIDAD_PASO = 6;
 
 const llenarCapacidades = () => {
   const select = document.getElementById('capacidad-asientos');
   select.replaceChildren();
-  for (let capacidad = CAPACIDAD_PASO; capacidad <= CAPACIDAD_MAXIMA; capacidad += CAPACIDAD_PASO) {
+  for (let capacidad = CAPACIDAD_MINIMA; capacidad <= CAPACIDAD_MAXIMA; capacidad += CAPACIDAD_PASO) {
     const opcion = document.createElement('option');
     opcion.value = String(capacidad);
     opcion.textContent = `${capacidad} asientos`;

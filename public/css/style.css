@@ -47,3 +47,21 @@ body {
 .fila-asiento {
   width: 1.5rem;
 }
+
+#mapa-asientos,
+#app-content {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
+
+#mapa-asientos::-webkit-scrollbar,
+#app-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+#mapa-asientos::-webkit-scrollbar-thumb,
+#app-content::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
+}

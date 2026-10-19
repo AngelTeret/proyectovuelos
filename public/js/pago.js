@@ -46,9 +46,20 @@ const mostrarTotal = async () => {
       precio = Number(vuelo?.precio_base) || 0;
     }
   }
-  const total = precio || 0;
-  document.getElementById('precio-vuelo').textContent = quetzales(total);
-  document.getElementById('total-pagar').textContent = quetzales(total);
+  const tarifa = precio || 0;
+  const guardados = leerJson('datosAsientos');
+  const asientos = Array.isArray(guardados) && guardados.length ? guardados : [leerJson('datosAsiento')];
+  const cargo = asientos.reduce((suma, asiento) => suma + (Number(asiento.precioAdicional) || 0), 0);
+  const etiqueta = document.querySelector('#precio-vuelo')?.previousElementSibling;
+  if (etiqueta) {
+    etiqueta.textContent = asientos.length > 1 ? `Tarifa del vuelo × ${asientos.length}` : 'Tarifa del vuelo';
+  }
+  document.getElementById('precio-vuelo').textContent = quetzales(tarifa * asientos.length);
+  document.getElementById('etiqueta-asiento').textContent = asientos.length > 1
+    ? `Asientos ${asientos.map((asiento) => asiento.codigo).filter(Boolean).join(', ')}`
+    : (asientos[0]?.categoria ? `Asiento ${asientos[0].categoria}` : 'Asiento');
+  document.getElementById('cargo-asiento').textContent = quetzales(cargo);
+  document.getElementById('total-pagar').textContent = quetzales(tarifa * asientos.length + cargo);
 };
 
 let relojBloqueo = null;
@@ -58,6 +69,11 @@ const textoTiempo = (segundos) => {
   const restante = Math.max(0, segundos);
   const minutos = String(Math.floor(restante / 60)).padStart(2, '0');
   const segs = String(restante % 60).padStart(2, '0');
+  const guardados = leerJson('datosAsientos');
+  const varios = Array.isArray(guardados) && guardados.length > 1;
+  if (varios) {
+    return `Asientos reservados por ${minutos}:${segs}. Si el tiempo termina, vuelven a quedar libres.`;
+  }
   return `Asiento reservado por ${minutos}:${segs}. Si el tiempo termina, vuelve a quedar libre.`;
 };
 
@@ -79,6 +95,7 @@ const liberarPantalla = async () => {
     text: 'El tiempo para completar el pago terminó. Vuelve a elegir un asiento.',
   });
   localStorage.removeItem('datosAsiento');
+  localStorage.removeItem('datosAsientos');
   window.location.replace('/asientos.html');
 };
 
@@ -139,7 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const llave = localStorage.getItem('bloqueoLlave') || '';
 
     try {
-      if (asiento.asientoId && llave) {
+      const guardados = leerJson('datosAsientos');
+      const hayAsientos = asiento.asientoId || (Array.isArray(guardados) && guardados.length);
+      if (llave && hayAsientos) {
         const respuesta = await fetch('/api/asientos/liberar', {
           method: 'POST',
           headers: {
@@ -147,9 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
             'x-bloqueo-llave': llave,
           },
           body: JSON.stringify({
-            asiento_id: asiento.asientoId,
             vuelo_id: Number(busqueda.vuelo_id),
             llave,
+            todos: true,
           }),
         });
         const data = await respuesta.json().catch(() => ({}));
@@ -163,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(relojBloqueo);
       }
       localStorage.removeItem('datosAsiento');
+      localStorage.removeItem('datosAsientos');
       window.location.replace('/asientos.html');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo liberar el asiento' });
@@ -200,10 +220,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const busqueda = leerJson('busquedaVuelo');
     const pasajero = leerJson('datosPasajeros');
     const asiento = leerJson('datosAsiento');
+    const guardados = leerJson('datosAsientos');
+    const asientosElegidos = Array.isArray(guardados) && guardados.length ? guardados : (asiento.asientoId ? [asiento] : []);
     const metodo = metodoSeleccionado();
-    const token = localStorage.getItem('token');
 
-    if (!asiento.asientoId) {
+    if (!asientosElegidos.length || !Array.isArray(pasajero.viajeros) || !pasajero.viajeros.length) {
       Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Por favor completa todos los campos' });
       return;
     }
@@ -212,17 +233,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let pagoConfirmado = false;
     const idempotencyKey = crypto.randomUUID();
     const payload = {
-      nombre: pasajero.nombre,
-      apellido: pasajero.apellido,
-      documento_identidad: pasajero.documento_identidad,
-      pasajero_id: pasajero.id,
       usuario_id: pasajero.usuario_id || Number(localStorage.getItem('usuario_id')) || null,
       email: pasajero.email,
       telefono: pasajero.telefono,
       equipaje_extra_kg: 0,
       costo_servicios_extra: 0,
       vuelo_id: Number(busqueda.vuelo_id),
-      asiento_id: Number(asiento.asientoId),
+      asiento_id: Number(asientosElegidos[0].asientoId),
+      viajeros: pasajero.viajeros,
+      asientos: asientosElegidos.map((item) => Number(item.asientoId)),
       metodo_pago: metodo,
       bloqueo_llave: localStorage.getItem('bloqueoLlave'),
     };
@@ -247,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('busquedaVuelo');
         localStorage.removeItem('datosPasajeros');
         localStorage.removeItem('datosAsiento');
-        localStorage.removeItem('bloqueoLlave');
+        localStorage.removeItem('datosAsientos');
         sessionStorage.removeItem('tempPasajero');
         if (data.id) {
           sessionStorage.setItem('reservaConfirmada', String(data.id));
@@ -271,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pagoConfirmado = true;
         Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje }).then(() => {
           localStorage.removeItem('datosAsiento');
+          localStorage.removeItem('datosAsientos');
           window.location.replace('/asientos.html');
         });
         return;
