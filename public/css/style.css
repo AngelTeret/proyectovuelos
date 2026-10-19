@@ -47,3 +47,38 @@ body {
 .fila-asiento {
   width: 1.5rem;
 }
+
+#mapa-asientos,
+#app-content {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
+
+#mapa-asientos::-webkit-scrollbar,
+#app-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+#mapa-asientos::-webkit-scrollbar-thumb,
+#app-content::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
+}
+
+.asiento-marcado::after {
+  content: "✓";
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #059669;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #fff;
+}

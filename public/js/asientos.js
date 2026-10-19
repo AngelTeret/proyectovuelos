@@ -1,8 +1,41 @@
-const clasesSeleccionado = ['bg-blue-600', 'text-white', 'border-transparent'];
+const exigirVuelo = () => {
+  let busqueda = {};
+  try {
+    busqueda = JSON.parse(localStorage.getItem('busquedaVuelo')) || {};
+  } catch (error) {
+    busqueda = {};
+  }
+  if (!busqueda.vuelo_id) {
+    location.replace('/index.html');
+  }
+};
+
+exigirVuelo();
+window.addEventListener('pageshow', (evento) => {
+  if (evento.persisted) {
+    exigirVuelo();
+  }
+});
+
+const clasesSeleccionado = ['scale-105', 'border-2', 'border-emerald-400', 'bg-emerald-500', 'text-white', 'shadow-[0_0_15px_rgba(16,185,129,0.4)]'];
 const clasesPorCategoria = {
-  Premium: ['border', 'border-amber-400', 'bg-amber-50', 'text-amber-800'],
-  'Estándar': ['border', 'border-blue-400', 'bg-white', 'text-blue-700'],
-  'Básica': ['border', 'border-slate-300', 'bg-white', 'text-slate-600'],
+  Premium: ['bg-indigo-900', 'text-white', 'hover:-translate-y-0.5', 'hover:bg-indigo-800', 'hover:shadow-md'],
+  'Estándar': ['bg-blue-600', 'text-white', 'hover:-translate-y-0.5', 'hover:bg-blue-700', 'hover:shadow-md'],
+  'Básica': ['bg-slate-300', 'text-slate-700', 'hover:-translate-y-0.5', 'hover:bg-slate-400', 'hover:shadow-md'],
+};
+const franjas = {
+  Premium: {
+    barra: 'bg-gradient-to-r from-indigo-900 to-slate-900 text-white',
+    pildora: 'bg-indigo-500/20 text-indigo-300',
+  },
+  'Estándar': {
+    barra: 'bg-gradient-to-r from-blue-600 to-blue-800 text-white',
+    pildora: 'bg-white/20 text-white',
+  },
+  'Básica': {
+    barra: 'bg-slate-200 text-slate-700',
+    pildora: 'bg-white text-slate-600',
+  },
 };
 const clasesDeCategoria = (categoria) => clasesPorCategoria[categoria] || clasesPorCategoria['Básica'];
 const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -23,7 +56,23 @@ const marcarDisponible = (boton) => {
 const marcarSeleccionado = (boton) => {
   boton.classList.remove(...Object.values(clasesPorCategoria).flat());
   boton.classList.add('asiento-marcado', ...clasesSeleccionado);
-  boton.setAttribute('aria-label', `Asiento ${boton.dataset.codigo}, seleccionado`);
+  boton.setAttribute('aria-label', `Asiento ${boton.dataset.codigo}, ${boton.dataset.categoria || 'Básica'}, seleccionado`);
+};
+
+const franjaCategoria = (categoria, cargo) => {
+  const estilo = franjas[categoria] || franjas['Básica'];
+  const desde = quetzales(tarifaVuelo + cargo);
+  return `<div class="mt-3 flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${estilo.barra}"><span class="min-w-0">${escapar(categoria)}</span><span class="shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${estilo.pildora}">Desde ${desde}</span></div>`;
+};
+
+const muestraDeFila = (asientosFila) => {
+  for (const letra of letras) {
+    const asiento = asientosFila.get(letra);
+    if (asiento) {
+      return asiento;
+    }
+  }
+  return null;
 };
 
 const leerBusqueda = () => leerJson('busquedaVuelo');
@@ -39,9 +88,6 @@ const mostrarPrecioVuelo = async (vueloId) => {
     }
   }
   tarifaVuelo = precio || 0;
-  if (!asientoElegido) {
-    document.getElementById('precio-extra').textContent = quetzales(tarifaVuelo);
-  }
 };
 
 const mostrarCategoria = (categoria) => {
@@ -51,26 +97,40 @@ const mostrarCategoria = (categoria) => {
     elemento.classList.add('hidden');
     return;
   }
-  elemento.textContent = `Categoría: ${categoria}`;
+  elemento.textContent = categoria;
   elemento.classList.remove('hidden');
 };
 
 const actualizarResumen = (codigo, categoria, cargo = 0) => {
   const detalle = document.getElementById('detalle-tarifa');
+  const precio = document.getElementById('precio-extra');
+  const tarjeta = document.getElementById('tarjeta-asiento');
+  const badge = document.getElementById('badge-seleccionado');
+  const fila = document.getElementById('detalle-precio');
   document.getElementById('asiento-seleccionado').textContent = codigo
     ? `Asiento ${codigo}`
-    : 'Elige un asiento disponible';
+    : 'Elige un asiento';
   mostrarCategoria(categoria);
   if (!codigo) {
-    document.getElementById('precio-extra').textContent = quetzales(tarifaVuelo);
+    precio.textContent = '';
+    precio.classList.add('hidden');
     detalle.classList.add('hidden');
+    fila.classList.add('hidden');
+    badge.classList.add('hidden');
+    tarjeta.classList.remove('border-emerald-400', 'bg-emerald-50');
+    tarjeta.classList.add('border-slate-200', 'bg-slate-50');
     return;
   }
-  document.getElementById('precio-extra').textContent = quetzales(tarifaVuelo + cargo);
+  precio.textContent = quetzales(tarifaVuelo + cargo);
+  precio.classList.remove('hidden');
   detalle.textContent = cargo > 0
     ? `Tarifa ${quetzales(tarifaVuelo)} + asiento ${quetzales(cargo)}`
     : 'La tarifa del vuelo ya incluye este asiento';
   detalle.classList.remove('hidden');
+  fila.classList.remove('hidden');
+  badge.classList.remove('hidden');
+  tarjeta.classList.remove('border-slate-200', 'bg-slate-50');
+  tarjeta.classList.add('border-emerald-400', 'bg-emerald-50');
 };
 
 const pintarAsientos = (asientos) => {
@@ -99,8 +159,15 @@ const pintarAsientos = (asientos) => {
     return;
   }
 
+  let categoriaAnterior = '';
   contenedor.innerHTML = numeros.map((fila) => {
     const asientosFila = filas.get(fila);
+    const muestra = muestraDeFila(asientosFila);
+    const categoriaFila = muestra?.categoria || 'Básica';
+    const franja = categoriaFila === categoriaAnterior
+      ? ''
+      : franjaCategoria(categoriaFila, Number(muestra?.precio_adicional) || 0);
+    categoriaAnterior = categoriaFila;
     const celdas = letras.map((letra) => {
       const asiento = asientosFila.get(letra);
       if (!asiento) {
@@ -111,13 +178,13 @@ const pintarAsientos = (asientos) => {
       const categoria = escapar(asiento.categoria || 'Básica');
       const tono = (clasesPorCategoria[asiento.categoria] || clasesPorCategoria['Básica']).join(' ');
       if (estaOcupado(asiento)) {
-        return `<button type="button" disabled class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-semibold bg-slate-200 text-slate-400" aria-label="Asiento ${codigo}, ocupado">${codigo}</button>`;
+        return `<button type="button" disabled class="flex h-10 w-10 shrink-0 cursor-not-allowed items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-400 opacity-60" aria-label="Asiento ${codigo}, ocupado"><span aria-hidden="true">×</span></button>`;
       }
       const propio = asiento.propio ? '1' : '0';
-      return `<button type="button" class="asiento-disponible flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-xs font-semibold ${tono}" data-codigo="${codigo}" data-precio="${precio}" data-categoria="${categoria}" data-propio="${propio}" aria-label="Asiento ${codigo}, ${categoria}, disponible">${codigo}</button>`;
+      return `<button type="button" class="asiento-disponible relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-semibold transition-all duration-200 ${tono}" data-codigo="${codigo}" data-precio="${precio}" data-categoria="${categoria}" data-propio="${propio}" aria-label="Asiento ${codigo}, ${categoria}, disponible">${codigo}</button>`;
     });
 
-    return `<div class="flex w-max items-center justify-center gap-1.5">${celdas[0]}${celdas[1]}${celdas[2]}<span class="w-6 shrink-0 text-center text-xs text-slate-400">${fila}</span>${celdas[3]}${celdas[4]}${celdas[5]}</div>`;
+    return `${franja}<div class="flex w-max items-center justify-center gap-1.5">${celdas[0]}${celdas[1]}${celdas[2]}<span class="w-6 shrink-0 text-center text-xs text-slate-400">${fila}</span>${celdas[3]}${celdas[4]}${celdas[5]}</div>`;
   }).join('');
 
   const categorias = [...new Set(asientos.map((asiento) => asiento.categoria).filter(Boolean))];
