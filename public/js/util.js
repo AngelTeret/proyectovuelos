@@ -52,6 +52,51 @@ const autorizacion = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const descargarBoleto = async (reservaId, boton) => {
+  const texto = boton ? boton.textContent : '';
+  if (boton) {
+    boton.disabled = true;
+    boton.textContent = 'Descargando...';
+  }
+  try {
+    const respuesta = await fetch(`/api/reservas/${reservaId}/boleto`, {
+      headers: autorizacion(),
+    });
+    if (respuesta.status === 401) {
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      window.location.replace('/login.html');
+      return;
+    }
+    if (!respuesta.ok) {
+      const data = await respuesta.json().catch(() => ({}));
+      Swal.fire({
+        icon: 'error',
+        title: 'No se pudo descargar',
+        text: data.mensaje || 'Intenta de nuevo.',
+      });
+      return;
+    }
+    const archivo = await respuesta.blob();
+    const disposicion = respuesta.headers.get('Content-Disposition') || '';
+    const coincidencia = disposicion.match(/filename="([^"]+)"/);
+    const url = URL.createObjectURL(archivo);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = coincidencia ? coincidencia[1] : 'confirmacion.pdf';
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'No se pudo descargar', text: 'Intenta de nuevo.' });
+  } finally {
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent = texto;
+    }
+  }
+};
+
 Object.assign(window, {
   escapar,
   quetzales,
@@ -61,4 +106,5 @@ Object.assign(window, {
   formatearSalida,
   formatearFecha,
   autorizacion,
+  descargarBoleto,
 });

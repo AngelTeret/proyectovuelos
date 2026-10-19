@@ -119,10 +119,11 @@ export const crearReservaTransaccion = async (datos) => {
 
     const codigoPnr = generarCodigoPnr();
 
-    const estadoPago = metodo_pago === 'saldo' ? 'aprobado' : 'pendiente';
+    const estadoPago = 'aprobado';
+    const metodo = metodo_pago === 'saldo' ? 'saldo' : 'tarjeta';
     const [resultadoReserva] = await connection.query(
-      'INSERT INTO reservas (codigo_pnr, pasajero_id, vuelo_id, asiento_id, estado_pago, monto_total, usuario_id, equipaje_extra_kg, costo_servicios_extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [codigoPnr, idPasajero, vuelo_id, asiento_id, estadoPago, montoTotal, usuario_id, equipaje_extra_kg, metodo_pago === 'saldo' ? 0 : costo_servicios_extra]
+      'INSERT INTO reservas (codigo_pnr, pasajero_id, vuelo_id, asiento_id, estado_pago, metodo_pago, monto_total, usuario_id, equipaje_extra_kg, costo_servicios_extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [codigoPnr, idPasajero, vuelo_id, asiento_id, estadoPago, metodo, montoTotal, usuario_id, equipaje_extra_kg, metodo === 'saldo' ? 0 : costo_servicios_extra]
     );
 
     await connection.query(
@@ -154,7 +155,7 @@ export const obtenerTodas = async () => {
       v.origen,
       v.destino,
       a.numero_asiento,
-      r.monto_total AS total_pagado,
+      r.monto_total - r.monto_reembolsado AS total_pagado,
       r.fecha_creacion
     FROM reservas r
     INNER JOIN pasajeros p ON r.pasajero_id = p.id
@@ -164,6 +165,61 @@ export const obtenerTodas = async () => {
   );
 
   return rows;
+};
+
+export const obtenerHistorialPorUsuario = async (usuarioId) => {
+  const [rows] = await pool.query(
+    `SELECT
+      r.id,
+      r.codigo_pnr,
+      v.origen,
+      v.destino,
+      v.fecha_salida,
+      v.estado AS estado_vuelo,
+      a.numero_asiento,
+      r.estado_pago,
+      r.metodo_pago,
+      r.monto_total,
+      r.monto_reembolsado,
+      TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) AS segundos_para_salida,
+      r.fecha_creacion
+    FROM reservas r
+    INNER JOIN vuelos v ON r.vuelo_id = v.id
+    INNER JOIN asientos a ON r.asiento_id = a.id
+    WHERE r.usuario_id = ?
+    ORDER BY r.fecha_creacion DESC`,
+    [usuarioId]
+  );
+
+  return rows;
+};
+
+export const obtenerComprobantePorUsuario = async (reservaId, usuarioId) => {
+  const [rows] = await pool.query(
+    `SELECT
+      r.id,
+      r.codigo_pnr,
+      r.estado_pago,
+      r.metodo_pago,
+      r.monto_total,
+      r.fecha_creacion,
+      p.nombre,
+      p.apellido,
+      p.documento_identidad,
+      v.origen,
+      v.destino,
+      v.fecha_salida,
+      v.estado AS estado_vuelo,
+      a.numero_asiento
+    FROM reservas r
+    INNER JOIN pasajeros p ON r.pasajero_id = p.id
+    INNER JOIN vuelos v ON r.vuelo_id = v.id
+    INNER JOIN asientos a ON r.asiento_id = a.id
+    WHERE r.id = ? AND r.usuario_id = ?`,
+    [reservaId, usuarioId]
+  );
+
+  return rows[0] || null;
 };
 
 export const obtenerPorPNR = async (codigo_pnr) => {
@@ -223,5 +279,95 @@ export const actualizarPago = async (id) => {
     );
 
     return { saldo_virtual: usuarios[0].saldo_virtual };
+  });
+};
+
+const SEGUNDOS_DIA = 24 * 60 * 60;
+const SEGUNDOS_DOS_DIAS = 2 * SEGUNDOS_DIA;
+
+const errorDeReserva = (mensaje, codigo) => {
+  const error = new Error(mensaje);
+  error.codigo = codigo;
+  return error;
+};
+
+export const calcularReembolso = (monto, segundos) => {
+  const total = Math.round(Number(monto) * 100) / 100;
+  const restante = Number(segundos);
+  if (!Number.isFinite(total) || total < 0 || !Number.isFinite(restante) || restante <= 0) {
+    return { permitido: false, motivo: 'salio', parcial: false, reembolso: 0 };
+  }
+  if (restante < SEGUNDOS_DIA) {
+    return { permitido: false, motivo: 'cercano', parcial: false, reembolso: 0 };
+  }
+  const parcial = restante <= SEGUNDOS_DOS_DIAS;
+  const reembolso = parcial ? Math.round((total / 2) * 100) / 100 : total;
+  return { permitido: true, motivo: parcial ? 'parcial' : 'total', parcial, reembolso };
+};
+
+export const cancelarReservaUsuario = async ({ reservaId, usuarioId }) => {
+  return conTransaccion(async (connection) => {
+    const [filas] = await connection.query(
+      `SELECT
+        r.id,
+        r.usuario_id,
+        r.estado_pago,
+        r.metodo_pago,
+        r.monto_total,
+        r.asiento_id,
+        TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) AS segundos
+      FROM reservas r
+      INNER JOIN vuelos v ON v.id = r.vuelo_id
+      WHERE r.id = ?
+      FOR UPDATE`,
+      [reservaId]
+    );
+
+    const reserva = filas[0];
+    if (!reserva || Number(reserva.usuario_id) !== Number(usuarioId)) {
+      throw errorDeReserva('Reserva no encontrada', 404);
+    }
+    if (reserva.estado_pago === 'reembolsado') {
+      throw errorDeReserva('Esta reserva ya fue cancelada', 400);
+    }
+    if (reserva.estado_pago !== 'aprobado' || reserva.metodo_pago !== 'saldo') {
+      throw errorDeReserva('Solo se puede cancelar una reserva pagada con billetera', 400);
+    }
+
+    const calculo = calcularReembolso(reserva.monto_total, reserva.segundos);
+    if (!calculo.permitido) {
+      const mensaje = calculo.motivo === 'cercano'
+        ? 'Por el poco tiempo que queda para el vuelo no se puede devolver el dinero.'
+        : 'El vuelo ya salió y no se puede cancelar';
+      throw errorDeReserva(mensaje, 400);
+    }
+
+    await connection.query(
+      `UPDATE asientos
+       SET estado = 'disponible', bloqueo_hasta = NULL, bloqueo_llave = NULL
+       WHERE id = ? AND estado = 'confirmado'`,
+      [reserva.asiento_id]
+    );
+    await connection.query(
+      'UPDATE usuarios SET saldo_virtual = saldo_virtual + ? WHERE id = ?',
+      [calculo.reembolso, usuarioId]
+    );
+    await connection.query(
+      `UPDATE reservas
+       SET estado_pago = 'reembolsado', monto_reembolsado = ?
+       WHERE id = ?`,
+      [calculo.reembolso, reserva.id]
+    );
+
+    const [usuarios] = await connection.query(
+      'SELECT saldo_virtual FROM usuarios WHERE id = ?',
+      [usuarioId]
+    );
+
+    return {
+      reembolso: calculo.reembolso,
+      parcial: calculo.parcial,
+      saldo_virtual: usuarios[0]?.saldo_virtual ?? null,
+    };
   });
 };

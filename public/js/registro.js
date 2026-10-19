@@ -23,7 +23,7 @@ document.getElementById('form-registro').addEventListener('submit', async (event
       title: '¡Bienvenido!',
       text: 'Cuenta creada con éxito (Bono de Q15,000 acreditado)',
     }).then(() => {
-      window.location.href = '/login.html';
+      window.location.replace('/login.html');
     });
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo crear la cuenta' });

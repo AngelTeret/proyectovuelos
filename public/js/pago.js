@@ -1,6 +1,6 @@
 if (!localStorage.getItem('token')) {
   localStorage.setItem('redirectAfterLogin', window.location.pathname);
-  window.location.href = '/login.html';
+  window.location.replace('/login.html');
 } else {
 
 const metodoSeleccionado = () => document.querySelector('input[name="metodo_pago"]:checked')?.value || 'saldo';
@@ -79,7 +79,7 @@ const liberarPantalla = async () => {
     text: 'El tiempo para completar el pago terminó. Vuelve a elegir un asiento.',
   });
   localStorage.removeItem('datosAsiento');
-  window.location.href = '/asientos.html';
+  window.location.replace('/asientos.html');
 };
 
 const iniciarReloj = async () => {
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(relojBloqueo);
       }
       localStorage.removeItem('datosAsiento');
-      window.location.href = '/asientos.html';
+      window.location.replace('/asientos.html');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo liberar el asiento' });
     } finally {
@@ -249,13 +249,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('datosAsiento');
         localStorage.removeItem('bloqueoLlave');
         sessionStorage.removeItem('tempPasajero');
-        Swal.fire({
-          icon: 'success',
-          title: '¡Reserva Confirmada!',
-          text: 'Tu pago ha sido procesado con éxito.',
-        }).then(() => {
-          window.location.href = '/index.html';
-        });
+        if (data.id) {
+          sessionStorage.setItem('reservaConfirmada', String(data.id));
+          window.location.replace('/confirmacion.html');
+          return;
+        }
+        window.location.replace('/mis-vuelos.html');
         return;
       }
 
@@ -272,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pagoConfirmado = true;
         Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje }).then(() => {
           localStorage.removeItem('datosAsiento');
-          window.location.href = '/asientos.html';
+          window.location.replace('/asientos.html');
         });
         return;
       }

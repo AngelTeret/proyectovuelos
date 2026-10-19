@@ -3,10 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <script>
-    if (!localStorage.getItem('token')) {
-      localStorage.setItem('redirectAfterLogin', '/pago.html');
-      location.replace('/login.html');
-    }
+    (function () {
+      const salir = () => {
+        if (!localStorage.getItem('token')) {
+          localStorage.setItem('redirectAfterLogin', '/pago.html');
+          location.replace('/login.html');
+          return;
+        }
+        let asiento = {};
+        try {
+          asiento = JSON.parse(localStorage.getItem('datosAsiento')) || {};
+        } catch (error) {
+          asiento = {};
+        }
+        if (!asiento.asientoId || !localStorage.getItem('bloqueoLlave')) {
+          location.replace('/asientos.html');
+        }
+      };
+      salir();
+      window.addEventListener('pageshow', (evento) => {
+        if (evento.persisted) {
+          salir();
+        }
+      });
+    })();
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Pago - Sistema de Vuelos</title>

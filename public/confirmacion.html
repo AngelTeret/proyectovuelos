@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    if (!localStorage.getItem('token')) {
+      localStorage.setItem('redirectAfterLogin', '/confirmacion.html');
+      location.replace('/login.html');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Reserva confirmada - Sistema de Vuelos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="h-[100dvh] overflow-hidden bg-slate-50 font-sans text-slate-800 antialiased">
+  <div class="flex h-[100dvh] bg-slate-50">
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="flex h-16 shrink-0 items-center justify-end border-b border-slate-100 bg-white px-6">
+        <p id="nombre-usuario" class="text-sm font-semibold text-slate-800"></p>
+      </header>
+
+      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
+        <p id="estado-carga" class="text-sm text-slate-500">Cargando tu comprobante...</p>
+        <div id="panel-confirmacion" class="hidden">
+          <article class="overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div class="flex flex-col gap-4 bg-blue-950 px-6 py-5 text-white sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h1 class="text-xl font-bold sm:text-2xl">Reserva confirmada</h1>
+                <p class="mt-1 text-sm text-blue-100">Tu pago quedó registrado. Guarda este comprobante.</p>
+              </div>
+              <div class="sm:text-right">
+                <p class="text-xs font-medium uppercase tracking-wide text-blue-200">Código</p>
+                <p id="pnr" class="text-3xl font-bold tracking-wide"></p>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="flex flex-wrap items-center gap-x-6 gap-y-3 sm:gap-x-8">
+                <div class="min-w-0">
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Origen</p>
+                  <p id="origen" class="mt-1 break-words text-2xl font-bold text-slate-900 sm:text-3xl"></p>
+                </div>
+                <span class="text-2xl text-slate-300" aria-hidden="true">→</span>
+                <div class="min-w-0">
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Destino</p>
+                  <p id="destino" class="mt-1 break-words text-2xl font-bold text-slate-900 sm:text-3xl"></p>
+                </div>
+              </div>
+              <dl class="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 pt-6 lg:grid-cols-4">
+                <div class="rounded-xl bg-slate-50 px-4 py-3">
+                  <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Salida</dt>
+                  <dd id="salida" class="mt-1 font-semibold text-slate-900"></dd>
+                </div>
+                <div class="rounded-xl bg-slate-50 px-4 py-3">
+                  <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Asiento</dt>
+                  <dd id="asiento" class="mt-1 font-semibold text-slate-900"></dd>
+                </div>
+                <div class="rounded-xl bg-slate-50 px-4 py-3">
+                  <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Pasajero</dt>
+                  <dd id="pasajero" class="mt-1 font-semibold text-slate-900"></dd>
+                  <dd id="documento" class="mt-0.5 text-sm text-slate-500"></dd>
+                </div>
+                <div class="rounded-xl bg-slate-50 px-4 py-3">
+                  <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Pago</dt>
+                  <dd id="total" class="mt-1 font-semibold text-slate-900"></dd>
+                  <dd id="pago" class="mt-0.5 text-sm text-slate-500"></dd>
+                </div>
+              </dl>
+              <div class="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p id="compra" class="text-sm text-slate-500"></p>
+                  <p class="mt-1 text-xs text-slate-400">Este documento es un comprobante de reserva. No es un pase de abordar.</p>
+                </div>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                  <button type="button" id="btn-boleto" class="h-11 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Descargar confirmación</button>
+                  <a href="/mis-vuelos.html" class="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver mis vuelos</a>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+        <div id="error-confirmacion" class="hidden max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm">
+          <p id="mensaje-error" class="text-sm text-slate-600">No se pudo mostrar el comprobante.</p>
+          <a href="/mis-vuelos.html" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Ver mis vuelos</a>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/util.js"></script>
+  <script src="/js/cabecera.js"></script>
+  <script src="/js/confirmacion.js"></script>
+</body>
+</html>
