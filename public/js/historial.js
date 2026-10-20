@@ -137,14 +137,23 @@ const cancelarReserva = async (reserva, boton) => {
     reserva.monto_reembolsado = data.reembolso;
     pestanaActiva = 'cancelados';
     pintarGrupo();
-    Swal.fire({
-      toast: true,
-      position: 'top-end',
-      icon: 'success',
-      title: `Reserva cancelada. Se devolvieron ${devuelto} a tu billetera.`,
-      showConfirmButton: false,
-      timer: 3200,
-    });
+    if (data.correo_enviado) {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `Reserva cancelada. Se devolvieron ${devuelto} a tu billetera. Te enviamos el aviso por correo.`,
+        showConfirmButton: false,
+        timer: 4200,
+      });
+    } else {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Reserva cancelada',
+        text: `Se devolvieron ${devuelto} a tu billetera. No pudimos enviar el aviso por correo.`,
+        confirmButtonText: 'Entendido',
+      });
+    }
     cargarHistorial(true);
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'No se pudo cancelar', text: 'Intenta de nuevo.' });

@@ -270,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.removeItem('tempPasajero');
         if (data.id) {
           sessionStorage.setItem('reservaConfirmada', String(data.id));
+          sessionStorage.setItem('correoEnviado', data.correo_enviado ? '1' : '0');
           window.location.replace('/confirmacion.html');
           return;
         }

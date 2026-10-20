@@ -4,12 +4,57 @@ import {
   obtenerTodas,
   obtenerHistorialPorUsuario,
   obtenerComprobantePorUsuario,
+  obtenerDatosCorreoReserva,
   obtenerPorPNR,
   actualizarPago,
   cancelarReservaUsuario,
 } from '../models/reserva.model.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 import { crearPdfBoleto } from '../utils/boletoPdf.js';
+import { enviarBoleto } from '../services/emailService.js';
+import { generarTemplateBoleto, generarTemplateCancelacion } from '../services/ticketTemplate.js';
+
+const enviarPaseDeAbordar = async (reservaId, codigoPnr) => {
+  try {
+    const datos = await obtenerDatosCorreoReserva(reservaId);
+    if (!datos?.email) {
+      console.log(`La reserva ${codigoPnr} no tiene correo para el comprobante.`);
+      return false;
+    }
+    await enviarBoleto(
+      datos.email,
+      `Comprobante de reserva ${datos.codigo_pnr} - Quetzal Airlines`,
+      generarTemplateBoleto(datos),
+    );
+    return true;
+  } catch (error) {
+    console.log(`La reserva ${codigoPnr} quedó confirmada, pero el comprobante no se envió: ${error.message}`);
+    return false;
+  }
+};
+
+const enviarAvisoCancelacion = async (reservaId, resultado) => {
+  try {
+    const datos = await obtenerDatosCorreoReserva(reservaId);
+    if (!datos?.email) {
+      console.log(`La reserva ${reservaId} no tiene correo para el aviso de cancelación.`);
+      return false;
+    }
+    await enviarBoleto(
+      datos.email,
+      `Reserva ${datos.codigo_pnr} cancelada - Quetzal Airlines`,
+      generarTemplateCancelacion({
+        ...datos,
+        reembolso: resultado.reembolso,
+        parcial: resultado.parcial,
+      }),
+    );
+    return true;
+  } catch (error) {
+    console.log(`La reserva ${reservaId} quedó cancelada, pero el aviso no se envió: ${error.message}`);
+    return false;
+  }
+};
 
 const usuarioDesdeToken = (req) => {
   const encabezado = req.headers.authorization || '';
@@ -88,9 +133,12 @@ export const crearReserva = async (req, res) => {
       asientos,
     });
 
+    const correoEnviado = await enviarPaseDeAbordar(reserva.id, reserva.codigo_pnr);
+
     res.status(201).json({
       codigo_pnr: reserva.codigo_pnr,
       id: reserva.id,
+      correo_enviado: correoEnviado,
     });
   } catch (error) {
     if (
@@ -156,11 +204,13 @@ export const cancelarReserva = async (req, res) => {
     }
 
     const resultado = await cancelarReservaUsuario({ reservaId, usuarioId: sesion.id });
+    const correoEnviado = await enviarAvisoCancelacion(reservaId, resultado);
     res.status(200).json({
       mensaje: 'Reserva cancelada',
       reembolso: resultado.reembolso,
       parcial: resultado.parcial,
       saldo_virtual: resultado.saldo_virtual,
+      correo_enviado: correoEnviado,
     });
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
@@ -220,6 +270,7 @@ export const obtenerComprobante = async (req, res) => {
       nombre: boleto.nombre,
       apellido: boleto.apellido,
       documento_identidad: boleto.documento_identidad,
+      email: boleto.email,
       origen: boleto.origen,
       destino: boleto.destino,
       fecha_salida: boleto.fecha_salida,

@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const remitente = (correo) => `"Quetzal Airlines" <${correo}>`;
+
 const transportadorGmail = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -32,7 +34,7 @@ export async function enviarBoleto(correoDestino, asunto, contenidoHTML) {
     console.log(`Intentando enviar el boleto a ${correoDestino} por Gmail...`);
     await transportadorGmail.sendMail({
       ...mensaje,
-      from: process.env.GMAIL_USER,
+      from: remitente(process.env.GMAIL_USER),
     });
     console.log(`Correo enviado por Gmail a ${correoDestino}.`);
   } catch (errorGmail) {
@@ -41,7 +43,7 @@ export async function enviarBoleto(correoDestino, asunto, contenidoHTML) {
     try {
       await transportadorBrevo.sendMail({
         ...mensaje,
-        from: process.env.BREVO_USER,
+        from: remitente(process.env.BREVO_USER),
       });
       console.log(`Correo enviado por Brevo a ${correoDestino}.`);
     } catch (errorBrevo) {

@@ -64,6 +64,19 @@ const pintarConfirmacion = (boleto) => {
   document.getElementById('total').textContent = quetzales(boleto.monto_total);
   document.getElementById('pago').textContent = metodoTexto(boleto.metodo_pago);
   document.getElementById('compra').textContent = `Comprado el ${formatearSalida(boleto.fecha_creacion)}`;
+  const correoEnviado = sessionStorage.getItem('correoEnviado');
+  const avisoCorreo = document.getElementById('aviso-correo');
+  if (correoEnviado === '1' && boleto.email) {
+    avisoCorreo.textContent = `Enviamos el comprobante de reserva a ${boleto.email}.`;
+  } else if (correoEnviado === '0' && boleto.email) {
+    avisoCorreo.textContent = `La reserva quedó confirmada, pero no pudimos enviar el comprobante a ${boleto.email}. Puedes descargarlo.`;
+  } else if (correoEnviado === '0') {
+    avisoCorreo.textContent = 'La reserva quedó confirmada, pero no pudimos enviar el comprobante. Puedes descargarlo.';
+  } else if (boleto.email) {
+    avisoCorreo.textContent = `El comprobante de reserva corresponde al correo ${boleto.email}.`;
+  } else {
+    avisoCorreo.textContent = 'Puedes descargar la confirmación de tu reserva.';
+  }
   pintarPasajeros(viajeros);
   document.getElementById('btn-boleto').addEventListener('click', (evento) => {
     descargarBoleto(boleto.id, evento.currentTarget);

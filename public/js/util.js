@@ -104,7 +104,7 @@ const limpiarDatosPersonales = () => {
     }).catch(() => {});
   }
 
-  ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave', 'redirectAfterLogin', 'reservaConfirmada'].forEach((clave) => {
+  ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave', 'redirectAfterLogin', 'reservaConfirmada', 'correoEnviado'].forEach((clave) => {
     localStorage.removeItem(clave);
     sessionStorage.removeItem(clave);
   });

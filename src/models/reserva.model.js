@@ -528,6 +528,7 @@ export const obtenerComprobantePorUsuario = async (reservaId, usuarioId) => {
       p.nombre,
       p.apellido,
       p.documento_identidad,
+      p.email,
       p.nacionalidad,
       DATE_FORMAT(p.fecha_nacimiento, '%Y-%m-%d') AS fecha_nacimiento,
       v.origen,
@@ -577,6 +578,63 @@ export const obtenerComprobantePorUsuario = async (reservaId, usuarioId) => {
     }];
   if (boleto.viajeros.length > 1) {
     boleto.numero_asiento = boleto.viajeros
+      .map((viajero) => viajero.numero_asiento)
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  return boleto;
+};
+
+export const obtenerDatosCorreoReserva = async (reservaId) => {
+  const [rows] = await pool.query(
+    `SELECT
+      r.id,
+      r.codigo_pnr,
+      r.monto_total,
+      r.metodo_pago,
+      r.fecha_creacion,
+      r.equipaje_extra_kg,
+      p.nombre,
+      p.apellido,
+      p.email,
+      p.telefono,
+      p.documento_identidad,
+      v.origen,
+      v.destino,
+      v.fecha_salida,
+      a.numero_asiento,
+      a.categoria
+    FROM reservas r
+    INNER JOIN pasajeros p ON r.pasajero_id = p.id
+    INNER JOIN vuelos v ON r.vuelo_id = v.id
+    INNER JOIN asientos a ON r.asiento_id = a.id
+    WHERE r.id = ?`,
+    [reservaId]
+  );
+
+  const boleto = rows[0];
+  if (!boleto) {
+    return null;
+  }
+
+  const [viajeros] = await pool.query(
+    `SELECT
+      p.nombre,
+      p.apellido,
+      p.documento_identidad,
+      p.tipo,
+      a.numero_asiento
+    FROM reserva_pasajeros rp
+    INNER JOIN pasajeros p ON p.id = rp.pasajero_id
+    LEFT JOIN asientos a ON a.id = rp.asiento_id
+    WHERE rp.reserva_id = ?
+    ORDER BY rp.orden`,
+    [reservaId]
+  );
+  boleto.viajeros = viajeros;
+  if (viajeros.length > 1) {
+    boleto.numero_asiento = viajeros
       .map((viajero) => viajero.numero_asiento)
       .filter(Boolean)
       .join(', ');
