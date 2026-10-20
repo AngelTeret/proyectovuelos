@@ -7,9 +7,10 @@ const escaparHtml = (valor) => String(valor ?? '')
   .replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;');
 
-const formatearFecha = (fecha) => new Date(fecha).toLocaleString('es-MX', {
+const formatearFecha = (fecha) => new Date(fecha).toLocaleString('es-GT', {
   dateStyle: 'medium',
   timeStyle: 'short',
+  timeZone: 'America/Guatemala',
 });
 
 const formatearSaldo = (saldo) => {

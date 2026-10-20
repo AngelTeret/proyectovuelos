@@ -1,16 +1,8 @@
 let vuelosCargados = [];
 
-const fechaISO = (valor) => {
-  const coincidencia = String(valor ?? '').match(/^(\d{4}-\d{2}-\d{2})/);
-  return coincidencia ? coincidencia[1] : '';
-};
+const fechaISO = (valor) => fechaCalendario(valor);
 
-const hoyISO = () => {
-  const hoy = new Date();
-  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-  const dia = String(hoy.getDate()).padStart(2, '0');
-  return `${hoy.getFullYear()}-${mes}-${dia}`;
-};
+const hoyISO = () => fechaCalendario(new Date());
 
 const llenarSelect = (select, lugares, seleccionado) => {
   select.innerHTML = lugares.map((lugar) => {

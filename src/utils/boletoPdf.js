@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { partesGuatemala } from './fecha.js';
 
 const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const izquierda = 48;
@@ -6,14 +7,12 @@ const derecha = 300;
 const ancho = 220;
 
 const textoFecha = (valor) => {
-  const iso = valor instanceof Date ? valor.toISOString() : String(valor ?? '');
-  const coincidencia = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!coincidencia) {
+  const partes = partesGuatemala(valor);
+  if (!partes) {
     return '';
   }
-  const dia = Number(coincidencia[3]);
-  const mes = meses[Number(coincidencia[2]) - 1];
-  return `${dia} ${mes} ${coincidencia[1]}, ${coincidencia[4]}:${coincidencia[5]}`;
+  const dia = `${partes.dia} ${meses[partes.mes - 1]} ${partes.anio}`;
+  return partes.hora ? `${dia}, ${partes.hora}:${partes.minuto}` : dia;
 };
 
 const quetzales = (monto) => `Q ${Number(monto || 0).toFixed(2)}`;
@@ -23,14 +22,8 @@ const metodoTexto = (metodo) => (metodo === 'saldo' ? 'Billetera' : 'Tarjeta');
 const titulosTipo = { adulto: 'Adulto', nino: 'Niño', infante: 'Infante' };
 
 const textoDia = (valor) => {
-  const iso = valor instanceof Date ? valor.toISOString() : String(valor ?? '');
-  const coincidencia = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!coincidencia) {
-    return '';
-  }
-  const dia = Number(coincidencia[3]);
-  const mes = meses[Number(coincidencia[2]) - 1];
-  return `${dia} ${mes} ${coincidencia[1]}`;
+  const partes = partesGuatemala(valor);
+  return partes ? `${partes.dia} ${meses[partes.mes - 1]} ${partes.anio}` : '';
 };
 
 const viajerosDe = (boleto) => (Array.isArray(boleto.viajeros) && boleto.viajeros.length

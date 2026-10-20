@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import pool from '../config/db.js';
+import { fechaCalendario } from '../utils/fecha.js';
 import { conTransaccion } from '../utils/transaccion.js';
 
 const paises = new Set(JSON.parse(readFileSync(new URL('../../public/js/codigosTelefono.json', import.meta.url), 'utf8')).map((item) => item.pais));
@@ -13,7 +14,7 @@ const errorCliente = (mensaje) => {
 
 const edadAlVuelo = (nacimiento, salida) => {
   const nace = new Date(`${nacimiento}T00:00:00Z`);
-  const vuelo = salida instanceof Date ? salida : new Date(salida);
+  const vuelo = new Date(`${fechaCalendario(salida)}T00:00:00Z`);
   if (Number.isNaN(nace.getTime()) || Number.isNaN(vuelo.getTime())) {
     return -1;
   }

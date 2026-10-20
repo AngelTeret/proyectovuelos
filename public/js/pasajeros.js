@@ -170,7 +170,7 @@ const edadAlVuelo = (nacimiento) => {
     return -1;
   }
   const nace = new Date(`${nacimiento}T00:00:00Z`);
-  const vuelo = new Date(fechaVuelo);
+  const vuelo = new Date(`${fechaCalendario(fechaVuelo)}T00:00:00Z`);
   if (Number.isNaN(nace.getTime()) || Number.isNaN(vuelo.getTime())) {
     return -1;
   }
@@ -204,11 +204,7 @@ const edadCorrecta = (tipo, edad) => {
   return edad >= 0 && edad < 2;
 };
 
-const fechaDelVuelo = () => {
-  const iso = fechaVuelo instanceof Date ? fechaVuelo.toISOString() : String(fechaVuelo || '');
-  const coincidencia = iso.match(/^(\d{4}-\d{2}-\d{2})/);
-  return coincidencia ? coincidencia[1] : '';
-};
+const fechaDelVuelo = () => fechaCalendario(fechaVuelo);
 
 const desplazarAnios = (iso, anios) => {
   const [anio, mes, dia] = iso.split('-').map(Number);
