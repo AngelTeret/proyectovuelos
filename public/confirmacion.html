@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" href="/imagenes/isotipo.svg" type="image/svg+xml">
   <script>
     if (!localStorage.getItem('token')) {
       localStorage.setItem('redirectAfterLogin', '/confirmacion.html');
@@ -9,7 +10,7 @@
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Reserva confirmada - Sistema de Vuelos</title>
+  <title>Reserva confirmada - Quetzal Airlines</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -38,6 +39,9 @@
         <p id="estado-carga" class="text-sm text-slate-500">Cargando tu comprobante...</p>
         <div id="panel-confirmacion" class="hidden">
           <article class="overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div class="flex justify-center border-b border-slate-100 bg-white px-6 py-4">
+              <img src="/imagenes/logotipo_frase.svg" alt="Quetzal Airlines. El cielo de Guatemala" class="h-16 w-auto">
+            </div>
             <div class="flex flex-col gap-4 bg-blue-950 px-6 py-5 text-white sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h1 class="text-xl font-bold sm:text-2xl">Reserva confirmada</h1>

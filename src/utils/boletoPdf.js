@@ -1,5 +1,14 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import PDFDocument from 'pdfkit';
+import SVGtoPDF from 'svg-to-pdfkit';
 import { partesGuatemala } from './fecha.js';
+
+const logoFrase = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '../../public/imagenes/logotipo_frase.svg'),
+  'utf8',
+).replace(/<metadata[\s\S]*?<\/metadata>/, '');
 
 const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const izquierda = 48;
@@ -53,40 +62,46 @@ export const crearPdfBoleto = (boleto) => new Promise((resolve, reject) => {
   doc.on('end', () => resolve(Buffer.concat(partes)));
   doc.on('error', reject);
 
-  doc.font('Helvetica-Bold').fontSize(16).fillColor('#0f172a').text('Sistema de Vuelos', izquierda, 40, { width: 499, lineBreak: false });
-  doc.font('Helvetica').fontSize(11).fillColor('#475569').text('Comprobante de reserva', izquierda, 60, { width: 499, lineBreak: false });
-  doc.moveTo(izquierda, 78).lineTo(547, 78).strokeColor('#e2e8f0').stroke();
+  const altoLogo = 58;
+  const anchoLogo = altoLogo * (3440 / 1520);
+  SVGtoPDF(doc, logoFrase, izquierda, 32, {
+    width: anchoLogo,
+    height: altoLogo,
+    preserveAspectRatio: 'xMinYMin meet',
+  });
+  doc.font('Helvetica').fontSize(11).fillColor('#475569').text('Comprobante de reserva', izquierda, 54, { width: 499, align: 'right', lineBreak: false });
+  doc.moveTo(izquierda, 102).lineTo(547, 102).strokeColor('#e2e8f0').stroke();
 
-  etiqueta(doc, 'CODIGO DE RESERVA', izquierda, 90);
-  doc.font('Helvetica-Bold').fontSize(18).fillColor('#0f172a').text(boleto.codigo_pnr || '', izquierda, 104, { width: 499, lineBreak: false });
+  etiqueta(doc, 'CODIGO DE RESERVA', izquierda, 114);
+  doc.font('Helvetica-Bold').fontSize(18).fillColor('#0f172a').text(boleto.codigo_pnr || '', izquierda, 128, { width: 499, lineBreak: false });
 
   const viajeros = viajerosDe(boleto);
   const asientos = viajeros.map((viajero) => viajero.numero_asiento).filter(Boolean);
 
-  etiqueta(doc, 'RUTA', izquierda, 136);
+  etiqueta(doc, 'RUTA', izquierda, 160);
   doc.font('Helvetica-Bold').fontSize(13).fillColor('#0f172a').text(
     `${boleto.origen || ''} - ${boleto.destino || ''}`,
     izquierda,
-    150,
+    174,
     { width: 499, lineBreak: false },
   );
 
-  etiqueta(doc, 'SALIDA', izquierda, 178);
-  valor(doc, textoFecha(boleto.fecha_salida), izquierda, 192);
-  etiqueta(doc, asientos.length > 1 ? 'ASIENTOS' : 'ASIENTO', derecha, 178);
-  valor(doc, asientos.join(', ') || 'Regazo', derecha, 192);
+  etiqueta(doc, 'SALIDA', izquierda, 202);
+  valor(doc, textoFecha(boleto.fecha_salida), izquierda, 216);
+  etiqueta(doc, asientos.length > 1 ? 'ASIENTOS' : 'ASIENTO', derecha, 202);
+  valor(doc, asientos.join(', ') || 'Regazo', derecha, 216);
 
-  doc.moveTo(izquierda, 218).lineTo(547, 218).strokeColor('#e2e8f0').stroke();
+  doc.moveTo(izquierda, 242).lineTo(547, 242).strokeColor('#e2e8f0').stroke();
 
-  etiqueta(doc, 'TOTAL', izquierda, 230);
-  valor(doc, quetzales(boleto.monto_total), izquierda, 244);
-  etiqueta(doc, 'METODO DE PAGO', derecha, 230);
-  valor(doc, metodoTexto(boleto.metodo_pago), derecha, 244);
+  etiqueta(doc, 'TOTAL', izquierda, 254);
+  valor(doc, quetzales(boleto.monto_total), izquierda, 268);
+  etiqueta(doc, 'METODO DE PAGO', derecha, 254);
+  valor(doc, metodoTexto(boleto.metodo_pago), derecha, 268);
 
-  etiqueta(doc, 'FECHA DE COMPRA', izquierda, 270);
-  valor(doc, textoFecha(boleto.fecha_creacion), izquierda, 284);
+  etiqueta(doc, 'FECHA DE COMPRA', izquierda, 294);
+  valor(doc, textoFecha(boleto.fecha_creacion), izquierda, 308);
 
-  let cursor = 316;
+  let cursor = 340;
   doc.font('Helvetica-Bold').fontSize(11).fillColor('#0f172a').text(
     viajeros.length > 1 ? 'PASAJEROS' : 'PASAJERO',
     izquierda,

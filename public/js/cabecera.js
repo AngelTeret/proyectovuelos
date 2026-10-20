@@ -1,5 +1,3 @@
-const iconoAvion = '<svg class="h-7 w-7 text-blue-950" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>';
-
 const iconosNav = {
   inicio: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>',
   administracion: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>',
@@ -43,7 +41,7 @@ const pintarMenu = () => {
   const actual = paginaActual();
   marco.insertAdjacentHTML('afterbegin', `
     <aside id="menu-lateral" class="flex w-[232px] shrink-0 flex-col border-r border-slate-100 bg-white px-4 py-5">
-      <a href="index.html" class="mb-8 flex items-center gap-2.5 px-2">${iconoAvion}<span class="text-[15px] font-semibold tracking-tight text-blue-950">Sistema de Vuelos</span></a>
+      <a href="index.html" class="mb-8 block px-1"><img src="/imagenes/logotipo.svg" alt="Quetzal Airlines" class="h-11 w-auto max-w-full"></a>
       <nav class="flex flex-1 flex-col gap-1" aria-label="Principal">
         <a href="index.html" class="${claseNav('inicio', actual)}">${iconosNav.inicio}Inicio</a>
         <a href="mis-vuelos.html" class="${claseNav('mis-vuelos', actual)}">${iconosNav.vuelos}Mis vuelos</a>
@@ -143,6 +141,7 @@ if (cerrarSesion) {
 
 const estiloMenu = document.createElement('style');
 estiloMenu.textContent = `
+  .marca-movil { display: none; }
   #nombre-usuario {
     min-width: 0;
     overflow: hidden;
@@ -195,6 +194,13 @@ estiloMenu.textContent = `
   @media (max-width: 767px) {
     #btn-menu,
     #btn-cerrar-menu { display: inline-flex; }
+    .marca-movil {
+      display: flex;
+      align-items: center;
+      margin-right: auto;
+      margin-left: 0.25rem;
+    }
+    .marca-movil img { height: 2rem; width: auto; }
     #menu-lateral {
       position: fixed;
       top: 0;
@@ -258,6 +264,12 @@ const prepararMenu = () => {
   abrirMenu.setAttribute('aria-label', 'Abrir menú');
   abrirMenu.innerHTML = icono('M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5');
   barra.prepend(abrirMenu);
+
+  const marcaMovil = document.createElement('a');
+  marcaMovil.href = '/index.html';
+  marcaMovil.className = 'marca-movil';
+  marcaMovil.innerHTML = '<img src="/imagenes/isotipo.svg" alt="Quetzal Airlines">';
+  abrirMenu.insertAdjacentElement('afterend', marcaMovil);
 
   const cerrarMenu = document.createElement('button');
   cerrarMenu.id = 'btn-cerrar-menu';
