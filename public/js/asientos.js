@@ -17,7 +17,6 @@ window.addEventListener('pageshow', (evento) => {
   }
 });
 
-const clasesSeleccionado = ['scale-105', 'border-2', 'border-emerald-400', 'bg-emerald-500', 'text-white', 'shadow-[0_0_15px_rgba(16,185,129,0.4)]'];
 const clasesPorCategoria = {
   Premium: ['bg-indigo-900', 'text-white', 'hover:-translate-y-0.5', 'hover:bg-indigo-800', 'hover:shadow-md'],
   'Estándar': ['bg-blue-600', 'text-white', 'hover:-translate-y-0.5', 'hover:bg-blue-700', 'hover:shadow-md'],
@@ -37,27 +36,15 @@ const franjas = {
     pildora: 'bg-white text-slate-600',
   },
 };
-const clasesDeCategoria = (categoria) => clasesPorCategoria[categoria] || clasesPorCategoria['Básica'];
 const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
 const MAX_ASIENTOS = 102;
 const MAX_FILA = MAX_ASIENTOS / letras.length;
 
-let asientoElegido = null;
 let tarifaVuelo = 0;
+let mapaVersion = 0;
+let seleccionEnCurso = false;
 
 const estaOcupado = (asiento) => asiento.estado !== 'disponible' || Boolean(asiento.ocupado);
-
-const marcarDisponible = (boton) => {
-  boton.classList.remove('asiento-marcado', ...clasesSeleccionado, ...Object.values(clasesPorCategoria).flat());
-  boton.classList.add(...clasesDeCategoria(boton.dataset.categoria));
-  boton.setAttribute('aria-label', `Asiento ${boton.dataset.codigo}, ${boton.dataset.categoria || 'Básica'}, disponible`);
-};
-
-const marcarSeleccionado = (boton) => {
-  boton.classList.remove(...Object.values(clasesPorCategoria).flat());
-  boton.classList.add('asiento-marcado', ...clasesSeleccionado);
-  boton.setAttribute('aria-label', `Asiento ${boton.dataset.codigo}, ${boton.dataset.categoria || 'Básica'}, seleccionado`);
-};
 
 const franjaCategoria = (categoria, cargo) => {
   const estilo = franjas[categoria] || franjas['Básica'];
@@ -88,49 +75,6 @@ const mostrarPrecioVuelo = async (vueloId) => {
     }
   }
   tarifaVuelo = precio || 0;
-};
-
-const mostrarCategoria = (categoria) => {
-  const elemento = document.getElementById('categoria-asiento');
-  if (!categoria) {
-    elemento.textContent = '';
-    elemento.classList.add('hidden');
-    return;
-  }
-  elemento.textContent = categoria;
-  elemento.classList.remove('hidden');
-};
-
-const actualizarResumen = (codigo, categoria, cargo = 0) => {
-  const detalle = document.getElementById('detalle-tarifa');
-  const precio = document.getElementById('precio-extra');
-  const tarjeta = document.getElementById('tarjeta-asiento');
-  const badge = document.getElementById('badge-seleccionado');
-  const fila = document.getElementById('detalle-precio');
-  document.getElementById('asiento-seleccionado').textContent = codigo
-    ? `Asiento ${codigo}`
-    : 'Elige un asiento';
-  mostrarCategoria(categoria);
-  if (!codigo) {
-    precio.textContent = '';
-    precio.classList.add('hidden');
-    detalle.classList.add('hidden');
-    fila.classList.add('hidden');
-    badge.classList.add('hidden');
-    tarjeta.classList.remove('border-emerald-400', 'bg-emerald-50');
-    tarjeta.classList.add('border-slate-200', 'bg-slate-50');
-    return;
-  }
-  precio.textContent = quetzales(tarifaVuelo + cargo);
-  precio.classList.remove('hidden');
-  detalle.textContent = cargo > 0
-    ? `Tarifa ${quetzales(tarifaVuelo)} + asiento ${quetzales(cargo)}`
-    : 'La tarifa del vuelo ya incluye este asiento';
-  detalle.classList.remove('hidden');
-  fila.classList.remove('hidden');
-  badge.classList.remove('hidden');
-  tarjeta.classList.remove('border-slate-200', 'bg-slate-50');
-  tarjeta.classList.add('border-emerald-400', 'bg-emerald-50');
 };
 
 const pintarAsientos = (asientos) => {
@@ -177,8 +121,8 @@ const pintarAsientos = (asientos) => {
       const precio = Number(asiento.precio_adicional) || 0;
       const categoria = escapar(asiento.categoria || 'Básica');
       const tono = (clasesPorCategoria[asiento.categoria] || clasesPorCategoria['Básica']).join(' ');
-      if (asientosGuardados().some((item) => item.codigo === asiento.numero_asiento)) {
-        return `<button type="button" disabled class="flex h-10 w-10 shrink-0 cursor-not-allowed items-center justify-center rounded-xl border-2 border-emerald-400 bg-emerald-500 text-xs font-semibold text-white" aria-label="Asiento ${codigo}, ya elegido">${codigo}</button>`;
+      if (asientosElegidos().some((item) => item.codigo === asiento.numero_asiento)) {
+        return `<button type="button" class="asiento-disponible asiento-marcado flex h-10 w-10 shrink-0 scale-105 items-center justify-center rounded-xl border-2 border-emerald-400 bg-emerald-500 text-xs font-semibold text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]" data-codigo="${codigo}" data-precio="${precio}" data-categoria="${categoria}" aria-pressed="true" aria-label="Asiento ${codigo}, seleccionado. Pulsa para quitarlo.">${codigo}</button>`;
       }
       if (estaOcupado(asiento)) {
         return `<button type="button" disabled class="flex h-10 w-10 shrink-0 cursor-not-allowed items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-xs font-semibold text-slate-400 opacity-60" aria-label="Asiento ${codigo}, ocupado"><span aria-hidden="true">×</span></button>`;
@@ -190,56 +134,9 @@ const pintarAsientos = (asientos) => {
     return `${franja}<div class="flex w-max items-center justify-center gap-1.5">${celdas[0]}${celdas[1]}${celdas[2]}<span class="w-6 shrink-0 text-center text-xs text-slate-400">${fila}</span>${celdas[3]}${celdas[4]}${celdas[5]}</div>`;
   }).join('');
 
-  const categorias = [...new Set(asientos.map((asiento) => asiento.categoria).filter(Boolean))];
-  if (categorias.length === 1) {
-    mostrarCategoria(categorias[0]);
-  }
-
   contenedor.querySelectorAll('.asiento-disponible').forEach((boton) => {
-    boton.addEventListener('click', () => {
-      contenedor.querySelectorAll('.asiento-disponible.asiento-marcado').forEach(marcarDisponible);
-      marcarSeleccionado(boton);
-      asientoElegido = {
-        codigo: boton.dataset.codigo,
-        precioAdicional: Number(boton.dataset.precio) || 0,
-        categoria: boton.dataset.categoria || '',
-        asientoId: null,
-      };
-      const asiento = asientos.find((item) => item.numero_asiento === boton.dataset.codigo);
-      if (asiento) {
-        asientoElegido.asientoId = asiento.id;
-        asientoElegido.precioAdicional = Number(asiento.precio_adicional) || 0;
-        asientoElegido.categoria = asiento.categoria || asientoElegido.categoria;
-      }
-      actualizarResumen(asientoElegido.codigo, asientoElegido.categoria, asientoElegido.precioAdicional);
-    });
+    boton.addEventListener('click', () => elegirAsiento(boton, asientos));
   });
-
-  const codigoActivo = asientoElegido?.codigo;
-  const botonActivo = codigoActivo
-    ? contenedor.querySelector(`.asiento-disponible[data-codigo="${CSS.escape(codigoActivo)}"]`)
-    : null;
-
-  if (botonActivo) {
-    marcarSeleccionado(botonActivo);
-    return;
-  }
-
-  if (codigoActivo) {
-    asientoElegido = null;
-    actualizarResumen('', '');
-  }
-
-  if (asientosGuardados().length) {
-    return;
-  }
-  const propio = asientos.find((asiento) => asiento.propio);
-  const botonPropio = propio
-    ? contenedor.querySelector(`.asiento-disponible[data-codigo="${CSS.escape(propio.numero_asiento)}"]`)
-    : null;
-  if (botonPropio) {
-    botonPropio.click();
-  }
 };
 
 const cargarAsientos = async () => {
@@ -253,14 +150,33 @@ const cargarAsientos = async () => {
     return;
   }
 
+  const version = ++mapaVersion;
   const llave = localStorage.getItem('bloqueoLlave') || '';
   const respuesta = await fetch(`/api/vuelos/${vueloId}/asientos`, {
     headers: llave ? { 'x-bloqueo-llave': llave } : {},
   });
+  if (version !== mapaVersion) {
+    return;
+  }
   if (!respuesta.ok) {
     throw new Error('No se pudieron cargar los asientos');
   }
-  pintarAsientos(await respuesta.json());
+  const asientos = await respuesta.json();
+  if (version !== mapaVersion) {
+    return;
+  }
+  const vigentes = new Set(asientos.filter((asiento) => !estaOcupado(asiento)).map((asiento) => asiento.numero_asiento));
+  const puestos = cuposPasajeros();
+  const perdidos = puestos.filter((item) => item && !vigentes.has(item.codigo));
+  if (perdidos.length) {
+    guardarSeleccion(puestos.map((item) => (item && vigentes.has(item.codigo) ? item : null)));
+    mostrarResumen();
+    const texto = perdidos.length === 1
+      ? `El asiento ${perdidos[0].codigo} ya no está reservado. Elige otro.`
+      : 'Algunos asientos ya no están reservados. Elige de nuevo.';
+    Swal.fire({ icon: 'warning', title: 'Asiento liberado', text: texto });
+  }
+  pintarAsientos(asientos);
 };
 
 const viajerosSentados = () => {
@@ -274,35 +190,115 @@ const asientosGuardados = () => {
   return Array.isArray(lista) ? lista : [];
 };
 
-const asientosCompletos = () => asientosGuardados().length >= viajerosSentados().length && viajerosSentados().length > 0;
-
-const mostrarPasajero = () => {
+const cuposPasajeros = () => {
   const sentados = viajerosSentados();
-  const guardados = asientosGuardados().length;
-  const completo = guardados >= sentados.length && sentados.length > 0;
-  const indice = completo ? sentados.length - 1 : guardados;
-  const actual = sentados[indice];
-  const nombre = actual ? [actual.nombre, actual.apellido].filter(Boolean).join(' ') : '';
+  const cupos = sentados.map(() => null);
+  asientosGuardados().forEach((item, indice) => {
+    if (!item?.codigo) {
+      return;
+    }
+    const puesto = Number.isInteger(item.pasajero) ? item.pasajero : indice;
+    if (puesto >= 0 && puesto < cupos.length && !cupos[puesto]) {
+      cupos[puesto] = item;
+    }
+  });
+  return cupos;
+};
+
+const asientosElegidos = () => cuposPasajeros().filter(Boolean);
+
+const asientosCompletos = () => {
+  const cupos = cuposPasajeros();
+  return cupos.length > 0 && cupos.every(Boolean);
+};
+
+const guardarSeleccion = (lista) => {
+  const cupos = Array.isArray(lista) ? lista : [];
+  localStorage.setItem('datosAsientos', JSON.stringify(cupos));
+  const primero = cupos.find(Boolean);
+  if (primero) {
+    localStorage.setItem('datosAsiento', JSON.stringify(primero));
+    return;
+  }
+  localStorage.removeItem('datosAsiento');
+};
+
+const nombreViajero = (viajero) => [viajero?.nombre, viajero?.apellido].filter(Boolean).join(' ') || 'Pasajero';
+
+const mostrarResumen = () => {
+  const sentados = viajerosSentados();
+  const guardados = cuposPasajeros();
   const datos = leerJson('datosPasajeros');
   const infantes = Array.isArray(datos.viajeros) ? datos.viajeros.filter((viajero) => viajero.tipo === 'infante').length : 0;
-  const elemento = document.getElementById('nombre-pasajero');
-  const progreso = sentados.length ? `asiento ${indice + 1} de ${sentados.length}` : '';
-  const regazo = infantes ? (infantes === 1 ? ' El infante va en el regazo y no elige asiento.' : ` Los ${infantes} infantes van en el regazo y no eligen asiento.`) : '';
-  elemento.textContent = nombre ? `${nombre} · ${progreso}.${regazo}` : 'Pasajero';
-  elemento.title = nombre;
-  const boton = document.getElementById('btnConfirmarAsiento');
-  if (boton && sentados.length) {
-    boton.textContent = indice + 1 >= sentados.length ? 'Continuar al pago' : 'Siguiente pasajero';
+  const nota = document.getElementById('nota-infantes');
+  if (infantes) {
+    nota.textContent = infantes === 1
+      ? 'El infante va en el regazo y no elige asiento.'
+      : `Los ${infantes} infantes van en el regazo y no eligen asiento.`;
+    nota.classList.remove('hidden');
+  } else {
+    nota.textContent = '';
+    nota.classList.add('hidden');
   }
+
+  document.getElementById('lista-pasajeros').innerHTML = sentados.map((viajero, indice) => {
+    const asiento = guardados[indice];
+    const nombre = escapar(nombreViajero(viajero));
+    if (!asiento) {
+      return `<li class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+        <div class="flex min-w-0 items-start gap-2">
+          <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">${indice + 1}</span>
+          <div class="min-w-0">
+            <p class="truncate text-sm font-medium text-slate-800">${nombre}</p>
+            <p class="text-xs text-slate-500">Elige un asiento</p>
+          </div>
+        </div>
+      </li>`;
+    }
+    const cargo = Number(asiento.precioAdicional) || 0;
+    const detalle = cargo > 0
+      ? `Tarifa ${quetzales(tarifaVuelo)} + asiento ${quetzales(cargo)}`
+      : 'La tarifa del vuelo ya incluye este asiento';
+    return `<li class="rounded-xl border border-emerald-400 bg-emerald-50 px-3 py-2.5">
+      <div class="flex min-w-0 items-start gap-2">
+        <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-700">${indice + 1}</span>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-medium text-slate-800">${nombre}</p>
+          <div class="mt-1 flex items-start justify-between gap-3">
+            <p class="min-w-0 text-sm font-semibold text-slate-800">Asiento ${escapar(asiento.codigo)}</p>
+            <span class="shrink-0 rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-semibold leading-4 text-white">Seleccionado</span>
+          </div>
+          <div class="mt-1 flex items-start justify-between gap-3">
+            <p class="min-w-0 text-xs font-medium text-slate-600">${escapar(asiento.categoria || '')}</p>
+            <p class="shrink-0 whitespace-nowrap text-sm font-semibold text-slate-800">${quetzales(tarifaVuelo + cargo)}</p>
+          </div>
+          <p class="mt-0.5 text-xs leading-4 text-slate-500">${detalle}</p>
+          <button type="button" data-quitar="${escapar(asiento.codigo)}" class="mt-2 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50" aria-label="Quitar asiento ${escapar(asiento.codigo)} de ${nombre}">Quitar</button>
+        </div>
+      </div>
+    </li>`;
+  }).join('');
+
+  const boton = document.getElementById('btnConfirmarAsiento');
+  boton.disabled = !asientosCompletos();
+};
+
+const asegurarLlave = () => {
+  let llave = localStorage.getItem('bloqueoLlave');
+  if (!/^[A-Za-z0-9-]{16,64}$/.test(llave || '')) {
+    llave = crypto.randomUUID();
+    localStorage.setItem('bloqueoLlave', llave);
+  }
+  return llave;
 };
 
 const liberarAsiento = async (asientoId) => {
   const busqueda = leerBusqueda();
   const llave = localStorage.getItem('bloqueoLlave') || '';
   if (!asientoId || !llave) {
-    return;
+    return null;
   }
-  await fetch('/api/asientos/liberar', {
+  return fetch('/api/asientos/liberar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
     body: JSON.stringify({
@@ -313,122 +309,172 @@ const liberarAsiento = async (asientoId) => {
   });
 };
 
+const liberarTodos = async () => {
+  const busqueda = leerBusqueda();
+  const llave = localStorage.getItem('bloqueoLlave') || '';
+  if (!llave || !busqueda.vuelo_id) {
+    return;
+  }
+  await fetch('/api/asientos/liberar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
+    body: JSON.stringify({
+      vuelo_id: Number(busqueda.vuelo_id),
+      llave,
+      todos: true,
+    }),
+  });
+};
+
+const quitarAsiento = async (codigo) => {
+  if (seleccionEnCurso || !codigo) {
+    return;
+  }
+  const guardados = cuposPasajeros();
+  const puesto = guardados.findIndex((item) => item?.codigo === codigo);
+  if (puesto === -1) {
+    return;
+  }
+  seleccionEnCurso = true;
+  mapaVersion += 1;
+  try {
+    const liberacion = await liberarAsiento(guardados[puesto].asientoId);
+    if (liberacion && !liberacion.ok && liberacion.status !== 409) {
+      throw new Error('No se pudo liberar el asiento');
+    }
+    guardados[puesto] = null;
+    guardarSeleccion(guardados);
+    mostrarResumen();
+    await cargarAsientos();
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'No se pudo actualizar', text: 'Intenta de nuevo.' });
+  } finally {
+    seleccionEnCurso = false;
+  }
+};
+
+const elegirAsiento = async (boton, asientos) => {
+  if (seleccionEnCurso) {
+    return;
+  }
+  const codigo = boton.dataset.codigo;
+  const guardados = cuposPasajeros();
+  const puestoExistente = guardados.findIndex((item) => item?.codigo === codigo);
+  if (puestoExistente >= 0) {
+    await quitarAsiento(codigo);
+    return;
+  }
+  if (guardados.every(Boolean)) {
+    Swal.fire({
+      icon: 'info',
+      title: 'Asientos completos',
+      text: 'Ya elegiste un asiento para cada pasajero. Quita uno si quieres cambiarlo.',
+    });
+    return;
+  }
+
+  const asiento = asientos.find((item) => item.numero_asiento === codigo);
+  if (!asiento) {
+    return;
+  }
+
+  seleccionEnCurso = true;
+  mapaVersion += 1;
+  try {
+    const llave = asegurarLlave();
+    const busqueda = leerBusqueda();
+    const respuesta = await fetch('/api/asientos/bloquear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
+      body: JSON.stringify({
+        asiento_id: asiento.id,
+        vuelo_id: Number(busqueda.vuelo_id),
+        llave,
+        conservar_ids: guardados.filter(Boolean).map((item) => item.asientoId),
+      }),
+    });
+    const data = await respuesta.json().catch(() => ({}));
+    if (!respuesta.ok) {
+      await cargarAsientos();
+      Swal.fire({
+        icon: 'error',
+        title: 'Asiento no disponible',
+        text: data.mensaje || 'Ese asiento acaba de ser reservado. Elige otro.',
+      });
+      return;
+    }
+
+    const puestoLibre = guardados.findIndex((item) => !item);
+    guardados[puestoLibre] = {
+      codigo,
+      precioAdicional: Number(asiento.precio_adicional) || 0,
+      categoria: asiento.categoria || boton.dataset.categoria || '',
+      asientoId: asiento.id,
+      segundos: data.segundos,
+      pasajero: puestoLibre,
+    };
+    guardarSeleccion(guardados);
+    mostrarResumen();
+    await cargarAsientos();
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'No se pudo actualizar', text: 'Intenta de nuevo.' });
+  } finally {
+    seleccionEnCurso = false;
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   const sentados = viajerosSentados();
   if (!sentados.length) {
     window.location.replace('/pasajeros.html');
     return;
   }
-  mostrarPasajero();
+  mostrarResumen();
 
-  document.getElementById('btnConfirmarAsiento').addEventListener('click', async (evento) => {
-    evento.preventDefault();
-
-    if (asientosCompletos()) {
-      window.location.href = '/pago.html';
+  document.getElementById('lista-pasajeros').addEventListener('click', (evento) => {
+    const boton = evento.target.closest('[data-quitar]');
+    if (!boton) {
       return;
     }
+    quitarAsiento(boton.dataset.quitar);
+  });
 
-    if (!asientoElegido) {
-      document.getElementById('asiento-seleccionado').textContent = 'Elige un asiento disponible';
-      Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Por favor completa todos los campos' });
+  document.getElementById('btnConfirmarAsiento').addEventListener('click', () => {
+    if (!asientosCompletos()) {
       return;
     }
-
-    const boton = evento.currentTarget;
-    boton.classList.add('pointer-events-none', 'opacity-70');
-
-    try {
-      let llave = localStorage.getItem('bloqueoLlave');
-      if (!/^[A-Za-z0-9-]{16,64}$/.test(llave || '')) {
-        llave = crypto.randomUUID();
-        localStorage.setItem('bloqueoLlave', llave);
-      }
-
-      const busqueda = leerBusqueda();
-      const previos = asientosGuardados();
-      const respuesta = await fetch('/api/asientos/bloquear', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
-        body: JSON.stringify({
-          asiento_id: asientoElegido.asientoId,
-          vuelo_id: Number(busqueda.vuelo_id),
-          llave,
-          conservar_ids: previos.map((item) => item.asientoId),
-        }),
-      });
-      const data = await respuesta.json();
-
-      if (!respuesta.ok) {
-        asientoElegido = null;
-        actualizarResumen('', '');
-        await cargarAsientos();
-        Swal.fire({
-          icon: 'error',
-          title: 'Asiento no disponible',
-          text: data.mensaje || 'Ese asiento acaba de ser reservado. Elige otro.',
-        });
-        return;
-      }
-
-      const elegido = {
-        codigo: asientoElegido.codigo,
-        precioAdicional: asientoElegido.precioAdicional,
-        categoria: asientoElegido.categoria,
-        asientoId: asientoElegido.asientoId,
-        segundos: data.segundos,
-      };
-      const acumulados = [...previos, elegido];
-      localStorage.setItem('datosAsientos', JSON.stringify(acumulados));
-      localStorage.setItem('datosAsiento', JSON.stringify(acumulados[0]));
-
-      if (!localStorage.getItem('token')) {
-        localStorage.setItem('redirectAfterLogin', '/pago.html');
-        window.location.replace('/login.html');
-        return;
-      }
-
-      if (acumulados.length < viajerosSentados().length) {
-        asientoElegido = null;
-        actualizarResumen('', '');
-        mostrarPasajero();
-        await cargarAsientos();
-        return;
-      }
-
-      window.location.href = '/pago.html';
-    } catch (error) {
-      Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo reservar el asiento' });
-    } finally {
-      boton.classList.remove('pointer-events-none', 'opacity-70');
+    if (!localStorage.getItem('token')) {
+      localStorage.setItem('redirectAfterLogin', '/pago.html');
+      window.location.replace('/login.html');
+      return;
     }
+    window.location.href = '/pago.html';
   });
 
   document.getElementById('btnVolver').addEventListener('click', async (evento) => {
     evento.preventDefault();
-    const guardados = asientosGuardados();
-    if (guardados.length) {
-      const ultimo = guardados[guardados.length - 1];
-      await liberarAsiento(ultimo.asientoId);
-      const restantes = guardados.slice(0, -1);
-      localStorage.setItem('datosAsientos', JSON.stringify(restantes));
-      if (restantes[0]) {
-        localStorage.setItem('datosAsiento', JSON.stringify(restantes[0]));
-      } else {
-        localStorage.removeItem('datosAsiento');
-      }
-      asientoElegido = null;
-      actualizarResumen('', '');
-      mostrarPasajero();
-      await cargarAsientos();
+    if (seleccionEnCurso) {
       return;
     }
+    seleccionEnCurso = true;
+    mapaVersion += 1;
+    try {
+      await liberarTodos();
+    } catch (error) {
+      /* La reserva temporal vence sola si la liberación no responde. */
+    }
+    guardarSeleccion([]);
     window.location.href = '/pasajeros.html';
   });
 
-  const mostrarMapa = () => cargarAsientos().catch(() => {
-    document.getElementById('contenedor-asientos').innerHTML = '<p class="text-center text-sm text-slate-500">No se pudieron cargar los asientos.</p>';
-  });
+  const mostrarMapa = () => {
+    if (seleccionEnCurso) {
+      return;
+    }
+    cargarAsientos().catch(() => {
+      document.getElementById('contenedor-asientos').innerHTML = '<p class="text-center text-sm text-slate-500">No se pudieron cargar los asientos.</p>';
+    });
+  };
 
   mostrarMapa();
   setInterval(mostrarMapa, 4000);

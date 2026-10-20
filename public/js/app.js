@@ -7,9 +7,10 @@ const escaparHtml = (valor) => String(valor ?? '')
   .replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;');
 
-const formatearFecha = (fecha) => new Date(fecha).toLocaleString('es-MX', {
+const formatearFecha = (fecha) => new Date(fecha).toLocaleString('es-GT', {
   dateStyle: 'medium',
   timeStyle: 'short',
+  timeZone: 'America/Guatemala',
 });
 
 const formatearSaldo = (saldo) => {
@@ -46,9 +47,13 @@ const guardarSesion = (token, usuario) => {
 const paginaDeRol = (rol) => (rol === 'admin' ? 'admin.html' : 'cliente.html');
 
 const cerrarSesion = () => {
+  ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave', 'redirectAfterLogin', 'reservaConfirmada', 'usuario_id', 'rol', 'nombre'].forEach((clave) => {
+    localStorage.removeItem(clave);
+    sessionStorage.removeItem(clave);
+  });
   localStorage.removeItem(CLAVE_TOKEN);
   localStorage.removeItem(CLAVE_USUARIO);
-  window.location.replace('login.html');
+  window.location.replace('/index.html');
 };
 
 const pintarNavbar = (sesion) => {

@@ -18,33 +18,96 @@ const leerJson = (clave, vacio = {}) => {
   }
 };
 
-const formatearDia = (valor) => {
-  const coincidencia = String(valor ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!coincidencia) {
-    return '';
-  }
-  const dia = Number(coincidencia[3]);
-  const mes = meses[Number(coincidencia[2]) - 1];
-  return `${dia} ${mes} ${coincidencia[1]}`;
+const ZONA = 'America/Guatemala';
+
+const partesDeInstante = (fecha) => {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: ZONA,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(fecha);
+  const tomar = (tipo) => partes.find((parte) => parte.type === tipo)?.value ?? '';
+  return {
+    anio: tomar('year'),
+    mes: Number(tomar('month')),
+    dia: Number(tomar('day')),
+    hora: tomar('hour') === '24' ? '00' : tomar('hour'),
+    minuto: tomar('minute'),
+  };
 };
 
-const formatearSalida = (valor) => {
-  const coincidencia = String(valor ?? '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!coincidencia) {
-    return '';
+const partesGuatemala = (valor) => {
+  if (valor instanceof Date) {
+    return Number.isNaN(valor.getTime()) ? null : partesDeInstante(valor);
   }
-  const dia = Number(coincidencia[3]);
-  const mes = meses[Number(coincidencia[2]) - 1];
-  return `${dia} ${mes} ${coincidencia[1]}, ${coincidencia[4]}:${coincidencia[5]}`;
-};
 
-const formatearFecha = (valor) => {
-  const fecha = new Date(valor);
+  const texto = String(valor ?? '').trim();
+  const soloDia = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (soloDia) {
+    return { anio: soloDia[1], mes: Number(soloDia[2]), dia: Number(soloDia[3]), hora: '', minuto: '' };
+  }
+
+  const fecha = new Date(texto);
   if (Number.isNaN(fecha.getTime())) {
+    return null;
+  }
+  return partesDeInstante(fecha);
+};
+
+const fechaCalendario = (valor) => {
+  const partes = partesGuatemala(valor);
+  if (!partes) {
     return '';
   }
   const dosDigitos = (numero) => String(numero).padStart(2, '0');
-  return `${fecha.getDate()} ${meses[fecha.getMonth()]} ${fecha.getFullYear()}, ${dosDigitos(fecha.getHours())}:${dosDigitos(fecha.getMinutes())}`;
+  return `${partes.anio}-${dosDigitos(partes.mes)}-${dosDigitos(partes.dia)}`;
+};
+
+const textoDia = (partes) => `${partes.dia} ${meses[partes.mes - 1]} ${partes.anio}`;
+
+const formatearDia = (valor) => {
+  const partes = partesGuatemala(valor);
+  return partes ? textoDia(partes) : '';
+};
+
+const formatearSalida = (valor) => {
+  const partes = partesGuatemala(valor);
+  if (!partes) {
+    return '';
+  }
+  if (!partes.hora) {
+    return textoDia(partes);
+  }
+  return `${textoDia(partes)}, ${partes.hora}:${partes.minuto}`;
+};
+
+const formatearFecha = (valor) => formatearSalida(valor);
+
+const limpiarDatosPersonales = () => {
+  const llave = localStorage.getItem('bloqueoLlave');
+  let vueloId = 0;
+  try {
+    vueloId = Number(JSON.parse(localStorage.getItem('busquedaVuelo') || '{}').vuelo_id) || 0;
+  } catch {
+    vueloId = 0;
+  }
+  if (llave && vueloId) {
+    fetch('/api/asientos/liberar', {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
+      body: JSON.stringify({ vuelo_id: vueloId, llave, todos: true }),
+    }).catch(() => {});
+  }
+
+  ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave', 'redirectAfterLogin', 'reservaConfirmada'].forEach((clave) => {
+    localStorage.removeItem(clave);
+    sessionStorage.removeItem(clave);
+  });
 };
 
 const autorizacion = () => {
@@ -102,9 +165,12 @@ Object.assign(window, {
   quetzales,
   sinAcentos,
   leerJson,
+  partesGuatemala,
+  fechaCalendario,
   formatearDia,
   formatearSalida,
   formatearFecha,
+  limpiarDatosPersonales,
   autorizacion,
   descargarBoleto,
 });

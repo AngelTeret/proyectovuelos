@@ -13,12 +13,12 @@ const miniatura = (url) => {
 };
 
 const aDatetimeLocal = (valor) => {
-  const fecha = new Date(valor);
-  if (Number.isNaN(fecha.getTime())) {
+  const partes = partesGuatemala(valor);
+  if (!partes?.hora) {
     return '';
   }
   const dosDigitos = (numero) => String(numero).padStart(2, '0');
-  return `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}T${dosDigitos(fecha.getHours())}:${dosDigitos(fecha.getMinutes())}`;
+  return `${partes.anio}-${dosDigitos(partes.mes)}-${dosDigitos(partes.dia)}T${partes.hora}:${partes.minuto}`;
 };
 
 let vuelosCargados = [];
@@ -103,11 +103,7 @@ const llenarCapacidades = () => {
   }
 };
 
-const fechaMinimaLocal = () => {
-  const hoy = new Date();
-  const dosDigitos = (numero) => String(numero).padStart(2, '0');
-  return `${hoy.getFullYear()}-${dosDigitos(hoy.getMonth() + 1)}-${dosDigitos(hoy.getDate())}T00:00`;
-};
+const fechaMinimaLocal = () => `${fechaCalendario(new Date())}T00:00`;
 
 const bloquearFechasPasadas = () => {
   const minimo = fechaMinimaLocal();

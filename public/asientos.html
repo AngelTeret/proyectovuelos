@@ -2,9 +2,10 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <link rel="icon" href="/imagenes/isotipo.svg" type="image/svg+xml">
   <script src="/js/asientos.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Selecciona tus asientos - Sistema de Vuelos</title>
+  <title>Selecciona tus asientos - Quetzal Airlines</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,7 +37,7 @@
         <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
           <section class="min-w-0 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
             <h1 class="text-lg font-semibold text-slate-900">Selecciona tus asientos</h1>
-            <p class="mt-1 text-sm text-slate-500">Elige el asiento para el pasajero de tu reserva.</p>
+            <p class="mt-1 text-sm text-slate-500">Elige un asiento por pasajero. Al seleccionarlo queda reservado y puedes elegir el siguiente.</p>
             <div id="mapa-asientos" class="mx-auto mt-6 max-h-[min(36rem,70dvh)] w-full max-w-md overflow-auto px-1">
               <div class="relative mx-auto w-max rounded-t-[100px] border border-slate-200 bg-slate-50/50 px-5 pb-6 pt-8 shadow-inner">
                 <div class="mb-3 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-400">
@@ -59,7 +60,7 @@
               <span class="inline-flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-sm"></span>Seleccionado</span>
             </div>
             <div class="hidden" aria-hidden="true">
-              <span class="rounded-xl bg-indigo-900 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-800 hover:shadow-md bg-blue-600 hover:bg-blue-700 bg-slate-300 text-slate-700 hover:bg-slate-400 scale-105 border-2 border-emerald-400 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] bg-gradient-to-r from-indigo-900 to-slate-900 bg-indigo-500/20 text-indigo-300 from-blue-600 to-blue-800 bg-white/20 rounded-full bg-slate-200 opacity-60 cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 bg-emerald-50"></span>
+              <span class="rounded-xl bg-indigo-900 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-indigo-800 hover:shadow-md bg-blue-600 hover:bg-blue-700 bg-slate-300 text-slate-700 hover:bg-slate-400 scale-105 border-2 border-emerald-400 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] bg-gradient-to-r from-indigo-900 to-slate-900 bg-indigo-500/20 text-indigo-300 from-blue-600 to-blue-800 bg-white/20 rounded-full bg-slate-200 opacity-60 cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400 bg-emerald-50 mt-2 border-red-200 px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"></span>
             </div>
           </section>
 
@@ -72,26 +73,9 @@
 
             <section class="min-w-0 overflow-hidden rounded-2xl bg-white p-4 shadow-sm sm:p-5">
               <h2 class="text-base font-semibold text-slate-900">Resumen de asientos</h2>
-              <div class="mt-4 border-t border-slate-100 pt-4">
-                <div class="flex min-w-0 items-start gap-2">
-                  <span class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">1</span>
-                  <p id="nombre-pasajero" class="min-w-0 flex-1 break-words text-sm font-medium leading-5 text-slate-800" title="">Pasajero</p>
-                </div>
-                <div id="tarjeta-asiento" class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                  <div class="flex items-start justify-between gap-3">
-                    <p id="asiento-seleccionado" class="min-w-0 text-sm font-semibold leading-5 text-slate-800">Elige un asiento</p>
-                    <span id="badge-seleccionado" class="hidden shrink-0 rounded-full bg-emerald-500 px-2.5 py-0.5 text-[11px] font-semibold leading-4 text-white">Seleccionado</span>
-                  </div>
-                  <div id="detalle-precio" class="mt-1 hidden">
-                    <div class="flex items-start justify-between gap-3">
-                      <p id="categoria-asiento" class="hidden min-w-0 text-xs font-medium leading-4 text-slate-600"></p>
-                      <p id="precio-extra" class="hidden shrink-0 whitespace-nowrap text-sm font-semibold leading-5 text-slate-800"></p>
-                    </div>
-                    <p id="detalle-tarifa" class="mt-0.5 hidden text-xs leading-4 text-slate-500"></p>
-                  </div>
-                </div>
-              </div>
-              <a id="btnConfirmarAsiento" href="#" class="mt-4 block w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-center text-sm font-medium text-white shadow-md transition-all hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg">Confirmar selección</a>
+              <p id="nota-infantes" class="mt-1 hidden text-xs leading-4 text-slate-500"></p>
+              <ul id="lista-pasajeros" class="mt-4 space-y-3 border-t border-slate-100 pt-4"></ul>
+              <button id="btnConfirmarAsiento" type="button" disabled class="mt-4 block w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 text-center text-sm font-medium text-white shadow-md transition-all hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 disabled:shadow-none">Continuar al pago</button>
               <a id="btnVolver" href="/pasajeros.html" class="mt-2 block w-full rounded-xl border border-slate-200 py-3 text-center text-sm font-medium text-slate-600 hover:bg-slate-50">Volver</a>
             </section>
           </div>
