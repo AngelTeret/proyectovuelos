@@ -14,11 +14,34 @@ const conteo = { adulto: 1, nino: 0, infante: 0 };
 
 const etiquetaCodigo = (item) => `${item.pais} +${item.codigo}`;
 
+const idDeSesion = () => {
+  const token = localStorage.getItem('token') || '';
+  const parte = token.split('.')[1];
+  if (parte) {
+    try {
+      const json = JSON.parse(atob(parte.replace(/-/g, '+').replace(/_/g, '/')));
+      if (json?.id) {
+        return String(json.id);
+      }
+    } catch {
+      /* El id guardado cubre un token que no se puede leer. */
+    }
+  }
+  return localStorage.getItem('usuario_id') || '';
+};
+
+const borrarBorrador = () => {
+  sessionStorage.removeItem(CLAVE_BORRADOR);
+  localStorage.removeItem(CLAVE_BORRADOR);
+};
+
 const guardarBorrador = () => {
   if (!borradorActivo) {
     return;
   }
+  const usuarioId = idDeSesion();
   sessionStorage.setItem(CLAVE_BORRADOR, JSON.stringify({
+    usuarioId,
     conteo,
     email: document.getElementById('email').value,
     telefono: document.getElementById('telefono').value,
@@ -26,14 +49,27 @@ const guardarBorrador = () => {
     etiquetaCodigo: document.getElementById('codigo-telefono').value,
     viajeros: leerTarjetas(),
   }));
+  localStorage.removeItem(CLAVE_BORRADOR);
 };
 
 const leerBorrador = () => {
+  let borrador = null;
   try {
-    return JSON.parse(sessionStorage.getItem(CLAVE_BORRADOR)) || null;
+    borrador = JSON.parse(sessionStorage.getItem(CLAVE_BORRADOR) || localStorage.getItem(CLAVE_BORRADOR) || 'null');
   } catch {
+    borrador = null;
+  }
+  if (!borrador) {
     return null;
   }
+  const dueno = borrador.usuarioId ? String(borrador.usuarioId) : '';
+  const actual = idDeSesion();
+  const esDeOtraCuenta = (dueno && dueno !== actual) || (!dueno && actual);
+  if (esDeOtraCuenta) {
+    borrarBorrador();
+    return null;
+  }
+  return borrador;
 };
 
 const prepararCodigoTelefono = async () => {

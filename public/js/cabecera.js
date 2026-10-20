@@ -130,11 +130,14 @@ if (iniciarSesion && cerrarSesion) {
 
 if (cerrarSesion) {
   cerrarSesion.addEventListener('click', () => {
+    if (typeof limpiarDatosPersonales === 'function') {
+      limpiarDatosPersonales();
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('rol');
     localStorage.removeItem('nombre');
     localStorage.removeItem('usuario_id');
-    window.location.replace('/login.html');
+    window.location.replace('/index.html');
   });
 }
 

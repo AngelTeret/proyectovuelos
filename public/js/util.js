@@ -87,6 +87,29 @@ const formatearSalida = (valor) => {
 
 const formatearFecha = (valor) => formatearSalida(valor);
 
+const limpiarDatosPersonales = () => {
+  const llave = localStorage.getItem('bloqueoLlave');
+  let vueloId = 0;
+  try {
+    vueloId = Number(JSON.parse(localStorage.getItem('busquedaVuelo') || '{}').vuelo_id) || 0;
+  } catch {
+    vueloId = 0;
+  }
+  if (llave && vueloId) {
+    fetch('/api/asientos/liberar', {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
+      body: JSON.stringify({ vuelo_id: vueloId, llave, todos: true }),
+    }).catch(() => {});
+  }
+
+  ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave', 'redirectAfterLogin', 'reservaConfirmada'].forEach((clave) => {
+    localStorage.removeItem(clave);
+    sessionStorage.removeItem(clave);
+  });
+};
+
 const autorizacion = () => {
   const token = localStorage.getItem('token');
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -147,6 +170,7 @@ Object.assign(window, {
   formatearDia,
   formatearSalida,
   formatearFecha,
+  limpiarDatosPersonales,
   autorizacion,
   descargarBoleto,
 });
