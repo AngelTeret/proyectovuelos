@@ -19,9 +19,11 @@ document.getElementById('form-registro').addEventListener('submit', async (event
     }
 
     Swal.fire({
-      icon: 'success',
-      title: '¡Bienvenido!',
-      text: 'Cuenta creada con éxito (Bono de Q15,000 acreditado)',
+      icon: data.correo_enviado ? 'success' : 'warning',
+      title: data.correo_enviado ? 'Revisa tu correo' : 'Cuenta pendiente',
+      text: data.correo_enviado
+        ? 'Te enviamos un enlace para confirmar la cuenta. El bono de Q15,000 se acredita cuando la confirmes.'
+        : 'La cuenta quedó pendiente, pero no pudimos enviar el correo. Desde el inicio de sesión puedes pedir otro enlace.',
     }).then(() => {
       window.location.replace('/login.html');
     });

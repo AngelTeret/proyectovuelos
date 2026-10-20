@@ -326,3 +326,46 @@ export const generarTemplateCancelacion = (datos = {}) => {
 </body>
 </html>`;
 };
+
+export const generarTemplateVerificacion = ({ nombre, enlace }) => {
+  const persona = texto(nombre) || 'viajero';
+  const url = escapar(enlace);
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirma tu cuenta - Quetzal Airlines</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td style="background:#05402d;padding:22px 28px;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#d1fae5;">Quetzal Airlines</p>
+              <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#ffffff;">Confirma tu cuenta</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="height:4px;background:#8b1c1c;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:28px;font-family:Arial,Helvetica,sans-serif;">
+              <p style="margin:0;font-size:16px;line-height:1.5;color:#111827;">Hola ${escapar(persona)},</p>
+              <p style="margin:12px 0 0 0;font-size:15px;line-height:1.6;color:#374151;">Para terminar el registro, confirma que este correo es tuyo. El enlace vence en 24 horas. Al confirmarlo, el bono de bienvenida queda en tu billetera.</p>
+              <p style="margin:24px 0 0 0;">
+                <a href="${url}" style="display:inline-block;background:#05402d;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:12px 18px;border-radius:10px;">Confirmar cuenta</a>
+              </p>
+              <p style="margin:20px 0 0 0;font-size:12px;line-height:1.5;color:#6b7280;">Si el botón no abre, copia este enlace en el navegador:<br>${url}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};

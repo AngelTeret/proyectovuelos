@@ -64,7 +64,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email VARCHAR(100) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   rol ENUM('admin', 'cliente', 'mantenimiento', 'despacho') DEFAULT 'cliente',
-  saldo_virtual DECIMAL(10,2) DEFAULT 1000.00
+  saldo_virtual DECIMAL(10,2) DEFAULT 1000.00,
+  email_verificado TINYINT(1) NOT NULL DEFAULT 0,
+  token_verificacion CHAR(64) NULL,
+  token_expira DATETIME NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS reservas (
