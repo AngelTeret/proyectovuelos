@@ -1,34 +1,150 @@
+import { createHash, randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { buscarPorEmail, buscarPorId, crearUsuario } from '../models/usuario.model.js';
+import {
+  buscarPorEmail,
+  buscarPorId,
+  confirmarCorreo,
+  crearUsuarioPendiente,
+  prepararReenvio,
+  renovarVerificacion,
+} from '../models/usuario.model.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
+import { enviarBoleto } from '../services/emailService.js';
+import { generarTemplateVerificacion } from '../services/ticketTemplate.js';
+
+const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+const normalizarCorreo = (valor) => String(valor || '').trim().toLowerCase();
+
+const correoValido = (email) => CORREO.test(email) && email.length <= 100;
+
+const nuevoToken = () => {
+  const token = randomBytes(32).toString('hex');
+  const hash = createHash('sha256').update(token).digest('hex');
+  return { token, hash };
+};
+
+const enlaceDe = (req, token) => {
+  const configurada = String(process.env.APP_URL || '').trim().replace(/\/$/, '');
+  const base = configurada || `${req.protocol}://${req.get('host')}`;
+  return `${base}/verificar.html?token=${token}`;
+};
+
+const enviarVerificacion = async (req, { nombre, email, token }) => {
+  await enviarBoleto(
+    email,
+    'Confirma tu cuenta - Quetzal Airlines',
+    generarTemplateVerificacion({ nombre, enlace: enlaceDe(req, token) }),
+  );
+};
 
 export const registro = async (req, res) => {
   try {
-    const { nombre, email, password } = req.body;
+    const nombre = String(req.body.nombre || '').trim();
+    const email = normalizarCorreo(req.body.email);
+    const password = String(req.body.password || '');
 
     if (!nombre || !email || !password) {
       return res.status(400).json({ mensaje: 'Nombre, email y contraseña son obligatorios' });
     }
+    if (!correoValido(email)) {
+      return res.status(400).json({ mensaje: 'Ingresa un correo electrónico válido' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ mensaje: 'La contraseña debe tener al menos 8 caracteres' });
+    }
 
+    const { token, hash } = nuevoToken();
+    const passwordHash = await bcrypt.hash(password, 10);
     const existente = await buscarPorEmail(email);
-    if (existente) {
+
+    if (existente?.email_verificado) {
       return res.status(409).json({ mensaje: 'El email ya está registrado' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
-    const usuario = await crearUsuario({
-      nombre,
-      email,
-      password: passwordHash,
-      rol: 'cliente',
-      saldo_virtual: 15000,
-    });
+    if (existente) {
+      await renovarVerificacion({
+        id: existente.id,
+        nombre,
+        password: passwordHash,
+        tokenHash: hash,
+      });
+    } else {
+      await crearUsuarioPendiente({
+        nombre,
+        email,
+        password: passwordHash,
+        tokenHash: hash,
+      });
+    }
 
-    res.status(201).json({
-      mensaje: 'Usuario registrado correctamente',
-      usuario,
+    let correoEnviado = true;
+    try {
+      await enviarVerificacion(req, { nombre, email, token });
+    } catch (error) {
+      correoEnviado = false;
+      console.log(`La cuenta ${email} quedó pendiente, pero el correo de verificación no se envió: ${error.message}`);
+    }
+
+    res.status(existente ? 200 : 201).json({
+      mensaje: 'Te enviamos un enlace para confirmar tu cuenta',
+      correo_enviado: correoEnviado,
     });
+  } catch (error) {
+    responderErrorInterno(res, error);
+  }
+};
+
+export const verificarCorreo = async (req, res) => {
+  try {
+    const token = String(req.body.token || req.query.token || '').trim();
+    if (!/^[a-f0-9]{64}$/i.test(token)) {
+      return res.status(400).json({ mensaje: 'El enlace no es válido' });
+    }
+
+    const hash = createHash('sha256').update(token).digest('hex');
+    const estado = await confirmarCorreo(hash);
+    if (estado === 'expirado') {
+      return res.status(400).json({ mensaje: 'El enlace venció. Pide uno nuevo desde el inicio de sesión.' });
+    }
+    if (estado !== 'ok') {
+      return res.status(400).json({ mensaje: 'El enlace no es válido' });
+    }
+
+    res.status(200).json({
+      mensaje: 'Cuenta confirmada. Ya puedes iniciar sesión. El bono de Q15,000 quedó en tu billetera.',
+    });
+  } catch (error) {
+    responderErrorInterno(res, error);
+  }
+};
+
+export const reenviarVerificacion = async (req, res) => {
+  try {
+    const email = normalizarCorreo(req.body.email);
+    if (!correoValido(email)) {
+      return res.status(400).json({ mensaje: 'Ingresa un correo electrónico válido' });
+    }
+
+    const usuario = await buscarPorEmail(email);
+    if (!usuario) {
+      return res.status(200).json({ mensaje: 'Si el correo está pendiente, enviamos un nuevo enlace.' });
+    }
+    if (usuario.email_verificado) {
+      return res.status(200).json({ mensaje: 'Esa cuenta ya está confirmada. Inicia sesión.' });
+    }
+
+    const { token, hash } = nuevoToken();
+    await prepararReenvio({ id: usuario.id, tokenHash: hash });
+    try {
+      await enviarVerificacion(req, { nombre: usuario.nombre, email, token });
+    } catch (error) {
+      console.log(`No se pudo reenviar la verificación a ${email}: ${error.message}`);
+      return res.status(502).json({ mensaje: 'No pudimos enviar el correo. Intenta de nuevo.' });
+    }
+
+    res.status(200).json({ mensaje: 'Enviamos un nuevo enlace. Revisa tu correo.' });
   } catch (error) {
     responderErrorInterno(res, error);
   }
@@ -65,7 +181,8 @@ export const perfil = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = normalizarCorreo(req.body.email);
+    const password = String(req.body.password || '');
 
     if (!email || !password) {
       return res.status(400).json({ mensaje: 'Email y contraseña son obligatorios' });
@@ -79,6 +196,13 @@ export const login = async (req, res) => {
     const coincide = await bcrypt.compare(password, usuario.password);
     if (!coincide) {
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
+    }
+
+    if (!usuario.email_verificado) {
+      return res.status(403).json({
+        mensaje: 'Confirma tu correo antes de iniciar sesión.',
+        pendiente: true,
+      });
     }
 
     const token = jwt.sign(

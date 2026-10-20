@@ -1,3 +1,21 @@
+const reenviarConfirmacion = async (email) => {
+  try {
+    const respuesta = await fetch('/api/auth/reenviar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const data = await respuesta.json().catch(() => ({}));
+    Swal.fire({
+      icon: respuesta.ok ? 'success' : 'error',
+      title: respuesta.ok ? 'Listo' : 'No se pudo enviar',
+      text: data.mensaje || 'Intenta de nuevo.',
+    });
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'No se pudo enviar', text: 'Intenta de nuevo.' });
+  }
+};
+
 document.getElementById('form-login').addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
@@ -13,7 +31,21 @@ document.getElementById('form-login').addEventListener('submit', async (evento) 
     const data = await respuesta.json();
 
     if (!respuesta.ok) {
-      Swal.fire({ icon: 'error', title: 'Oops...', text: 'Credenciales incorrectas' });
+      if (data.pendiente) {
+        const accion = await Swal.fire({
+          icon: 'info',
+          title: 'Confirma tu correo',
+          text: data.mensaje,
+          showCancelButton: true,
+          confirmButtonText: 'Reenviar enlace',
+          cancelButtonText: 'Cerrar',
+        });
+        if (accion.isConfirmed) {
+          await reenviarConfirmacion(document.getElementById('email').value.trim());
+        }
+        return;
+      }
+      Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje || 'Credenciales incorrectas' });
       return;
     }
 

@@ -47,7 +47,7 @@ const guardarSesion = (token, usuario) => {
 const paginaDeRol = (rol) => (rol === 'admin' ? 'admin.html' : 'cliente.html');
 
 const cerrarSesion = () => {
-  ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave', 'redirectAfterLogin', 'reservaConfirmada', 'usuario_id', 'rol', 'nombre'].forEach((clave) => {
+  ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave', 'redirectAfterLogin', 'reservaConfirmada', 'correoEnviado', 'usuario_id', 'rol', 'nombre'].forEach((clave) => {
     localStorage.removeItem(clave);
     sessionStorage.removeItem(clave);
   });
