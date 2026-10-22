@@ -562,8 +562,20 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
         SELECT COUNT(*)
         FROM checkins c
         INNER JOIN reserva_pasajeros rp ON rp.id = c.reserva_pasajero_id
-        WHERE rp.reserva_id = r.id AND c.estado = 'chequeado'
+        WHERE rp.reserva_id = r.id AND c.estado IN ('chequeado', 'abordado', 'no_show')
       ) AS boletos_emitidos,
+      (
+        SELECT COUNT(*)
+        FROM checkins c
+        INNER JOIN reserva_pasajeros rp ON rp.id = c.reserva_pasajero_id
+        WHERE rp.reserva_id = r.id AND c.estado = 'abordado'
+      ) AS abordados,
+      (
+        SELECT COUNT(*)
+        FROM checkins c
+        INNER JOIN reserva_pasajeros rp ON rp.id = c.reserva_pasajero_id
+        WHERE rp.reserva_id = r.id AND c.estado = 'no_show'
+      ) AS ausentes,
       (
         SELECT COUNT(*)
         FROM reserva_pasajeros rp
@@ -587,6 +599,8 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
     return {
       ...fila,
       boletos_emitidos: Number(fila.boletos_emitidos) || 0,
+      abordados: Number(fila.abordados) || 0,
+      ausentes: Number(fila.ausentes) || 0,
       viajeros_total: Number(fila.viajeros_total) || 0,
       checkin_abierto: checkin.abierto,
       checkin_motivo: checkin.motivo,

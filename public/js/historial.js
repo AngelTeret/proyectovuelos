@@ -45,6 +45,28 @@ const clasificar = (reserva) => {
 const SEGUNDOS_DIA = 24 * 60 * 60;
 const SEGUNDOS_DOS_DIAS = 2 * SEGUNDOS_DIA;
 
+const resumenAbordaje = (reserva) => {
+  const entro = Number(reserva.abordados) || 0;
+  const falta = Number(reserva.ausentes) || 0;
+  if (entro === 0 && falta === 0) {
+    return '';
+  }
+  if (entro === 1 && falta === 0) {
+    return 'Ya entró al avión';
+  }
+  if (entro === 0 && falta === 1) {
+    return 'No se presentó';
+  }
+  const partes = [];
+  if (entro > 0) {
+    partes.push(entro === 1 ? '1 ya entró al avión' : `${entro} ya entraron al avión`);
+  }
+  if (falta > 0) {
+    partes.push(falta === 1 ? '1 no se presentó' : `${falta} no se presentaron`);
+  }
+  return partes.join(' · ');
+};
+
 const puedeDescargar = (reserva) => (
   reserva.estado_pago === 'aprobado' || reserva.estado_pago === 'reembolsado'
 );
@@ -193,6 +215,15 @@ const pintarGrupo = () => {
     nodo.querySelector('[data-campo="salida"]').textContent = formatearSalida(reserva.fecha_salida);
     nodo.querySelector('[data-campo="asiento"]').textContent = reserva.numero_asiento || '';
     nodo.querySelector('[data-campo="total"]').textContent = quetzales(reserva.monto_total);
+    const abordaje = nodo.querySelector('[data-campo="abordaje"]');
+    const textoAbordaje = resumenAbordaje(reserva);
+    if (textoAbordaje) {
+      abordaje.textContent = textoAbordaje;
+      abordaje.classList.remove('hidden');
+      const todosEntraron = (Number(reserva.ausentes) || 0) === 0;
+      abordaje.classList.toggle('text-emerald-700', todosEntraron);
+      abordaje.classList.toggle('text-slate-700', !todosEntraron);
+    }
     const reembolso = nodo.querySelector('[data-campo="reembolso"]');
     if (Number(reserva.monto_reembolsado) > 0) {
       reembolso.textContent = `Se devolvieron ${quetzales(reserva.monto_reembolsado)} a tu billetera.`;

@@ -234,7 +234,68 @@ const controlesViaje = (viajero) => {
   if (viajero.tipo === 'infante' || !viajero.asiento_id) {
     return '';
   }
+  if (viajero.estado_checkin === 'abordado' || viajero.estado_checkin === 'no_show') {
+    return '';
+  }
   return preguntaAsiento(viajero);
+};
+
+const etiquetaViajero = (viajero) => String(viajero.nombre || '').trim() || String(viajero.apellido || '').trim() || 'Un pasajero';
+
+const fraseNombres = (lista) => {
+  const nombres = lista.map(etiquetaViajero);
+  if (nombres.length === 1) {
+    return nombres[0];
+  }
+  if (nombres.length === 2) {
+    return `${nombres[0]} y ${nombres[1]}`;
+  }
+  return `${nombres.slice(0, -1).join(', ')} y ${nombres.at(-1)}`;
+};
+
+const resumenAbordaje = () => {
+  const viajeros = reserva?.viajeros || [];
+  const entraron = viajeros.filter((viajero) => viajero.estado_checkin === 'abordado');
+  const faltaron = viajeros.filter((viajero) => viajero.estado_checkin === 'no_show');
+  const vuelo = String(reserva?.estado_vuelo || '').toLowerCase();
+  const puerta = vuelo === 'abordando' || vuelo === 'en curso' || vuelo === 'completado';
+  const esperan = puerta
+    ? viajeros.filter((viajero) => viajero.estado_checkin === 'chequeado')
+    : [];
+  const partes = [];
+  if (entraron.length === 1) {
+    partes.push(`${fraseNombres(entraron)} ya entró al avión.`);
+  } else if (entraron.length > 1) {
+    partes.push(`${fraseNombres(entraron)} ya entraron al avión.`);
+  }
+  if (faltaron.length === 1) {
+    partes.push(`${fraseNombres(faltaron)} no se presentó.`);
+  } else if (faltaron.length > 1) {
+    partes.push(`${fraseNombres(faltaron)} no se presentaron.`);
+  }
+  if (esperan.length === 1) {
+    partes.push(`${fraseNombres(esperan)} todavía no entra.`);
+  } else if (esperan.length > 1) {
+    partes.push(`${fraseNombres(esperan)} todavía no entran.`);
+  }
+  return partes.join(' ');
+};
+
+const situacionBoleto = (viajero) => {
+  if (viajero.estado_checkin === 'abordado') {
+    return { texto: 'Ya entró al avión', clase: 'text-emerald-800' };
+  }
+  if (viajero.estado_checkin === 'no_show') {
+    return { texto: 'No se presentó', clase: 'text-slate-600' };
+  }
+  if (!viajero.codigo_boleto) {
+    return null;
+  }
+  const vuelo = String(reserva?.estado_vuelo || '').toLowerCase();
+  if (vuelo === 'abordando' || vuelo === 'en curso' || vuelo === 'completado') {
+    return { texto: 'Todavía no entra', clase: 'text-amber-800' };
+  }
+  return { texto: 'Tiene boleto. Lo muestra al entrar al avión.', clase: 'text-emerald-800' };
 };
 
 const pintarViajero = (viajero) => {
@@ -243,6 +304,7 @@ const pintarViajero = (viajero) => {
   const asiento = elegido?.numero || viajero.numero_asiento || 'Regazo';
   const tipo = titulosTipo[viajero.tipo] || 'Pasajero';
   const listo = Boolean(viajero.codigo_boleto);
+  const situacion = situacionBoleto(viajero);
   const infante = viajero.tipo === 'infante';
   const regazo = Array.isArray(viajero.infantes_en_regazo) && viajero.infantes_en_regazo.length
     ? `Infante en regazo: ${viajero.infantes_en_regazo.join(', ')}`
@@ -269,7 +331,8 @@ const pintarViajero = (viajero) => {
       </div>
       <div class="h-1.5 bg-[#8B2026]"></div>
       <div class="bg-emerald-50 px-4 py-3">
-        ${listo ? `<p class="text-sm font-semibold tracking-wide text-emerald-950">Boleto ${escapar(viajero.codigo_boleto)}</p>` : '<p class="text-sm text-emerald-800">El boleto se crea al confirmar el check-in.</p>'}
+        ${situacion ? `<p class="text-sm font-semibold ${situacion.clase}">${escapar(situacion.texto)}</p>` : ''}
+        ${listo ? `<p class="mt-1 text-sm font-semibold tracking-wide text-emerald-950">Boleto ${escapar(viajero.codigo_boleto)}</p>` : '<p class="text-sm text-emerald-800">El boleto se crea al confirmar el check-in.</p>'}
         ${reglasEquipaje(viajero)}
         ${controlesViaje(viajero)}
       </div>
@@ -278,7 +341,7 @@ const pintarViajero = (viajero) => {
 
 const pintar = (aviso) => {
   document.getElementById('pnr').textContent = reserva.codigo_pnr || pnr;
-  document.getElementById('mensaje-checkin').textContent = reserva.mensaje || '';
+  document.getElementById('mensaje-checkin').textContent = resumenAbordaje() || reserva.mensaje || '';
   document.getElementById('ruta').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;
   document.getElementById('salida').textContent = formatearSalida(reserva.fecha_salida);
   document.getElementById('lista-viajeros').innerHTML = (reserva.viajeros || []).map(pintarViajero).join('');

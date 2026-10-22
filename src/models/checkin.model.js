@@ -32,6 +32,10 @@ const rangoCategoria = (categoria) => RANGO_CATEGORIA[categoria] || 1;
 
 const nombreCompleto = (viajero) => `${viajero.nombre || ''} ${viajero.apellido || ''}`.trim();
 
+const ESTADOS_CON_BOLETO = new Set(['chequeado', 'abordado', 'no_show']);
+
+const tieneBoleto = (viajero) => ESTADOS_CON_BOLETO.has(viajero.estado_checkin);
+
 const presentarViajeros = (filas) => {
   const porAdulto = emparejarInfantes(filas);
   return filas.map((viajero) => {
@@ -47,7 +51,7 @@ const presentarViajeros = (filas) => {
       categoria: viajero.categoria,
       maleta_mano: infante ? 0 : (viajero.maleta_mano == null ? 1 : Number(viajero.maleta_mano)),
       maleta_bodega_kg: infante ? 0 : Number(viajero.maleta_bodega_kg) || 0,
-      codigo_boleto: viajero.estado_checkin === 'chequeado' ? viajero.codigo_boleto : null,
+      codigo_boleto: tieneBoleto(viajero) ? viajero.codigo_boleto : null,
       estado_checkin: viajero.estado_checkin,
       cambios_asiento: Number(viajero.cambios_asiento) || 0,
       infantes_en_regazo: (porAdulto.get(viajero.reserva_pasajero_id) || []).map(nombreCompleto),
@@ -123,6 +127,7 @@ const armarRespuesta = (reserva, filas) => {
     fecha_salida: reserva.fecha_salida,
     vuelo_id: reserva.vuelo_id,
     equipaje_extra_kg: Number(reserva.equipaje_extra_kg) || 0,
+    estado_vuelo: reserva.estado_vuelo,
     email: reserva.email,
     abierto: ventana.abierto,
     motivo: ventana.motivo,
@@ -180,6 +185,12 @@ const cambiosDeAsiento = (cambios, filas) => {
     }
     if (viajero.tipo === 'infante' || !viajero.asiento_id) {
       throw errorCheckin('El infante viaja en regazo y no cambia de asiento', 400);
+    }
+    if (
+      asientoId !== Number(viajero.asiento_id)
+      && (viajero.estado_checkin === 'abordado' || viajero.estado_checkin === 'no_show')
+    ) {
+      throw errorCheckin('Ese pasajero ya no puede cambiar de asiento', 400);
     }
     if (!Number.isInteger(asientoId) || asientoId <= 0) {
       throw errorCheckin('Elige un asiento libre', 400);
@@ -362,11 +373,11 @@ export const emitirCheckin = async ({ pnr, usuarioId, viajeros, maletas = [], as
 
     const pendientes = new Set(
       filas
-        .filter((viajero) => viajero.estado_checkin !== 'chequeado' && elegidos.includes(viajero.reserva_pasajero_id))
+        .filter((viajero) => !tieneBoleto(viajero) && elegidos.includes(viajero.reserva_pasajero_id))
         .map((viajero) => viajero.reserva_pasajero_id)
     );
     filas
-      .filter((viajero) => viajero.tipo === 'infante' && viajero.estado_checkin !== 'chequeado')
+      .filter((viajero) => viajero.tipo === 'infante' && !tieneBoleto(viajero))
       .forEach((viajero) => pendientes.add(viajero.reserva_pasajero_id));
 
     const cambios = cambiosDeAsiento(asientos, filas);
