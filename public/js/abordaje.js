@@ -16,7 +16,8 @@ const nombreEstadoVuelo = {
   Programado: 'Listo para empezar',
   Retrasado: 'Vuelo retrasado',
   Abordando: 'Dejando entrar',
-  'En Curso': 'Puerta cerrada',
+  Cerrado: 'Puerta cerrada',
+  'En Curso': 'En vuelo',
 };
 const clasesEstado = {
   chequeado: 'bg-amber-50 text-amber-800',
@@ -67,12 +68,23 @@ const resumenConteo = (vuelo) => {
   return partes.join(' · ');
 };
 
+const faltaMasDeUnaHora = (vuelo) => {
+  const salida = new Date(vuelo.fecha_salida).getTime();
+  return Number.isFinite(salida) && salida - Date.now() > 60 * 60 * 1000;
+};
+
 const guiaDe = (vuelo) => {
+  if (vuelo.estado === 'Abordando' && faltaMasDeUnaHora(vuelo)) {
+    return 'Puedes marcar a quien muestre el boleto. La puerta se cierra cuando falte una hora o menos. Hasta entonces el check-in sigue abierto.';
+  }
   if (vuelo.estado === 'Abordando') {
     return 'Paso 2. Cuando la persona muestre su boleto, búscalo y pulsa Ya entró. Quien no hizo check-in no tiene boleto y no entra. Cuando ya no vaya a entrar nadie más, cierra la puerta.';
   }
+  if (vuelo.estado === 'Cerrado') {
+    return 'La puerta ya cerró. Quien tenía boleto y no entró quedó como que no se presentó. Quien nunca hizo check-in sigue aparte: no tenía boleto. El avión figura en vuelo cuando llega la hora de salida.';
+  }
   if (vuelo.estado === 'En Curso') {
-    return 'La puerta ya cerró. Quien tenía boleto y no entró quedó como que no se presentó. Quien nunca hizo check-in sigue aparte: no tenía boleto.';
+    return 'El avión ya salió. Quien tenía boleto y no entró quedó como que no se presentó.';
   }
   return 'Paso 1. Pulsa Empezar abordaje. Después podrás marcar a cada persona cuando muestre su boleto.';
 };
@@ -100,7 +112,7 @@ const accionesVuelo = (vuelo) => {
   if (vuelo.estado === 'Programado' || vuelo.estado === 'Retrasado') {
     return '<button type="button" id="btn-iniciar" class="h-11 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900">Empezar abordaje</button>';
   }
-  if (vuelo.estado === 'Abordando') {
+  if (vuelo.estado === 'Abordando' && !faltaMasDeUnaHora(vuelo)) {
     return '<button type="button" id="btn-cerrar" class="h-11 rounded-lg bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700">Cerrar la puerta</button>';
   }
   return '';

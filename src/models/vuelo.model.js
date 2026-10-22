@@ -1,7 +1,9 @@
 import pool from '../config/db.js';
 import { conTransaccion } from '../utils/transaccion.js';
+import { marcarSalidas } from './abordaje.model.js';
 
 const obtenerTodos = async () => {
+  await marcarSalidas();
   const [rows] = await pool.query('SELECT * FROM vuelos');
   return rows;
 };

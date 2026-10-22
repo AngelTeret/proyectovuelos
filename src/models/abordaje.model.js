@@ -1,5 +1,6 @@
 import pool from '../config/db.js';
 import { conTransaccion } from '../utils/transaccion.js';
+import { CIERRA_SEGUNDOS } from '../utils/checkinVentana.js';
 
 const HORAS_LISTA = 48;
 
@@ -18,6 +19,22 @@ const idVuelo = (valor) => {
 };
 
 const codigoBoleto = (valor) => String(valor || '').trim().toUpperCase();
+
+const segundosParaSalir = (fecha) => {
+  const salida = new Date(fecha).getTime();
+  if (!Number.isFinite(salida)) {
+    return null;
+  }
+  return Math.floor((salida - Date.now()) / 1000);
+};
+
+export const marcarSalidas = async (executor = pool) => {
+  await executor.query(
+    `UPDATE vuelos
+     SET estado = 'En Curso'
+     WHERE estado = 'Cerrado' AND fecha_salida <= NOW()`
+  );
+};
 
 const presentarVuelo = (vuelo, conteos = {}) => ({
   id: vuelo.id,
@@ -88,6 +105,7 @@ const pasajerosDe = async (executor, vueloId) => {
 };
 
 export const listarVuelosAbordaje = async () => {
+  await marcarSalidas();
   const [filas] = await pool.query(
     `SELECT
       v.id,
@@ -103,7 +121,7 @@ export const listarVuelosAbordaje = async () => {
     LEFT JOIN reservas r ON r.vuelo_id = v.id AND r.estado_pago = 'aprobado'
     LEFT JOIN reserva_pasajeros rp ON rp.reserva_id = r.id
     LEFT JOIN checkins c ON c.reserva_pasajero_id = rp.id AND c.estado <> 'anulado'
-    WHERE v.estado = 'Abordando'
+    WHERE v.estado IN ('Abordando', 'Cerrado')
       OR (v.estado = 'En Curso' AND v.fecha_salida >= NOW() - INTERVAL 1 DAY)
       OR (
         v.estado IN ('Programado', 'Retrasado')
@@ -118,6 +136,7 @@ export const listarVuelosAbordaje = async () => {
 
 export const obtenerAbordaje = async (vueloId) => {
   const id = idVuelo(vueloId);
+  await marcarSalidas();
   const [filas] = await pool.query(
     'SELECT id, origen, destino, fecha_salida, estado FROM vuelos WHERE id = ?',
     [id]
@@ -212,6 +231,13 @@ export const cerrarAbordaje = async (vueloId) => {
     if (vuelo.estado !== 'Abordando') {
       throw errorAbordaje('El abordaje de este vuelo no está abierto', 400);
     }
+    const falta = segundosParaSalir(vuelo.fecha_salida);
+    if (falta == null) {
+      throw errorAbordaje('No se pudo leer la hora de salida', 400);
+    }
+    if (falta > CIERRA_SEGUNDOS) {
+      throw errorAbordaje('Puedes cerrar la puerta cuando falte una hora o menos para la salida', 400);
+    }
     const [ausentes] = await connection.query(
       `UPDATE checkins c
        INNER JOIN reserva_pasajeros rp ON rp.id = c.reserva_pasajero_id
@@ -220,8 +246,9 @@ export const cerrarAbordaje = async (vueloId) => {
        WHERE r.vuelo_id = ? AND c.estado = 'chequeado'`,
       [id]
     );
-    await connection.query('UPDATE vuelos SET estado = ? WHERE id = ?', ['En Curso', id]);
-    vuelo.estado = 'En Curso';
+    const estado = falta <= 0 ? 'En Curso' : 'Cerrado';
+    await connection.query('UPDATE vuelos SET estado = ? WHERE id = ?', [estado, id]);
+    vuelo.estado = estado;
     const conteos = await conteosDe(connection, id);
     return {
       ...presentarVuelo(vuelo, conteos),

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS vuelos (
   estado ENUM(
     'Programado',
     'Abordando',
+    'Cerrado',
     'En Curso',
     'Completado',
     'Retrasado',

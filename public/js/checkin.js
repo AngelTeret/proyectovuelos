@@ -258,7 +258,7 @@ const resumenAbordaje = () => {
   const entraron = viajeros.filter((viajero) => viajero.estado_checkin === 'abordado');
   const faltaron = viajeros.filter((viajero) => viajero.estado_checkin === 'no_show');
   const vuelo = String(reserva?.estado_vuelo || '').toLowerCase();
-  const puerta = vuelo === 'abordando' || vuelo === 'en curso' || vuelo === 'completado';
+  const puerta = vuelo === 'abordando' || vuelo === 'cerrado' || vuelo === 'en curso' || vuelo === 'completado';
   const esperan = puerta
     ? viajeros.filter((viajero) => viajero.estado_checkin === 'chequeado')
     : [];
@@ -292,7 +292,7 @@ const situacionBoleto = (viajero) => {
     return null;
   }
   const vuelo = String(reserva?.estado_vuelo || '').toLowerCase();
-  if (vuelo === 'abordando' || vuelo === 'en curso' || vuelo === 'completado') {
+  if (vuelo === 'abordando' || vuelo === 'cerrado' || vuelo === 'en curso' || vuelo === 'completado') {
     return { texto: 'Todavía no entra', clase: 'text-amber-800' };
   }
   return { texto: 'Tiene boleto. Lo muestra al entrar al avión.', clase: 'text-emerald-800' };
