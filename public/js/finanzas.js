@@ -1,6 +1,6 @@
-if (!localStorage.getItem('token')) {
+if (!tokenDeSesion()) {
   window.location.replace('/login.html');
-} else if (localStorage.getItem('rol') !== 'admin') {
+} else if (rolDeSesion() !== 'admin') {
   window.location.replace('/index.html');
 }
 
@@ -29,7 +29,11 @@ const pintarReservas = (reservas) => {
 const cargarReservas = async () => {
   const cuerpo = document.getElementById('cuerpo-reservas');
   try {
-    const respuesta = await fetch('/api/reservas');
+    const respuesta = await fetch('/api/reservas', { headers: autorizacion() });
+    if (respuesta.status === 401) {
+      window.location.replace('/login.html');
+      return;
+    }
     if (!respuesta.ok) {
       throw new Error('No se pudieron cargar las reservas');
     }
@@ -42,7 +46,7 @@ const cargarReservas = async () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!localStorage.getItem('token') || localStorage.getItem('rol') !== 'admin') {
+  if (!tokenDeSesion() || rolDeSesion() !== 'admin') {
     return;
   }
 

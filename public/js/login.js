@@ -16,6 +16,15 @@ const reenviarConfirmacion = async (email) => {
   }
 };
 
+if (sessionStorage.getItem('avisoSesion') === 'inactiva') {
+  sessionStorage.removeItem('avisoSesion');
+  Swal.fire({
+    icon: 'info',
+    title: 'Sesión cerrada',
+    text: 'Cerramos tu sesión tras 15 minutos sin actividad.',
+  });
+}
+
 document.getElementById('form-login').addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
@@ -49,17 +58,17 @@ document.getElementById('form-login').addEventListener('submit', async (evento) 
       return;
     }
 
-    const anterior = localStorage.getItem('usuario_id') || '';
+    const anterior = sessionStorage.getItem('usuario_id') || localStorage.getItem('usuario_id') || '';
     const nuevo = data.usuario?.id ? String(data.usuario.id) : '';
     if (anterior && nuevo && anterior !== nuevo && typeof limpiarDatosPersonales === 'function') {
       limpiarDatosPersonales();
     }
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('rol', data.rol);
-    localStorage.setItem('nombre', data.usuario?.nombre || '');
-    if (nuevo) {
-      localStorage.setItem('usuario_id', nuevo);
-    }
+    guardarDatosSesion({
+      token: data.token,
+      rol: data.rol,
+      nombre: data.usuario?.nombre || '',
+      usuarioId: nuevo,
+    });
 
     if (data.rol === 'admin') {
       window.location.replace('/administracion.html');

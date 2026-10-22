@@ -4,6 +4,11 @@ const fechaISO = (valor) => fechaCalendario(valor);
 
 const hoyISO = () => fechaCalendario(new Date());
 
+const vueloVigente = (vuelo) => {
+  const fecha = fechaISO(vuelo.fecha_salida);
+  return fecha !== '' && fecha >= hoyISO();
+};
+
 const llenarSelect = (select, lugares) => {
   const opciones = lugares.map((lugar) => `<option value="${escapar(lugar)}">${escapar(lugar)}</option>`);
   select.innerHTML = `<option value="">Todos</option>${opciones.join('')}`;
@@ -15,6 +20,9 @@ const vuelosFiltrados = () => {
   const salida = document.getElementById('fecha-salida').value;
 
   return vuelosCargados.filter((vuelo) => {
+    if (!vueloVigente(vuelo)) {
+      return false;
+    }
     if (origen && vuelo.origen !== origen) {
       return false;
     }
@@ -88,11 +96,12 @@ const cargarVuelos = async () => {
   }
   const vuelos = await respuesta.json();
   vuelosCargados = vuelos;
-  const origenes = [...new Set(vuelos.map((vuelo) => vuelo.origen))];
-  const destinos = [...new Set(vuelos.map((vuelo) => vuelo.destino))];
+  const vigentes = vuelos.filter(vueloVigente);
+  const origenes = [...new Set(vigentes.map((vuelo) => vuelo.origen))];
+  const destinos = [...new Set(vigentes.map((vuelo) => vuelo.destino))];
   llenarSelect(document.getElementById('origen'), origenes);
   llenarSelect(document.getElementById('destino'), destinos);
-  pintarDestinos(vuelos);
+  pintarDestinos(vigentes);
 };
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -19,8 +19,10 @@ const formatearSaldo = (saldo) => {
 };
 
 const obtenerSesion = () => {
-  const token = localStorage.getItem(CLAVE_TOKEN);
-  const crudo = localStorage.getItem(CLAVE_USUARIO);
+  localStorage.removeItem(CLAVE_TOKEN);
+  localStorage.removeItem(CLAVE_USUARIO);
+  const token = sessionStorage.getItem(CLAVE_TOKEN);
+  const crudo = sessionStorage.getItem(CLAVE_USUARIO);
   if (!token || !crudo) {
     return null;
   }
@@ -28,20 +30,23 @@ const obtenerSesion = () => {
   try {
     return { token, usuario: JSON.parse(crudo) };
   } catch (error) {
-    localStorage.removeItem(CLAVE_TOKEN);
-    localStorage.removeItem(CLAVE_USUARIO);
+    sessionStorage.removeItem(CLAVE_TOKEN);
+    sessionStorage.removeItem(CLAVE_USUARIO);
     return null;
   }
 };
 
 const guardarSesion = (token, usuario) => {
-  localStorage.setItem(CLAVE_TOKEN, token);
-  localStorage.setItem(CLAVE_USUARIO, JSON.stringify({
+  sessionStorage.setItem(CLAVE_TOKEN, token);
+  sessionStorage.setItem(CLAVE_USUARIO, JSON.stringify({
     id: usuario.id,
     nombre: usuario.nombre,
     rol: usuario.rol,
     saldo: usuario.saldo_virtual ?? usuario.saldo,
   }));
+  localStorage.removeItem(CLAVE_TOKEN);
+  localStorage.removeItem(CLAVE_USUARIO);
+  sessionStorage.setItem('sesionActiva', String(Date.now()));
 };
 
 const paginaDeRol = (rol) => (rol === 'admin' ? 'admin.html' : 'cliente.html');
@@ -53,6 +58,9 @@ const cerrarSesion = () => {
   });
   localStorage.removeItem(CLAVE_TOKEN);
   localStorage.removeItem(CLAVE_USUARIO);
+  sessionStorage.removeItem(CLAVE_TOKEN);
+  sessionStorage.removeItem(CLAVE_USUARIO);
+  sessionStorage.removeItem('sesionActiva');
   window.location.replace('/index.html');
 };
 
@@ -126,3 +134,18 @@ window.App = {
 };
 
 proteger();
+
+const minutosInactividad = 15;
+window.setInterval(() => {
+  if (!sessionStorage.getItem(CLAVE_TOKEN)) {
+    return;
+  }
+  const marca = Number(sessionStorage.getItem('sesionActiva') || 0);
+  if (!marca) {
+    sessionStorage.setItem('sesionActiva', String(Date.now()));
+    return;
+  }
+  if (Date.now() - marca > minutosInactividad * 60 * 1000) {
+    cerrarSesion();
+  }
+}, 30000);

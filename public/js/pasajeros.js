@@ -12,10 +12,16 @@ let fechaVuelo = '';
 let catalogoPaises = [];
 const conteo = { adulto: 1, nino: 0, infante: 0 };
 
+if (!tokenDeSesion()) {
+  abandonarReserva();
+} else {
+  olvidarCopiasDurables();
+}
+
 const etiquetaCodigo = (item) => `${item.pais} +${item.codigo}`;
 
 const idDeSesion = () => {
-  const token = localStorage.getItem('token') || '';
+  const token = tokenDeSesion() || '';
   const parte = token.split('.')[1];
   if (parte) {
     try {
@@ -27,38 +33,38 @@ const idDeSesion = () => {
       /* El id guardado cubre un token que no se puede leer. */
     }
   }
-  return localStorage.getItem('usuario_id') || '';
+  return idUsuarioSesion() || '';
 };
 
 const borrarBorrador = () => {
-  sessionStorage.removeItem(CLAVE_BORRADOR);
-  localStorage.removeItem(CLAVE_BORRADOR);
+  borrarTemporal(CLAVE_BORRADOR);
 };
 
 const guardarBorrador = () => {
   if (!borradorActivo) {
     return;
   }
-  const usuarioId = idDeSesion();
-  sessionStorage.setItem(CLAVE_BORRADOR, JSON.stringify({
-    usuarioId,
+  if (!tokenDeSesion()) {
+    borrarBorrador();
+    return;
+  }
+  guardarJsonTemporal(CLAVE_BORRADOR, {
+    usuarioId: idDeSesion(),
     conteo,
     email: document.getElementById('email').value,
     telefono: document.getElementById('telefono').value,
     codigo: codigoTelefono,
     etiquetaCodigo: document.getElementById('codigo-telefono').value,
     viajeros: leerTarjetas(),
-  }));
-  localStorage.removeItem(CLAVE_BORRADOR);
+  });
 };
 
 const leerBorrador = () => {
-  let borrador = null;
-  try {
-    borrador = JSON.parse(sessionStorage.getItem(CLAVE_BORRADOR) || localStorage.getItem(CLAVE_BORRADOR) || 'null');
-  } catch {
-    borrador = null;
+  if (!tokenDeSesion()) {
+    borrarBorrador();
+    return null;
   }
+  const borrador = leerJsonTemporal(CLAVE_BORRADOR, null);
   if (!borrador) {
     return null;
   }
@@ -667,14 +673,14 @@ document.getElementById('form-pasajero').addEventListener('submit', (evento) => 
     return;
   }
 
-  localStorage.setItem('datosPasajeros', JSON.stringify({
+  guardarJsonTemporal('datosPasajeros', {
     email: valor('email'),
     telefono: telefonoCompleto(),
     viajeros,
-    usuario_id: Number(localStorage.getItem('usuario_id')) || null,
-  }));
-  localStorage.removeItem('datosAsiento');
-  localStorage.removeItem('datosAsientos');
+    usuario_id: Number(idUsuarioSesion()) || null,
+  });
+  borrarTemporal('datosAsiento');
+  borrarTemporal('datosAsientos');
   window.location.href = '/asientos.html';
 });
 
@@ -690,7 +696,7 @@ const cargarFechaVuelo = async () => {
 };
 
 const rellenarContacto = async () => {
-  const token = localStorage.getItem('token');
+  const token = tokenDeSesion();
   if (!token) {
     return;
   }
@@ -704,11 +710,40 @@ const rellenarContacto = async () => {
       document.getElementById('email').value = usuario.email || '';
     }
     if (usuario.id) {
-      localStorage.setItem('usuario_id', String(usuario.id));
+      guardarIdUsuario(usuario.id);
     }
   } catch (error) {
     return;
   }
+};
+
+const vaciarFormularioInvitado = () => {
+  if (tokenDeSesion()) {
+    return;
+  }
+  conteo.adulto = 1;
+  conteo.nino = 0;
+  conteo.infante = 0;
+  pintarConteo();
+  const email = document.getElementById('email');
+  const telefono = document.getElementById('telefono');
+  const codigo = document.getElementById('codigo-telefono');
+  if (email) {
+    email.value = '';
+    marcar(email, document.getElementById('error-email'), '');
+  }
+  if (telefono) {
+    telefono.value = '';
+    marcar(telefono, document.getElementById('error-telefono'), '');
+  }
+  if (codigo) {
+    codigo.value = '';
+    marcar(codigo, null, '');
+  }
+  codigoTelefono = '';
+  document.getElementById('lista-codigo-telefono')?.classList.add('hidden');
+  pintarViajeros([]);
+  borradorActivo = true;
 };
 
 const iniciarFormulario = async () => {
@@ -746,6 +781,14 @@ const iniciarFormulario = async () => {
   await rellenarContacto();
   borradorActivo = true;
 };
+
+window.addEventListener('pageshow', (evento) => {
+  if (!evento.persisted || tokenDeSesion()) {
+    return;
+  }
+  abandonarReserva();
+  vaciarFormularioInvitado();
+});
 
 iniciarFormulario().catch(() => {
   marcar(document.getElementById('telefono'), document.getElementById('error-telefono'), 'No se pudo cargar el catálogo de códigos');

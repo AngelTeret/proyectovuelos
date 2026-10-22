@@ -86,12 +86,12 @@ pintarMenu();
 pintarPasos();
 
 const nombreDeSesion = () => {
-  const guardado = localStorage.getItem('nombre');
+  const guardado = nombreGuardado();
   if (guardado) {
     return guardado;
   }
 
-  const token = localStorage.getItem('token');
+  const token = tokenDeSesion();
   if (!token) {
     return '';
   }
@@ -110,18 +110,18 @@ if (nombreUsuario) {
   nombreUsuario.textContent = nombreDeSesion();
 }
 
-if (localStorage.getItem('rol') !== 'admin') {
+if (rolDeSesion() !== 'admin') {
   document.querySelectorAll('.solo-admin').forEach((enlace) => enlace.remove());
 }
 
-if (!localStorage.getItem('token')) {
+if (!tokenDeSesion()) {
   document.querySelectorAll('.solo-sesion').forEach((enlace) => enlace.remove());
 }
 
 const iniciarSesion = document.getElementById('btn-iniciar-sesion');
 const cerrarSesion = document.getElementById('btn-cerrar-sesion');
 if (iniciarSesion && cerrarSesion) {
-  const autenticado = Boolean(localStorage.getItem('token'));
+  const autenticado = Boolean(tokenDeSesion());
   iniciarSesion.classList.toggle('hidden', autenticado);
   cerrarSesion.classList.toggle('hidden', !autenticado);
 }
@@ -131,10 +131,7 @@ if (cerrarSesion) {
     if (typeof limpiarDatosPersonales === 'function') {
       limpiarDatosPersonales();
     }
-    localStorage.removeItem('token');
-    localStorage.removeItem('rol');
-    localStorage.removeItem('nombre');
-    localStorage.removeItem('usuario_id');
+    cerrarDatosSesion();
     window.location.replace('/index.html');
   });
 }

@@ -47,7 +47,10 @@ if (formVuelo && sesion?.usuario.rol === 'admin') {
     try {
       const respuesta = await fetch('/api/vuelos', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sesion.token}`,
+        },
         body: JSON.stringify({
           origen: document.getElementById('origen').value.trim(),
           destino: document.getElementById('destino').value.trim(),
