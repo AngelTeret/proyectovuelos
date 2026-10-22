@@ -12,6 +12,24 @@ const escapar = (valor) => texto(valor)
 
 const mostrar = (valor, reserva = '—') => escapar(valor) || reserva;
 
+const textoDuracion = (minutos) => {
+  const total = Number(minutos);
+  if (!Number.isInteger(total) || total <= 0) {
+    return '';
+  }
+  const horas = Math.floor(total / 60);
+  const resto = total % 60;
+  const horasTexto = horas === 1 ? '1 hora' : `${horas} horas`;
+  const minutosTexto = resto === 1 ? '1 minuto' : `${resto} minutos`;
+  if (horas === 0) {
+    return minutosTexto;
+  }
+  if (resto === 0) {
+    return horasTexto;
+  }
+  return `${horasTexto} ${minutosTexto}`;
+};
+
 const nombrePasajero = (datos) => {
   const completo = `${texto(datos.nombre)} ${texto(datos.apellido)}`.trim();
   return completo || texto(datos.nombrePasajero) || 'Pasajero';
@@ -188,6 +206,8 @@ export const generarTemplateBoleto = (datosVuelo = {}) => {
               </table>
             </td>
           </tr>
+          ${textoDuracion(datosVuelo.retraso_minutos) ? `<tr><td style="padding:0 28px 4px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#92400e;">Retraso: ${escapar(textoDuracion(datosVuelo.retraso_minutos))}</td></tr>` : ''}
+          ${textoDuracion(datosVuelo.duracion_minutos) ? `<tr><td style="padding:0 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;">Duración: ${escapar(textoDuracion(datosVuelo.duracion_minutos))}</td></tr>` : ''}
           <tr>
             <td style="padding:8px 20px 8px 20px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:8px 0;">
@@ -373,10 +393,54 @@ export const generarTemplateVerificacion = ({ nombre, enlace }) => {
 </html>`;
 };
 
+export const generarTemplateRestablecer = ({ nombre, enlace }) => {
+  const persona = texto(nombre) || 'viajero';
+  const url = escapar(enlace);
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elige otra contraseña - Quetzal Airlines</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td style="background:#05402d;padding:22px 28px;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#d1fae5;">Quetzal Airlines</p>
+              <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#ffffff;">Elige otra contraseña</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="height:4px;background:#8b1c1c;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:28px;font-family:Arial,Helvetica,sans-serif;">
+              <p style="margin:0;font-size:16px;line-height:1.5;color:#111827;">Hola ${escapar(persona)},</p>
+              <p style="margin:12px 0 0 0;font-size:15px;line-height:1.6;color:#374151;">Recibimos una solicitud para cambiar la contraseña de esta cuenta. El enlace vence en 1 hora y sirve una sola vez.</p>
+              <p style="margin:24px 0 0 0;">
+                <a href="${url}" style="display:inline-block;background:#05402d;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:12px 18px;border-radius:10px;">Elegir contraseña</a>
+              </p>
+              <p style="margin:20px 0 0 0;font-size:12px;line-height:1.5;color:#6b7280;">Si no pediste este cambio, ignora el correo. La contraseña sigue igual.<br><br>Si el botón no abre, copia este enlace en el navegador:<br>${url}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};
+
 export const generarTemplateCheckin = (datos = {}) => {
   const { fecha, hora } = fechaYHora(datos);
   const codigo = texto(datos.codigo_pnr);
   const salida = [fecha, hora].filter(Boolean).join(', ');
+  const duracion = textoDuracion(datos.duracion_minutos);
   const filas = (Array.isArray(datos.viajeros) ? datos.viajeros : []).map((viajero) => {
     const nombre = `${texto(viajero.nombre)} ${texto(viajero.apellido)}`.trim();
     const asiento = texto(viajero.numero_asiento) || 'Regazo';
@@ -416,6 +480,8 @@ export const generarTemplateCheckin = (datos = {}) => {
             <td style="padding:18px 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;">
               <p style="margin:0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#166534;">Salida · reserva ${mostrar(codigo)}</p>
               <p style="margin:6px 0 0 0;font-size:16px;font-weight:700;color:#052e16;">${mostrar(salida)}</p>
+              ${textoDuracion(datos.retraso_minutos) ? `<p style="margin:4px 0 0 0;font-size:13px;color:#92400e;">Retraso: ${escapar(textoDuracion(datos.retraso_minutos))}</p>` : ''}
+              ${duracion ? `<p style="margin:4px 0 0 0;font-size:13px;color:#166534;">Duración: ${escapar(duracion)}</p>` : ''}
             </td>
           </tr>
           <tr>

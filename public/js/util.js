@@ -8,6 +8,34 @@ const escapar = (texto) => String(texto ?? '')
 
 const quetzales = (monto) => `Q ${Number(monto || 0).toFixed(2)}`;
 
+const textoDuracion = (minutos) => {
+  const total = Number(minutos);
+  if (!Number.isInteger(total) || total <= 0) {
+    return '';
+  }
+  const horas = Math.floor(total / 60);
+  const resto = total % 60;
+  const horasTexto = horas === 1 ? '1 hora' : `${horas} horas`;
+  const minutosTexto = resto === 1 ? '1 minuto' : `${resto} minutos`;
+  if (horas === 0) {
+    return minutosTexto;
+  }
+  if (resto === 0) {
+    return horasTexto;
+  }
+  return `${horasTexto} ${minutosTexto}`;
+};
+
+const duracionVisible = (minutos) => {
+  const texto = textoDuracion(minutos);
+  return texto ? `Duración: ${texto}` : '';
+};
+
+const retrasoVisible = (minutos) => {
+  const texto = textoDuracion(minutos);
+  return texto ? `Retraso: ${texto}` : '';
+};
+
 const sinAcentos = (texto) => String(texto ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
 const CLAVES_DE_RESERVA = ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave'];
@@ -170,7 +198,7 @@ const limpiarDatosPersonales = () => {
 };
 
 const CLAVES_SESION = ['token', 'rol', 'nombre', 'usuario_id'];
-const MINUTOS_INACTIVIDAD = 15;
+const MINUTOS_INACTIVIDAD = 60;
 
 const olvidarSesionDurable = () => {
   CLAVES_SESION.forEach((clave) => localStorage.removeItem(clave));
@@ -220,6 +248,18 @@ const autorizacion = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const cerrarSesionInvalida = (destino) => {
+  const pagina = destino || `${window.location.pathname}${window.location.search}`;
+  cerrarDatosSesion();
+  if (pagina.startsWith('/') && !pagina.startsWith('//') && !pagina.startsWith('/login.html')) {
+    localStorage.setItem('redirectAfterLogin', pagina);
+  }
+  sessionStorage.setItem('avisoSesion', 'invalida');
+  if (!location.pathname.endsWith('/login.html')) {
+    window.location.replace('/login.html');
+  }
+};
+
 const descargarArchivo = async (url, boton, nombreReserva) => {
   const texto = boton ? boton.textContent : '';
   if (boton) {
@@ -231,8 +271,7 @@ const descargarArchivo = async (url, boton, nombreReserva) => {
       headers: autorizacion(),
     });
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', `${window.location.pathname}${window.location.search}`);
-      window.location.replace('/login.html');
+      cerrarSesionInvalida();
       return;
     }
     if (!respuesta.ok) {
@@ -274,6 +313,9 @@ const descargarBoleto = (reservaId, boton) => descargarArchivo(
 Object.assign(window, {
   escapar,
   quetzales,
+  textoDuracion,
+  duracionVisible,
+  retrasoVisible,
   sinAcentos,
   leerJson,
   guardarJsonTemporal,
@@ -297,6 +339,7 @@ Object.assign(window, {
   guardarIdUsuario,
   guardarDatosSesion,
   cerrarDatosSesion,
+  cerrarSesionInvalida,
   descargarBoleto,
   descargarArchivo,
 });

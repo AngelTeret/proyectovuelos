@@ -17,6 +17,28 @@ const ASIENTOS_POR_FILA = 6;
 const CAPACIDAD_MINIMA = 18;
 const CAPACIDAD_MAXIMA = 102;
 
+const retrasoDe = (valor) => {
+  if (valor == null || valor === '') {
+    return 0;
+  }
+  const minutos = Number(valor);
+  if (!Number.isInteger(minutos) || minutos < 0 || minutos > 24 * 60) {
+    return null;
+  }
+  return minutos;
+};
+
+const duracionDe = (valor) => {
+  if (valor == null || valor === '') {
+    return 120;
+  }
+  const minutos = Number(valor);
+  if (!Number.isInteger(minutos) || minutos < 15 || minutos > 24 * 60) {
+    return null;
+  }
+  return minutos;
+};
+
 const capacidadDeAsientos = (valor) => {
   const numero = Number(valor);
   const esMultiploDeSeis = Number.isInteger(numero) && numero % ASIENTOS_POR_FILA === 0;
@@ -56,7 +78,11 @@ export const obtenerVuelos = async (req, res) => {
 
 export const crearVuelo = async (req, res) => {
   try {
-    const { origen, destino, fecha_salida, fecha_regreso, precio_base, estado, capacidad_asientos } = req.body;
+    const { origen, destino, fecha_salida, fecha_regreso, precio_base, estado, capacidad_asientos, duracion_minutos } = req.body;
+    const duracion = duracionDe(duracion_minutos);
+    if (duracion === null) {
+      return res.status(400).json({ mensaje: 'La duración debe ser de 15 minutos a 24 horas.' });
+    }
     const capacidad = capacidadDeAsientos(capacidad_asientos);
     if (capacidad === null) {
       return res.status(400).json({
@@ -70,8 +96,10 @@ export const crearVuelo = async (req, res) => {
       fecha_regreso: fecha_regreso || null,
       precio_base,
       estado: estado || 'Programado',
+      retraso_minutos: 0,
       imagen_url: rutaDeArchivo(req.file) || IMAGEN_POR_DEFECTO,
       capacidad_asientos: capacidad,
+      duracion_minutos: duracion,
     });
     await generarAsientosParaVuelo(resultado.insertId, capacidad, precio_base);
     res.status(201).json({ mensaje: 'Vuelo creado correctamente', id: resultado.insertId });
@@ -87,7 +115,19 @@ export const actualizarVuelo = async (req, res) => {
       return res.status(404).json({ mensaje: 'El vuelo no existe' });
     }
 
-    const { origen, destino, fecha_salida, fecha_regreso, precio_base } = req.body;
+    const { origen, destino, fecha_salida, fecha_regreso, precio_base, duracion_minutos, retraso_minutos } = req.body;
+    const retraso = retrasoDe(retraso_minutos);
+    if (retraso === null) {
+      return res.status(400).json({ mensaje: 'El retraso debe ser de 0 a 24 horas.' });
+    }
+    const duracion = duracionDe(duracion_minutos);
+    if (duracion === null) {
+      return res.status(400).json({ mensaje: 'La duración debe ser de 15 minutos a 24 horas.' });
+    }
+    const puedeRetrasar = actual.estado === 'Programado' || actual.estado === 'Retrasado';
+    if (!puedeRetrasar && retraso !== (Number(actual.retraso_minutos) || 0)) {
+      return res.status(400).json({ mensaje: 'Este vuelo ya no se puede retrasar.' });
+    }
     const imagenNueva = rutaDeArchivo(req.file);
     const resultado = await Vuelo.actualizar(req.params.id, {
       origen,
@@ -96,6 +136,9 @@ export const actualizarVuelo = async (req, res) => {
       fecha_regreso: fecha_regreso || null,
       precio_base,
       imagen_url: imagenNueva || actual.imagen_url || IMAGEN_POR_DEFECTO,
+      duracion_minutos: duracion,
+      retraso_minutos: retraso,
+      estado: puedeRetrasar ? (retraso > 0 ? 'Retrasado' : 'Programado') : actual.estado,
     });
 
     if (resultado.affectedRows === 0) {

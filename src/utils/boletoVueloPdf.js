@@ -4,6 +4,24 @@ import { textoEquipajeBoleto } from './franquiciaEquipaje.js';
 
 const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
+const textoDuracion = (minutos) => {
+  const total = Number(minutos);
+  if (!Number.isInteger(total) || total <= 0) {
+    return '';
+  }
+  const horas = Math.floor(total / 60);
+  const resto = total % 60;
+  const horasTexto = horas === 1 ? '1 hora' : `${horas} horas`;
+  const minutosTexto = resto === 1 ? '1 minuto' : `${resto} minutos`;
+  if (horas === 0) {
+    return minutosTexto;
+  }
+  if (resto === 0) {
+    return horasTexto;
+  }
+  return `${horasTexto} ${minutosTexto}`;
+};
+
 const textoFecha = (valor) => {
   const partes = partesGuatemala(valor);
   if (!partes) {
@@ -58,11 +76,19 @@ const dibujarBoleto = (doc, boleto, grupo) => {
   doc.fillColor('#166534').font('Helvetica').fontSize(10).text('RESERVA', x + 290, y + 232, { width: 185, align: 'right', lineBreak: false });
   doc.fillColor('#052e16').font('Helvetica-Bold').fontSize(12).text(boleto.codigo_pnr || '', x + 290, y + 248, { width: 185, align: 'right', lineBreak: false });
 
+  const retraso = textoDuracion(boleto.retraso_minutos);
+  const duracion = textoDuracion(boleto.duracion_minutos);
+  const avisos = [retraso ? `Retraso: ${retraso}` : '', duracion ? `Duración: ${duracion}` : ''].filter(Boolean);
+  const yDatos = avisos.length > 0 ? y + 282 : y + 274;
+  if (avisos.length > 0) {
+    doc.fillColor('#166534').font('Helvetica').fontSize(10).text(avisos.join('   '), x + 24, y + 264, { width: 450, lineBreak: false });
+  }
+
   const documento = boleto.documento_identidad ? `Documento ${boleto.documento_identidad}` : '';
   const regazo = infantes.length > 0 ? `Infante en regazo: ${infantes.join(', ')}` : '';
   const lineaUno = [documento, regazo].filter(Boolean).join('  ·  ');
-  doc.fillColor('#166534').font('Helvetica').fontSize(10).text(lineaUno, x + 24, y + 274, { width: 450, lineBreak: false });
-  doc.text(textoEquipajeBoleto(boleto, grupo), x + 24, y + 290, { width: 450, lineBreak: false });
+  doc.fillColor('#166534').font('Helvetica').fontSize(10).text(lineaUno, x + 24, yDatos, { width: 450, lineBreak: false });
+  doc.text(textoEquipajeBoleto(boleto, grupo), x + 24, yDatos + 16, { width: 450, lineBreak: false });
 
   doc.save();
   doc.dash(4, { space: 4 });

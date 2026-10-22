@@ -31,7 +31,7 @@ const cargarReservas = async () => {
   try {
     const respuesta = await fetch('/api/reservas', { headers: autorizacion() });
     if (respuesta.status === 401) {
-      window.location.replace('/login.html');
+      cerrarSesionInvalida('/finanzas.html');
       return;
     }
     if (!respuesta.ok) {

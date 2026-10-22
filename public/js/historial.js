@@ -45,6 +45,30 @@ const clasificar = (reserva) => {
 const SEGUNDOS_DIA = 24 * 60 * 60;
 const SEGUNDOS_DOS_DIAS = 2 * SEGUNDOS_DIA;
 
+const resumenAbordaje = (reserva) => {
+  const entro = Number(reserva.abordados) || 0;
+  const falta = Number(reserva.ausentes) || 0;
+  let texto = '';
+  if (entro === 1 && falta === 0) {
+    texto = 'Ya entró al avión';
+  } else if (entro === 0 && falta === 1) {
+    texto = 'No se presentó';
+  } else if (entro > 0 || falta > 0) {
+    const partes = [];
+    if (entro > 0) {
+      partes.push(entro === 1 ? '1 ya entró al avión' : `${entro} ya entraron al avión`);
+    }
+    if (falta > 0) {
+      partes.push(falta === 1 ? '1 no se presentó' : `${falta} no se presentaron`);
+    }
+    texto = partes.join(' · ');
+  }
+  if (String(reserva.estado_vuelo || '').toLowerCase() !== 'completado') {
+    return texto;
+  }
+  return texto ? `${texto}. El vuelo ya terminó` : 'El vuelo ya terminó';
+};
+
 const puedeDescargar = (reserva) => (
   reserva.estado_pago === 'aprobado' || reserva.estado_pago === 'reembolsado'
 );
@@ -121,8 +145,7 @@ const cancelarReserva = async (reserva, boton) => {
     });
     const data = await respuesta.json().catch(() => ({}));
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', '/mis-vuelos.html');
-      window.location.replace('/login.html');
+      cerrarSesionInvalida('/mis-vuelos.html');
       return;
     }
     if (!respuesta.ok) {
@@ -187,12 +210,22 @@ const pintarGrupo = () => {
     const etiqueta = nodo.querySelector('[data-campo="estado"]');
     nodo.querySelector('[data-campo="pnr"]').textContent = reserva.codigo_pnr || '';
     nodo.querySelector('[data-campo="factura"]').textContent = reserva.numero_factura || '';
-    etiqueta.textContent = grupo.texto;
-    etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${grupo.clase}`;
+    const retrasado = pestanaActiva === 'proximos' && String(reserva.estado_vuelo || '').toLowerCase() === 'retrasado';
+    etiqueta.textContent = retrasado ? 'Retrasado' : grupo.texto;
+    etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${retrasado ? 'bg-amber-50 text-amber-800' : grupo.clase}`;
     nodo.querySelector('[data-campo="ruta"]').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;
-    nodo.querySelector('[data-campo="salida"]').textContent = formatearSalida(reserva.fecha_salida);
+    nodo.querySelector('[data-campo="salida"]').textContent = [formatearSalida(reserva.fecha_salida), retrasoVisible(reserva.retraso_minutos), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
     nodo.querySelector('[data-campo="asiento"]').textContent = reserva.numero_asiento || '';
     nodo.querySelector('[data-campo="total"]').textContent = quetzales(reserva.monto_total);
+    const abordaje = nodo.querySelector('[data-campo="abordaje"]');
+    const textoAbordaje = resumenAbordaje(reserva);
+    if (textoAbordaje) {
+      abordaje.textContent = textoAbordaje;
+      abordaje.classList.remove('hidden');
+      const todosEntraron = (Number(reserva.ausentes) || 0) === 0;
+      abordaje.classList.toggle('text-emerald-700', todosEntraron);
+      abordaje.classList.toggle('text-slate-700', !todosEntraron);
+    }
     const reembolso = nodo.querySelector('[data-campo="reembolso"]');
     if (Number(reserva.monto_reembolsado) > 0) {
       reembolso.textContent = `Se devolvieron ${quetzales(reserva.monto_reembolsado)} a tu billetera.`;
@@ -259,8 +292,7 @@ const cargarHistorial = async (conservarPestana = false) => {
       headers: autorizacion(),
     });
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', '/mis-vuelos.html');
-      window.location.replace('/login.html');
+      cerrarSesionInvalida('/mis-vuelos.html');
       return;
     }
     if (!respuesta.ok) {

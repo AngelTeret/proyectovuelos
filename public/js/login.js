@@ -21,7 +21,16 @@ if (sessionStorage.getItem('avisoSesion') === 'inactiva') {
   Swal.fire({
     icon: 'info',
     title: 'Sesión cerrada',
-    text: 'Cerramos tu sesión tras 15 minutos sin actividad.',
+    text: 'Cerramos tu sesión tras 1 hora sin actividad.',
+  });
+}
+
+if (sessionStorage.getItem('avisoSesion') === 'invalida') {
+  sessionStorage.removeItem('avisoSesion');
+  Swal.fire({
+    icon: 'info',
+    title: 'Sesión cerrada',
+    text: 'Esta sesión ya no sirve. Entra de nuevo.',
   });
 }
 
@@ -76,6 +85,10 @@ document.getElementById('form-login').addEventListener('submit', async (evento) 
     }
     if (data.rol === 'despacho') {
       window.location.replace('/abordaje.html');
+      return;
+    }
+    if (data.rol === 'mantenimiento') {
+      window.location.replace('/mantenimiento.html');
       return;
     }
 

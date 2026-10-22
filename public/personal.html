@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="/imagenes/isotipo.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Cuentas de puerta - Quetzal Airlines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="h-[100dvh] overflow-hidden bg-slate-50 font-sans text-slate-800 antialiased">
+  <div class="flex h-[100dvh] bg-slate-50">
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="flex h-16 shrink-0 items-center justify-end border-b border-slate-100 bg-white px-6">
+        <p id="nombre-usuario" class="text-sm font-semibold text-slate-800"></p>
+      </header>
+      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Cuentas de puerta</h1>
+          <button id="btn-nueva-cuenta" type="button" class="h-11 shrink-0 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">+ Nueva cuenta</button>
+        </div>
+        <section class="overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[520px] text-left text-sm">
+              <thead class="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th class="px-5 py-3">Nombre</th>
+                  <th class="px-5 py-3">Correo</th>
+                  <th class="px-5 py-3">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="lista-despacho" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div id="modal-cuenta" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-slate-900/50 p-4">
+    <div class="my-auto w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl sm:p-6" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-cuenta">
+      <h2 id="titulo-modal-cuenta" class="text-xl font-bold text-slate-900">Nueva cuenta</h2>
+      <form id="form-despacho" class="mt-5 space-y-4">
+        <label class="block">
+          <span class="mb-1.5 block text-xs font-medium text-slate-600">Nombre</span>
+          <input id="despacho-nombre" name="nombre" type="text" required maxlength="100" autocomplete="off" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+        </label>
+        <label class="block">
+          <span class="mb-1.5 block text-xs font-medium text-slate-600">Correo</span>
+          <input id="despacho-email" name="email" type="email" required maxlength="100" autocomplete="off" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+        </label>
+        <label class="block">
+          <span class="mb-1.5 block text-xs font-medium text-slate-600">Contraseña</span>
+          <input id="despacho-password" name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+          <span id="nota-password" class="mt-1.5 hidden text-xs text-slate-500">Si la dejas vacía, la contraseña no cambia.</span>
+        </label>
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button id="btn-cancelar-cuenta" type="button" class="rounded-lg bg-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-300">Cancelar</button>
+          <button id="btn-crear-despacho" type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70">Crear cuenta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script src="/js/util.js"></script>
+  <script src="/js/cabecera.js"></script>
+  <script src="/js/personal.js"></script>
+</body>
+</html>

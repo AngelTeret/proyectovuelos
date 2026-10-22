@@ -10,17 +10,20 @@ const titulosEstado = {
   chequeado: 'Todavía no entra',
   abordado: 'Ya entró',
   no_show: 'No se presentó',
+  sin_checkin: 'No hizo check-in',
 };
 const nombreEstadoVuelo = {
   Programado: 'Listo para empezar',
   Retrasado: 'Vuelo retrasado',
   Abordando: 'Dejando entrar',
-  'En Curso': 'Puerta cerrada',
+  Cerrado: 'Puerta cerrada',
+  'En Curso': 'En vuelo',
 };
 const clasesEstado = {
   chequeado: 'bg-amber-50 text-amber-800',
   abordado: 'bg-emerald-50 text-emerald-800',
   no_show: 'bg-slate-100 text-slate-600',
+  sin_checkin: 'bg-orange-50 text-orange-800',
 };
 
 let vueloActual = null;
@@ -37,8 +40,7 @@ const pedir = async (ruta, metodo = 'GET', cuerpo) => {
     body: cuerpo ? JSON.stringify(cuerpo) : undefined,
   });
   if (respuesta.status === 401) {
-    localStorage.setItem('redirectAfterLogin', `${window.location.pathname}${window.location.search}`);
-    window.location.replace('/login.html');
+    cerrarSesionInvalida(`${window.location.pathname}${window.location.search}`);
     return null;
   }
   const data = await respuesta.json().catch(() => ({}));
@@ -52,22 +54,40 @@ const frasePersonas = (cantidad, una, varias) => `${cantidad} ${Number(cantidad)
 
 const resumenConteo = (vuelo) => {
   const conBoleto = Number(vuelo.chequeados) + Number(vuelo.abordados) + Number(vuelo.no_show);
-  const partes = [frasePersonas(conBoleto, 'persona con boleto', 'personas con boleto')];
+  const sinCheckin = Number(vuelo.sin_checkin) || 0;
+  const partes = [frasePersonas(conBoleto + sinCheckin, 'persona en el vuelo', 'personas en el vuelo')];
+  if (sinCheckin > 0) {
+    partes.push(frasePersonas(sinCheckin, 'no hizo check-in', 'no hicieron check-in'));
+  }
   partes.push(Number(vuelo.abordados) === 0
     ? 'nadie ha entrado'
     : frasePersonas(vuelo.abordados, 'ya entró', 'ya entraron'));
   if (Number(vuelo.no_show) > 0) {
-    partes.push(frasePersonas(vuelo.no_show, 'no se presentó', 'no se presentaron'));
+    partes.push(frasePersonas(vuelo.no_show, 'tenía boleto y no se presentó', 'tenían boleto y no se presentaron'));
   }
   return partes.join(' · ');
 };
 
+const faltaMasDe = (vuelo, horas) => {
+  const salida = new Date(vuelo.fecha_salida).getTime();
+  return Number.isFinite(salida) && salida - Date.now() > horas * 60 * 60 * 1000;
+};
+
 const guiaDe = (vuelo) => {
+  if (faltaMasDe(vuelo, 2) && (vuelo.estado === 'Programado' || vuelo.estado === 'Retrasado' || vuelo.estado === 'Abordando')) {
+    return 'El abordaje abre cuando falten dos horas o menos para la salida. Hasta entonces el check-in sigue abierto.';
+  }
+  if (vuelo.estado === 'Abordando' && faltaMasDe(vuelo, 1)) {
+    return 'Puedes marcar a quien muestre el boleto. La puerta se cierra cuando falte una hora o menos. Hasta entonces el check-in sigue abierto.';
+  }
   if (vuelo.estado === 'Abordando') {
-    return 'Paso 2. Cuando la persona muestre su boleto, búscalo y pulsa Ya entró. Cuando ya no vaya a entrar nadie más, cierra la puerta.';
+    return 'Paso 2. Cuando la persona muestre su boleto, búscalo y pulsa Ya entró. Quien no hizo check-in no tiene boleto y no entra. Cuando ya no vaya a entrar nadie más, cierra la puerta.';
+  }
+  if (vuelo.estado === 'Cerrado') {
+    return 'La puerta ya cerró. Quien tenía boleto y no entró quedó como que no se presentó. Quien nunca hizo check-in sigue aparte: no tenía boleto. El avión figura en vuelo cuando llega la hora de salida.';
   }
   if (vuelo.estado === 'En Curso') {
-    return 'La puerta ya cerró. Quien tenía boleto y no entró quedó como que no se presentó.';
+    return 'El avión ya salió. Quien tenía boleto y no entró quedó como que no se presentó.';
   }
   return 'Paso 1. Pulsa Empezar abordaje. Después podrás marcar a cada persona cuando muestre su boleto.';
 };
@@ -83,7 +103,7 @@ const pintarVuelos = (vuelos) => {
     <a href="/abordaje.html?vuelo=${vuelo.id}" class="block rounded-2xl bg-white p-5 shadow-sm hover:bg-slate-50">
       <p class="text-sm font-semibold text-emerald-800">${escapar(nombreEstadoVuelo[vuelo.estado] || vuelo.estado)}</p>
       <p class="mt-1 text-lg font-bold text-slate-900">${escapar(vuelo.origen)} → ${escapar(vuelo.destino)}</p>
-      <p class="mt-1 text-sm text-slate-500">${escapar(formatearSalida(vuelo.fecha_salida))}</p>
+      <p class="mt-1 text-sm text-slate-500">${escapar([formatearSalida(vuelo.fecha_salida), retrasoVisible(vuelo.retraso_minutos), duracionVisible(vuelo.duracion_minutos)].filter(Boolean).join(' · '))}</p>
       <p class="mt-3 text-sm text-slate-700">${escapar(resumenConteo(vuelo))}</p>
       <p class="mt-3 text-sm font-semibold text-emerald-800">Abrir la lista</p>
     </a>
@@ -92,10 +112,10 @@ const pintarVuelos = (vuelos) => {
 };
 
 const accionesVuelo = (vuelo) => {
-  if (vuelo.estado === 'Programado' || vuelo.estado === 'Retrasado') {
+  if ((vuelo.estado === 'Programado' || vuelo.estado === 'Retrasado') && !faltaMasDe(vuelo, 2)) {
     return '<button type="button" id="btn-iniciar" class="h-11 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900">Empezar abordaje</button>';
   }
-  if (vuelo.estado === 'Abordando') {
+  if (vuelo.estado === 'Abordando' && !faltaMasDe(vuelo, 1)) {
     return '<button type="button" id="btn-cerrar" class="h-11 rounded-lg bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700">Cerrar la puerta</button>';
   }
   return '';
@@ -115,7 +135,7 @@ const pintarPasajeros = () => {
     if (!consulta) {
       return true;
     }
-    const texto = `${pasajero.codigo_boleto} ${pasajero.nombre} ${pasajero.apellido} ${pasajero.numero_asiento || ''} ${pasajero.codigo_pnr}`.toUpperCase();
+    const texto = `${pasajero.codigo_boleto || ''} ${pasajero.nombre} ${pasajero.apellido} ${pasajero.numero_asiento || ''} ${pasajero.codigo_pnr}`.toUpperCase();
     return texto.includes(consulta);
   });
   const vacio = document.getElementById('vacio-pasajeros');
@@ -123,7 +143,7 @@ const pintarPasajeros = () => {
   vacio.classList.toggle('hidden', (vueloActual?.pasajeros || []).length > 0);
   if (pasajeros.length === 0) {
     lista.innerHTML = consulta
-      ? '<p class="text-sm text-slate-500">Ese código no está en este vuelo.</p>'
+      ? '<p class="text-sm text-slate-500">No hay nadie con ese dato en este vuelo.</p>'
       : '';
     return;
   }
@@ -139,7 +159,7 @@ const pintarPasajeros = () => {
         <div>
           <p class="text-base font-bold text-slate-900">${escapar(nombre)}</p>
           <p class="mt-1 text-sm text-slate-500">${escapar(asiento)} · Reserva ${escapar(pasajero.codigo_pnr)}</p>
-          <p class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">${escapar(pasajero.codigo_boleto)}</p>
+          ${pasajero.codigo_boleto ? `<p class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">${escapar(pasajero.codigo_boleto)}</p>` : ''}
         </div>
         <div class="flex items-center gap-2">
           <span class="rounded-full px-2.5 py-1 text-xs font-semibold ${clasesEstado[pasajero.estado] || 'bg-slate-100 text-slate-600'}">${escapar(titulosEstado[pasajero.estado] || pasajero.estado)}</span>
@@ -153,7 +173,7 @@ const pintarDetalle = (vuelo) => {
   vueloActual = vuelo;
   document.getElementById('estado-vuelo').textContent = nombreEstadoVuelo[vuelo.estado] || vuelo.estado;
   document.getElementById('ruta-vuelo').textContent = `${vuelo.origen} → ${vuelo.destino}`;
-  document.getElementById('salida-vuelo').textContent = `${formatearSalida(vuelo.fecha_salida)} · ${resumenConteo(vuelo)}`;
+  document.getElementById('salida-vuelo').textContent = [formatearSalida(vuelo.fecha_salida), retrasoVisible(vuelo.retraso_minutos), duracionVisible(vuelo.duracion_minutos), resumenConteo(vuelo)].filter(Boolean).join(' · ');
   document.getElementById('guia-vuelo').textContent = guiaDe(vuelo);
   document.getElementById('acciones-vuelo').innerHTML = accionesVuelo(vuelo);
   pintarPasajeros();
@@ -232,9 +252,14 @@ document.getElementById('detalle-vuelo').addEventListener('click', async (evento
       Swal.fire({
         icon: 'success',
         title: 'Abordaje cerrado',
-        text: Number(data.ausentes) > 0
-          ? `${data.ausentes} quedaron como no se presentaron.`
-          : 'Todos los que tenían check-in abordaron.',
+        text: [
+          Number(data.ausentes) > 0
+            ? `${data.ausentes} ${Number(data.ausentes) === 1 ? 'tenía boleto y quedó como que no se presentó' : 'tenían boleto y quedaron como que no se presentaron'}.`
+            : 'Todos los que tenían boleto abordaron.',
+          Number(data.sin_checkin) > 0
+            ? 'Quien no hizo check-in no tenía boleto y no entra en esa cuenta.'
+            : '',
+        ].filter(Boolean).join(' '),
         confirmButtonText: 'Listo',
       });
     } catch (error) {

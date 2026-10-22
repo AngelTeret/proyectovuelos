@@ -4,6 +4,9 @@ const iconosNav = {
   finanzas: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z"/></svg>',
   vuelos: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"/></svg>',
   abordaje: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.125 1.125 0 1 1-2.25 0 1.125 1.125 0 0 1 2.25 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z"/></svg>',
+  puerta: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>',
+  mantenimiento: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008Z"/></svg>',
+  asientos: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/></svg>',
   entrar: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m3.75-3 3-3m0 0-3-3m3 3H2.25"/></svg>',
   salir: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>',
 };
@@ -12,6 +15,15 @@ const paginaActual = () => {
   const ruta = location.pathname.split('/').pop() || 'index.html';
   if (ruta === 'administracion.html') {
     return 'administracion';
+  }
+  if (ruta === 'personal.html') {
+    return 'puerta';
+  }
+  if (ruta === 'cuentas-mantenimiento.html') {
+    return 'mantenimiento';
+  }
+  if (ruta === 'mantenimiento.html') {
+    return 'asientos';
   }
   if (ruta === 'abordaje.html') {
     return 'abordaje';
@@ -27,15 +39,17 @@ const paginaActual = () => {
 
 const claseNav = (id, actual) => {
   const activo = id === actual;
-  const extra = id === 'administracion' || id === 'finanzas'
+  const extra = id === 'administracion' || id === 'finanzas' || id === 'puerta' || id === 'mantenimiento'
     ? ' solo-admin'
     : id === 'abordaje'
       ? ' solo-personal'
-      : id === 'mis-vuelos'
-        ? ' solo-sesion oculto-despacho'
-        : id === 'inicio'
-          ? ' oculto-despacho'
-          : '';
+      : id === 'asientos'
+        ? ' solo-mantenimiento'
+        : id === 'mis-vuelos'
+          ? ' solo-sesion oculto-despacho oculto-mantenimiento'
+          : id === 'inicio'
+            ? ' oculto-despacho oculto-mantenimiento'
+            : '';
   const color = activo ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50';
   return `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${color}${extra}`;
 };
@@ -49,12 +63,15 @@ const pintarMenu = () => {
   const actual = paginaActual();
   marco.insertAdjacentHTML('afterbegin', `
     <aside id="menu-lateral" class="flex w-[232px] shrink-0 flex-col border-r border-slate-100 bg-white px-4 py-5">
-      <a href="${rolDeSesion() === 'despacho' ? 'abordaje.html' : 'index.html'}" class="mb-8 block px-1"><img src="/imagenes/logotipo.svg" alt="Quetzal Airlines" class="h-11 w-auto max-w-full"></a>
+      <a href="${rolDeSesion() === 'despacho' ? 'abordaje.html' : rolDeSesion() === 'mantenimiento' ? 'mantenimiento.html' : 'index.html'}" class="mb-8 block px-1"><img src="/imagenes/logotipo.svg" alt="Quetzal Airlines" class="h-11 w-auto max-w-full"></a>
       <nav class="flex flex-1 flex-col gap-1" aria-label="Principal">
         <a href="index.html" class="${claseNav('inicio', actual)}">${iconosNav.inicio}Inicio</a>
         <a href="mis-vuelos.html" class="${claseNav('mis-vuelos', actual)}">${iconosNav.vuelos}Mis vuelos</a>
         <a href="administracion.html" class="${claseNav('administracion', actual)}">${iconosNav.administracion}Administración</a>
+        <a href="personal.html" class="${claseNav('puerta', actual)}">${iconosNav.puerta}Puerta</a>
+        <a href="cuentas-mantenimiento.html" class="${claseNav('mantenimiento', actual)}">${iconosNav.mantenimiento}Mantenimiento</a>
         <a href="abordaje.html" class="${claseNav('abordaje', actual)}">${iconosNav.abordaje}Abordaje</a>
+        <a href="mantenimiento.html" class="${claseNav('asientos', actual)}">${iconosNav.asientos}Asientos</a>
         <a href="finanzas.html" class="${claseNav('finanzas', actual)}">${iconosNav.finanzas}Finanzas</a>
         <div class="mt-auto flex flex-col gap-1 border-t border-slate-100 pt-4">
           <a id="btn-iniciar-sesion" href="/login.html" class="hidden flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50">${iconosNav.entrar}Iniciar Sesión</a>
@@ -127,11 +144,23 @@ if (rolDeSesion() !== 'admin' && rolDeSesion() !== 'despacho') {
   document.querySelectorAll('.solo-personal').forEach((enlace) => enlace.remove());
 }
 
+if (rolDeSesion() !== 'admin' && rolDeSesion() !== 'mantenimiento') {
+  document.querySelectorAll('.solo-mantenimiento').forEach((enlace) => enlace.remove());
+}
+
 if (rolDeSesion() === 'despacho') {
   document.querySelectorAll('.oculto-despacho').forEach((enlace) => enlace.remove());
   const pagina = location.pathname.split('/').pop() || 'index.html';
   if (pagina !== 'abordaje.html') {
     location.replace('/abordaje.html');
+  }
+}
+
+if (rolDeSesion() === 'mantenimiento') {
+  document.querySelectorAll('.oculto-mantenimiento').forEach((enlace) => enlace.remove());
+  const pagina = location.pathname.split('/').pop() || 'index.html';
+  if (pagina !== 'mantenimiento.html') {
+    location.replace('/mantenimiento.html');
   }
 }
 

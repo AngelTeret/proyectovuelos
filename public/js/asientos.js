@@ -405,8 +405,7 @@ const elegirAsiento = async (boton, asientos) => {
     });
     const data = await respuesta.json().catch(() => ({}));
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', '/asientos.html');
-      window.location.replace('/login.html');
+      cerrarSesionInvalida('/asientos.html');
       return;
     }
     if (!respuesta.ok) {

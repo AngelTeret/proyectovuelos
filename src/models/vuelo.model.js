@@ -1,9 +1,23 @@
 import pool from '../config/db.js';
 import { conTransaccion } from '../utils/transaccion.js';
+import { marcarSalidas } from './abordaje.model.js';
+import { sumarRetraso } from '../utils/horarioVuelo.js';
 
 const obtenerTodos = async () => {
+  await marcarSalidas();
   const [rows] = await pool.query('SELECT * FROM vuelos');
-  return rows;
+  return rows.map((vuelo) => {
+    const retraso = Number(vuelo.retraso_minutos) || 0;
+    if (!retraso) {
+      return { ...vuelo, retraso_minutos: 0, fecha_programada: null };
+    }
+    return {
+      ...vuelo,
+      retraso_minutos: retraso,
+      fecha_programada: vuelo.fecha_salida,
+      fecha_salida: sumarRetraso(vuelo.fecha_salida, retraso) || vuelo.fecha_salida,
+    };
+  });
 };
 
 const obtenerPorId = async (id) => {
@@ -29,10 +43,12 @@ const crear = async (datos) => {
     estado = 'Programado',
     imagen_url = '/imagenes/avion-fondo.webp',
     capacidad_asientos = 30,
+    duracion_minutos = 120,
+    retraso_minutos = 0,
   } = datos;
   const [result] = await pool.query(
-    'INSERT INTO vuelos (origen, destino, fecha_salida, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [origen, destino, fecha_salida, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos]
+    'INSERT INTO vuelos (origen, destino, fecha_salida, retraso_minutos, duracion_minutos, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [origen, destino, fecha_salida, retraso_minutos, duracion_minutos, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos]
   );
   return result;
 };
@@ -45,10 +61,13 @@ const actualizar = async (id, datos) => {
     fecha_regreso = null,
     precio_base,
     imagen_url = '/imagenes/avion-fondo.webp',
+    duracion_minutos = 120,
+    retraso_minutos = 0,
+    estado = 'Programado',
   } = datos;
   const [resultado] = await pool.query(
-    'UPDATE vuelos SET origen = ?, destino = ?, fecha_salida = ?, fecha_regreso = ?, precio_base = ?, imagen_url = ? WHERE id = ?',
-    [origen, destino, fecha_salida, fecha_regreso, precio_base, imagen_url, id]
+    'UPDATE vuelos SET origen = ?, destino = ?, fecha_salida = ?, retraso_minutos = ?, duracion_minutos = ?, fecha_regreso = ?, precio_base = ?, estado = ?, imagen_url = ? WHERE id = ?',
+    [origen, destino, fecha_salida, retraso_minutos, duracion_minutos, fecha_regreso, precio_base, estado, imagen_url, id]
   );
   return resultado;
 };

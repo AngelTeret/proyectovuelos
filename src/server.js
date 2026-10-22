@@ -11,6 +11,8 @@ import authRoutes from './routes/auth.routes.js';
 import pasajerosRoutes from './routes/pasajeros.routes.js';
 import checkinRoutes from './routes/checkin.routes.js';
 import abordajeRoutes from './routes/abordaje.routes.js';
+import personalRoutes from './routes/personal.routes.js';
+import mantenimientoRoutes from './routes/mantenimiento.routes.js';
 
 dotenv.config();
 
@@ -30,6 +32,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/pasajeros', pasajerosRoutes);
 app.use('/api/checkin', checkinRoutes);
 app.use('/api/abordaje', abordajeRoutes);
+app.use('/api/personal', personalRoutes);
+app.use('/api/mantenimiento', mantenimientoRoutes);
 
 app.listen(PORT, () => {
   console.log(`Servidor escuchando en el puerto ${PORT}`);

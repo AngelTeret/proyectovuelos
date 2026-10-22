@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="/imagenes/isotipo.svg" type="image/svg+xml">
+  <script>
+    ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
+    if (!sessionStorage.getItem('token')) {
+      localStorage.setItem('redirectAfterLogin', location.pathname + location.search);
+      location.replace('/login.html');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Asientos - Quetzal Airlines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="h-[100dvh] overflow-hidden bg-slate-50 font-sans text-slate-800 antialiased">
+  <div class="flex h-[100dvh] bg-slate-50">
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="flex h-16 shrink-0 items-center justify-end border-b border-slate-100 bg-white px-6">
+        <p id="nombre-usuario" class="text-sm font-semibold text-slate-800"></p>
+      </header>
+      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
+        <span class="hidden border-amber-300 bg-amber-50 text-amber-800 border-slate-200 bg-white text-slate-800 bg-slate-100 text-slate-400"></span>
+        <p id="estado-carga" class="text-sm text-slate-500">Cargando los asientos...</p>
+        <section id="lista-vuelos" class="hidden">
+          <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Asientos</h1>
+          <p class="mt-1 max-w-2xl text-sm text-slate-600">Elige un vuelo y deja fuera de servicio el asiento que no se puede vender.</p>
+          <div id="vuelos" class="mt-6 grid gap-3"></div>
+        </section>
+        <section id="detalle-vuelo" class="hidden">
+          <a href="/mantenimiento.html" class="text-sm font-semibold text-slate-500 hover:text-slate-800">Volver a los vuelos</a>
+          <h1 id="ruta-vuelo" class="mt-4 text-xl font-bold text-slate-900 sm:text-2xl"></h1>
+          <p id="salida-vuelo" class="mt-1 text-sm text-slate-500"></p>
+          <p class="mt-4 text-sm text-slate-600">Pulsa un asiento libre para dejarlo fuera de servicio. El vendido no se toca.</p>
+          <div id="mapa" class="mt-6 space-y-3"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="/js/util.js"></script>
+  <script src="/js/cabecera.js"></script>
+  <script src="/js/mantenimiento.js"></script>
+</body>
+</html>
