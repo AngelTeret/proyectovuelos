@@ -68,13 +68,16 @@ const resumenConteo = (vuelo) => {
   return partes.join(' · ');
 };
 
-const faltaMasDeUnaHora = (vuelo) => {
+const faltaMasDe = (vuelo, horas) => {
   const salida = new Date(vuelo.fecha_salida).getTime();
-  return Number.isFinite(salida) && salida - Date.now() > 60 * 60 * 1000;
+  return Number.isFinite(salida) && salida - Date.now() > horas * 60 * 60 * 1000;
 };
 
 const guiaDe = (vuelo) => {
-  if (vuelo.estado === 'Abordando' && faltaMasDeUnaHora(vuelo)) {
+  if (faltaMasDe(vuelo, 2) && (vuelo.estado === 'Programado' || vuelo.estado === 'Retrasado' || vuelo.estado === 'Abordando')) {
+    return 'El abordaje abre cuando falten dos horas o menos para la salida. Hasta entonces el check-in sigue abierto.';
+  }
+  if (vuelo.estado === 'Abordando' && faltaMasDe(vuelo, 1)) {
     return 'Puedes marcar a quien muestre el boleto. La puerta se cierra cuando falte una hora o menos. Hasta entonces el check-in sigue abierto.';
   }
   if (vuelo.estado === 'Abordando') {
@@ -109,10 +112,10 @@ const pintarVuelos = (vuelos) => {
 };
 
 const accionesVuelo = (vuelo) => {
-  if (vuelo.estado === 'Programado' || vuelo.estado === 'Retrasado') {
+  if ((vuelo.estado === 'Programado' || vuelo.estado === 'Retrasado') && !faltaMasDe(vuelo, 2)) {
     return '<button type="button" id="btn-iniciar" class="h-11 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900">Empezar abordaje</button>';
   }
-  if (vuelo.estado === 'Abordando' && !faltaMasDeUnaHora(vuelo)) {
+  if (vuelo.estado === 'Abordando' && !faltaMasDe(vuelo, 1)) {
     return '<button type="button" id="btn-cerrar" class="h-11 rounded-lg bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700">Cerrar la puerta</button>';
   }
   return '';

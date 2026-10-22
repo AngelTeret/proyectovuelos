@@ -2,7 +2,8 @@ import pool from '../config/db.js';
 import { conTransaccion } from '../utils/transaccion.js';
 import { CIERRA_SEGUNDOS } from '../utils/checkinVentana.js';
 
-const HORAS_LISTA = 48;
+const HORAS_ABORDAJE = 2;
+const SEGUNDOS_ABORDAJE = HORAS_ABORDAJE * 60 * 60;
 
 const errorAbordaje = (mensaje, codigo) => {
   const error = new Error(mensaje);
@@ -129,15 +130,19 @@ export const listarVuelosAbordaje = async () => {
     LEFT JOIN reservas r ON r.vuelo_id = v.id AND r.estado_pago = 'aprobado'
     LEFT JOIN reserva_pasajeros rp ON rp.reserva_id = r.id
     LEFT JOIN checkins c ON c.reserva_pasajero_id = rp.id AND c.estado <> 'anulado'
-    WHERE v.estado IN ('Abordando', 'Cerrado')
-      OR (v.estado = 'En Curso' AND v.fecha_salida >= NOW() - INTERVAL 1 DAY)
-      OR (
+    WHERE (
         v.estado IN ('Programado', 'Retrasado')
         AND TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) BETWEEN 0 AND ?
       )
+      OR (
+        v.estado IN ('Abordando', 'Cerrado')
+        AND v.fecha_salida >= NOW() - INTERVAL 2 HOUR
+        AND TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) <= ?
+      )
+      OR (v.estado = 'En Curso' AND v.fecha_salida >= NOW() - INTERVAL 1 DAY)
     GROUP BY v.id, v.origen, v.destino, v.fecha_salida, v.duracion_minutos, v.estado
     ORDER BY v.fecha_salida`,
-    [HORAS_LISTA * 60 * 60]
+    [SEGUNDOS_ABORDAJE, SEGUNDOS_ABORDAJE]
   );
   return filas.map((vuelo) => presentarVuelo(vuelo, vuelo));
 };
@@ -167,6 +172,13 @@ export const iniciarAbordaje = async (vueloId) => {
     if (!vuelo) {
       throw errorAbordaje('Vuelo no encontrado', 404);
     }
+    const falta = segundosParaSalir(vuelo.fecha_salida);
+    if (falta == null) {
+      throw errorAbordaje('No se pudo leer la hora de salida', 400);
+    }
+    if (falta > SEGUNDOS_ABORDAJE) {
+      throw errorAbordaje('Puedes empezar el abordaje cuando falten dos horas o menos para la salida', 400);
+    }
     if (vuelo.estado !== 'Abordando') {
       if (vuelo.estado !== 'Programado' && vuelo.estado !== 'Retrasado') {
         throw errorAbordaje('Este vuelo no puede iniciar el abordaje', 400);
@@ -195,6 +207,10 @@ export const marcarAbordado = async (vueloId, codigo) => {
     }
     if (vuelo.estado !== 'Abordando') {
       throw errorAbordaje('Inicia el abordaje de este vuelo', 400);
+    }
+    const falta = segundosParaSalir(vuelo.fecha_salida);
+    if (falta == null || falta > SEGUNDOS_ABORDAJE) {
+      throw errorAbordaje('Puedes empezar el abordaje cuando falten dos horas o menos para la salida', 400);
     }
     const [filas] = await connection.query(
       `SELECT c.id, c.estado, r.vuelo_id

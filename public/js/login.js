@@ -21,7 +21,7 @@ if (sessionStorage.getItem('avisoSesion') === 'inactiva') {
   Swal.fire({
     icon: 'info',
     title: 'Sesión cerrada',
-    text: 'Cerramos tu sesión tras 15 minutos sin actividad.',
+    text: 'Cerramos tu sesión tras 1 hora sin actividad.',
   });
 }
 

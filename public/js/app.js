@@ -146,7 +146,7 @@ window.App = {
 
 proteger();
 
-const minutosInactividad = 15;
+const minutosInactividad = 60;
 window.setInterval(() => {
   if (!sessionStorage.getItem(CLAVE_TOKEN)) {
     return;

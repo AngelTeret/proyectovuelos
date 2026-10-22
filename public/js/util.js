@@ -193,7 +193,7 @@ const limpiarDatosPersonales = () => {
 };
 
 const CLAVES_SESION = ['token', 'rol', 'nombre', 'usuario_id'];
-const MINUTOS_INACTIVIDAD = 15;
+const MINUTOS_INACTIVIDAD = 60;
 
 const olvidarSesionDurable = () => {
   CLAVES_SESION.forEach((clave) => localStorage.removeItem(clave));
