@@ -69,6 +69,50 @@ const documentoRepetidoEnVuelo = async (connection, vueloId, documentos) => {
   return filas.length > 0;
 };
 
+const numeroFactura = (reservaId) => `FAC-${String(reservaId).padStart(6, '0')}`;
+
+const emitirFactura = async (connection, reservaId, monto, estado = 'emitida') => {
+  await connection.query(
+    `INSERT INTO facturas (reserva_id, numero, monto_total, estado, fecha_anulacion)
+     VALUES (?, ?, ?, ?, IF(? = 'anulada', NOW(), NULL))`,
+    [reservaId, numeroFactura(reservaId), monto, estado, estado]
+  );
+};
+
+const anularFactura = async (connection, reservaId, monto) => {
+  const [filas] = await connection.query(
+    'SELECT id FROM facturas WHERE reserva_id = ? FOR UPDATE',
+    [reservaId]
+  );
+  if (!filas.length) {
+    await emitirFactura(connection, reservaId, monto, 'anulada');
+    return;
+  }
+  await connection.query(
+    `UPDATE facturas
+     SET estado = 'anulada', fecha_anulacion = IFNULL(fecha_anulacion, NOW())
+     WHERE reserva_id = ?`,
+    [reservaId]
+  );
+};
+
+const completarFacturas = async (whereSql, params) => {
+  await pool.query(
+    `INSERT IGNORE INTO facturas (reserva_id, numero, monto_total, estado, fecha_anulacion)
+     SELECT r.id,
+            CONCAT('FAC-', LPAD(r.id, GREATEST(6, CHAR_LENGTH(r.id)), '0')),
+            r.monto_total,
+            IF(r.estado_pago = 'reembolsado', 'anulada', 'emitida'),
+            IF(r.estado_pago = 'reembolsado', NOW(), NULL)
+     FROM reservas r
+     LEFT JOIN facturas f ON f.reserva_id = r.id
+     WHERE f.id IS NULL
+       AND r.estado_pago IN ('aprobado', 'reembolsado')
+       AND ${whereSql}`,
+    params
+  );
+};
+
 const generarCodigoPnr = () => {
   const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let codigo = '';
@@ -299,6 +343,8 @@ const crearReservaGrupo = async (datos) => {
       );
     }
 
+    await emitirFactura(connection, resultadoReserva.insertId, montoTotal);
+
     await connection.query(
       "INSERT INTO idempotencia_pagos (llave_idempotencia, reserva_id, estado_respuesta, codigo_http, cuerpo_respuesta) VALUES (?, ?, 'COMPLETADO', 201, ?)",
       [
@@ -443,6 +489,8 @@ export const crearReservaTransaccion = async (datos) => {
       [resultadoReserva.insertId, idPasajero, asiento_id]
     );
 
+    await emitirFactura(connection, resultadoReserva.insertId, montoTotal);
+
     await connection.query(
       "INSERT INTO idempotencia_pagos (llave_idempotencia, reserva_id, estado_respuesta, codigo_http, cuerpo_respuesta) VALUES (?, ?, 'COMPLETADO', 201, ?)",
       [
@@ -485,10 +533,13 @@ export const obtenerTodas = async () => {
 };
 
 export const obtenerHistorialPorUsuario = async (usuarioId) => {
+  await completarFacturas('r.usuario_id = ?', [usuarioId]);
   const [rows] = await pool.query(
     `SELECT
       r.id,
       r.codigo_pnr,
+      f.numero AS numero_factura,
+      f.estado AS estado_factura,
       v.origen,
       v.destino,
       v.fecha_salida,
@@ -508,6 +559,7 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
     FROM reservas r
     INNER JOIN vuelos v ON r.vuelo_id = v.id
     INNER JOIN asientos a ON r.asiento_id = a.id
+    LEFT JOIN facturas f ON f.reserva_id = r.id
     WHERE r.usuario_id = ?
     ORDER BY r.fecha_creacion DESC`,
     [usuarioId]
@@ -517,10 +569,13 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
 };
 
 export const obtenerComprobantePorUsuario = async (reservaId, usuarioId) => {
+  await completarFacturas('r.id = ? AND r.usuario_id = ?', [reservaId, usuarioId]);
   const [rows] = await pool.query(
     `SELECT
       r.id,
       r.codigo_pnr,
+      f.numero AS numero_factura,
+      f.estado AS estado_factura,
       r.estado_pago,
       r.metodo_pago,
       r.monto_total,
@@ -540,6 +595,7 @@ export const obtenerComprobantePorUsuario = async (reservaId, usuarioId) => {
     INNER JOIN pasajeros p ON r.pasajero_id = p.id
     INNER JOIN vuelos v ON r.vuelo_id = v.id
     INNER JOIN asientos a ON r.asiento_id = a.id
+    LEFT JOIN facturas f ON f.reserva_id = r.id
     WHERE r.id = ? AND r.usuario_id = ?`,
     [reservaId, usuarioId]
   );
@@ -595,6 +651,8 @@ export const obtenerDatosCorreoReserva = async (reservaId) => {
       r.metodo_pago,
       r.fecha_creacion,
       r.equipaje_extra_kg,
+      f.numero AS numero_factura,
+      f.estado AS estado_factura,
       p.nombre,
       p.apellido,
       p.email,
@@ -609,6 +667,7 @@ export const obtenerDatosCorreoReserva = async (reservaId) => {
     INNER JOIN pasajeros p ON r.pasajero_id = p.id
     INNER JOIN vuelos v ON r.vuelo_id = v.id
     INNER JOIN asientos a ON r.asiento_id = a.id
+    LEFT JOIN facturas f ON f.reserva_id = r.id
     WHERE r.id = ?`,
     [reservaId]
   );
@@ -690,6 +749,7 @@ export const actualizarPago = async (id, usuarioId) => {
       "UPDATE reservas SET estado_pago = 'aprobado' WHERE id = ?",
       [id]
     );
+    await emitirFactura(connection, id, monto_total);
 
     await connection.query(
       'UPDATE usuarios SET saldo_virtual = saldo_virtual - ? WHERE id = ?',
@@ -787,6 +847,7 @@ export const cancelarReservaUsuario = async ({ reservaId, usuarioId }) => {
        WHERE id = ?`,
       [calculo.reembolso, reserva.id]
     );
+    await anularFactura(connection, reserva.id, reserva.monto_total);
 
     const [usuarios] = await connection.query(
       'SELECT saldo_virtual FROM usuarios WHERE id = ?',

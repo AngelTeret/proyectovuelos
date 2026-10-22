@@ -46,8 +46,7 @@ const SEGUNDOS_DIA = 24 * 60 * 60;
 const SEGUNDOS_DOS_DIAS = 2 * SEGUNDOS_DIA;
 
 const puedeDescargar = (reserva) => (
-  reserva.estado_pago === 'aprobado'
-  && clasificar(reserva) !== 'cancelados'
+  reserva.estado_pago === 'aprobado' || reserva.estado_pago === 'reembolsado'
 );
 
 const puedeCancelar = (reserva) => (
@@ -187,6 +186,7 @@ const pintarGrupo = () => {
     const nodo = plantilla.content.cloneNode(true);
     const etiqueta = nodo.querySelector('[data-campo="estado"]');
     nodo.querySelector('[data-campo="pnr"]').textContent = reserva.codigo_pnr || '';
+    nodo.querySelector('[data-campo="factura"]').textContent = reserva.numero_factura || '';
     etiqueta.textContent = grupo.texto;
     etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${grupo.clase}`;
     nodo.querySelector('[data-campo="ruta"]').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;

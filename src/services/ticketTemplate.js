@@ -128,16 +128,17 @@ export const generarTemplateBoleto = (datosVuelo = {}) => {
   const metodo = metodoTexto(datosVuelo.metodo_pago || datosVuelo.metodo);
   const compra = texto(datosVuelo.fechaCompra) || formatearInstante(datosVuelo.fecha_creacion);
   const equipaje = Number(datosVuelo.equipaje_extra_kg);
+  const numeroFactura = texto(datosVuelo.numero_factura) || texto(datosVuelo.numeroFactura);
   const cierre = equipaje > 0
-    ? `Este correo es el comprobante de tu reserva. Incluye ${equipaje} kg de equipaje extra. Quetzal Airlines.`
-    : 'Este correo es el comprobante de tu reserva. Quetzal Airlines.';
+    ? `Adjuntamos la factura ${numeroFactura} de tu reserva. Incluye ${equipaje} kg de equipaje extra. Quetzal Airlines.`
+    : `Adjuntamos la factura ${numeroFactura} de tu reserva. Quetzal Airlines.`;
 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Comprobante de reserva - Quetzal Airlines</title>
+  <title>Factura ${escapar(numeroFactura)} - Quetzal Airlines</title>
 </head>
 <body style="margin:0;padding:0;background:#f3f4f6;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px;">
@@ -147,7 +148,7 @@ export const generarTemplateBoleto = (datosVuelo = {}) => {
           <tr>
             <td style="background:#05402d;padding:22px 28px;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#d1fae5;">Quetzal Airlines</p>
-              <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#ffffff;">Comprobante de reserva</p>
+              <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#ffffff;">Factura ${escapar(numeroFactura)}</p>
             </td>
           </tr>
           <tr>
@@ -156,7 +157,7 @@ export const generarTemplateBoleto = (datosVuelo = {}) => {
           <tr>
             <td style="padding:16px 28px;background:#ecfdf5;font-family:Arial,Helvetica,sans-serif;">
               <p style="margin:0;font-size:13px;font-weight:700;color:#05402d;">Reserva confirmada</p>
-              <p style="margin:4px 0 0 0;font-size:13px;line-height:1.5;color:#3f6212;">Tu pago quedó registrado. Guarda este comprobante. No es un pase de abordar.</p>
+              <p style="margin:4px 0 0 0;font-size:13px;line-height:1.5;color:#3f6212;">Tu pago quedó registrado. La factura va adjunta a este correo.</p>
             </td>
           </tr>
           <tr>
@@ -245,11 +246,13 @@ export const generarTemplateCancelacion = (datos = {}) => {
   const devuelto = quetzales(datos.reembolso);
   const pagado = quetzales(datos.monto_total ?? datos.monto);
   const tipoReembolso = datos.parcial ? 'Parcial' : 'Total';
+  const factura = texto(datos.numero_factura);
+  const avisoFactura = factura ? ` La factura ${factura} quedó anulada.` : '';
   const explicacion = datos.parcial && pagado
-    ? `De ${pagado} pagados, volvieron ${devuelto} a tu billetera.`
+    ? `De ${pagado} pagados, volvieron ${devuelto} a tu billetera.${avisoFactura}`
     : datos.parcial
-      ? `Volvieron ${devuelto} a tu billetera.`
-      : `Volvió el total, ${devuelto}, a tu billetera.`;
+      ? `Volvieron ${devuelto} a tu billetera.${avisoFactura}`
+      : `Volvió el total, ${devuelto}, a tu billetera.${avisoFactura}`;
   const asientosLibres = varios
     ? 'Los asientos volvieron a estar disponibles.'
     : 'El asiento volvió a estar disponible.';

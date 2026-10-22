@@ -10,25 +10,32 @@ import {
   cancelarReservaUsuario,
 } from '../models/reserva.model.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
-import { crearPdfBoleto } from '../utils/boletoPdf.js';
+import { crearPdfFactura } from '../utils/boletoPdf.js';
 import { enviarBoleto } from '../services/emailService.js';
 import { generarTemplateBoleto, generarTemplateCancelacion } from '../services/ticketTemplate.js';
 
-const enviarPaseDeAbordar = async (reservaId, codigoPnr) => {
+const enviarFactura = async (reservaId) => {
   try {
     const datos = await obtenerDatosCorreoReserva(reservaId);
     if (!datos?.email) {
-      console.log(`La reserva ${codigoPnr} no tiene correo para el comprobante.`);
+      console.log(`La reserva ${reservaId} no tiene correo para la factura.`);
       return false;
     }
+    const pdf = await crearPdfFactura(datos);
+    const numero = String(datos.numero_factura || 'factura').replace(/[^A-Za-z0-9-]/g, '');
     await enviarBoleto(
       datos.email,
-      `Comprobante de reserva ${datos.codigo_pnr} - Quetzal Airlines`,
+      `Factura ${datos.numero_factura} - Quetzal Airlines`,
       generarTemplateBoleto(datos),
+      [{
+        filename: `factura-${numero}.pdf`,
+        content: pdf,
+        contentType: 'application/pdf',
+      }],
     );
     return true;
   } catch (error) {
-    console.log(`La reserva ${codigoPnr} quedó confirmada, pero el comprobante no se envió: ${error.message}`);
+    console.log(`La reserva ${reservaId} quedó confirmada, pero la factura no se envió: ${error.message}`);
     return false;
   }
 };
@@ -119,7 +126,7 @@ export const crearReserva = async (req, res) => {
       asientos,
     });
 
-    const correoEnviado = await enviarPaseDeAbordar(reserva.id, reserva.codigo_pnr);
+    const correoEnviado = await enviarFactura(reserva.id);
 
     res.status(201).json({
       codigo_pnr: reserva.codigo_pnr,
@@ -212,10 +219,10 @@ export const cancelarReserva = async (req, res) => {
   }
 };
 
-const boletoDisponible = async (req) => {
+const facturaDisponible = async (req) => {
   const sesion = usuarioDesdeToken(req);
   if (!sesion?.id) {
-    const error = new Error('Inicia sesión para ver tu boleto');
+    const error = new Error('Inicia sesión para ver tu factura');
     error.codigo = 401;
     throw error;
   }
@@ -225,19 +232,18 @@ const boletoDisponible = async (req) => {
     error.codigo = 400;
     throw error;
   }
-  const boleto = await obtenerComprobantePorUsuario(reservaId, sesion.id);
-  if (!boleto) {
+  const factura = await obtenerComprobantePorUsuario(reservaId, sesion.id);
+  if (!factura) {
     const error = new Error('Reserva no encontrada');
     error.codigo = 404;
     throw error;
   }
-  const vueloCancelado = String(boleto.estado_vuelo || '').toLowerCase() === 'cancelado';
-  if (boleto.estado_pago !== 'aprobado' || vueloCancelado) {
-    const error = new Error('Este boleto ya no está disponible');
+  if (!factura.numero_factura) {
+    const error = new Error('Esta reserva no tiene factura');
     error.codigo = 400;
     throw error;
   }
-  return boleto;
+  return factura;
 };
 
 const responderErrorBoleto = (res, error) => {
@@ -250,49 +256,59 @@ const responderErrorBoleto = (res, error) => {
   return responderErrorInterno(res, error);
 };
 
-export const obtenerComprobante = async (req, res) => {
+const datosFactura = (factura) => ({
+  id: factura.id,
+  numero_factura: factura.numero_factura,
+  estado_factura: factura.estado_factura,
+  codigo_pnr: factura.codigo_pnr,
+  nombre: factura.nombre,
+  apellido: factura.apellido,
+  documento_identidad: factura.documento_identidad,
+  email: factura.email,
+  origen: factura.origen,
+  destino: factura.destino,
+  fecha_salida: factura.fecha_salida,
+  numero_asiento: factura.numero_asiento,
+  monto_total: factura.monto_total,
+  metodo_pago: factura.metodo_pago,
+  fecha_creacion: factura.fecha_creacion,
+  viajeros: factura.viajeros,
+});
+
+export const obtenerFactura = async (req, res) => {
   try {
-    const boleto = await boletoDisponible(req);
-    res.status(200).json({
-      id: boleto.id,
-      codigo_pnr: boleto.codigo_pnr,
-      nombre: boleto.nombre,
-      apellido: boleto.apellido,
-      documento_identidad: boleto.documento_identidad,
-      email: boleto.email,
-      origen: boleto.origen,
-      destino: boleto.destino,
-      fecha_salida: boleto.fecha_salida,
-      numero_asiento: boleto.numero_asiento,
-      monto_total: boleto.monto_total,
-      metodo_pago: boleto.metodo_pago,
-      fecha_creacion: boleto.fecha_creacion,
-      viajeros: boleto.viajeros,
-    });
+    const factura = await facturaDisponible(req);
+    res.status(200).json(datosFactura(factura));
   } catch (error) {
     responderErrorBoleto(res, error);
   }
 };
 
-export const descargarBoleto = async (req, res) => {
+export const descargarFactura = async (req, res) => {
   try {
-    const boleto = await boletoDisponible(req);
-    const pdf = await crearPdfBoleto(boleto);
-    const codigo = String(boleto.codigo_pnr || 'reserva').replace(/[^A-Za-z0-9]/g, '');
+    const factura = await facturaDisponible(req);
+    const pdf = await crearPdfFactura(factura);
+    const numero = String(factura.numero_factura || 'factura').replace(/[^A-Za-z0-9-]/g, '');
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="confirmacion-${codigo}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="factura-${numero}.pdf"`);
     res.status(200).send(pdf);
   } catch (error) {
     responderErrorBoleto(res, error);
   }
 };
 
+export const obtenerComprobante = obtenerFactura;
+export const descargarBoleto = descargarFactura;
+
 export const pagarReserva = async (req, res) => {
   try {
-    const pago = await actualizarPago(Number(req.params.id), req.usuario.id);
+    const reservaId = Number(req.params.id);
+    const pago = await actualizarPago(reservaId, req.usuario.id);
+    const correoEnviado = await enviarFactura(reservaId);
     res.status(200).json({
       mensaje: 'Pago actualizado correctamente',
       saldo_virtual: pago.saldo_virtual,
+      correo_enviado: correoEnviado,
     });
   } catch (error) {
     if (error.codigo === 404 || error.codigo === 400) {

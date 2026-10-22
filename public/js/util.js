@@ -227,7 +227,7 @@ const descargarBoleto = async (reservaId, boton) => {
     boton.textContent = 'Descargando...';
   }
   try {
-    const respuesta = await fetch(`/api/reservas/${reservaId}/boleto`, {
+    const respuesta = await fetch(`/api/reservas/${reservaId}/factura/pdf`, {
       headers: autorizacion(),
     });
     if (respuesta.status === 401) {
@@ -250,7 +250,7 @@ const descargarBoleto = async (reservaId, boton) => {
     const url = URL.createObjectURL(archivo);
     const enlace = document.createElement('a');
     enlace.href = url;
-    enlace.download = coincidencia ? coincidencia[1] : 'confirmacion.pdf';
+    enlace.download = coincidencia ? coincidencia[1] : 'factura.pdf';
     document.body.appendChild(enlace);
     enlace.click();
     enlace.remove();

@@ -121,6 +121,22 @@ CREATE TABLE IF NOT EXISTS reserva_pasajeros (
     FOREIGN KEY (asiento_id) REFERENCES asientos (id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS facturas (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  reserva_id INT UNSIGNED NOT NULL,
+  numero VARCHAR(20) NOT NULL,
+  monto_total DECIMAL(10, 2) NOT NULL,
+  estado ENUM('emitida', 'anulada') NOT NULL DEFAULT 'emitida',
+  fecha_emision TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_anulacion DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_facturas_reserva (reserva_id),
+  UNIQUE KEY uk_facturas_numero (numero),
+  CONSTRAINT fk_facturas_reserva
+    FOREIGN KEY (reserva_id) REFERENCES reservas (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS idempotencia_pagos (
     llave_idempotencia VARCHAR(50) PRIMARY KEY,
     reserva_id INT UNSIGNED NOT NULL,

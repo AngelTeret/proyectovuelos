@@ -23,15 +23,16 @@ const transportadorBrevo = nodemailer.createTransport({
   },
 });
 
-export async function enviarBoleto(correoDestino, asunto, contenidoHTML) {
+export async function enviarBoleto(correoDestino, asunto, contenidoHTML, adjuntos = []) {
   const mensaje = {
     to: correoDestino,
     subject: asunto,
     html: contenidoHTML,
+    attachments: adjuntos,
   };
 
   try {
-    console.log(`Intentando enviar el boleto a ${correoDestino} por Gmail...`);
+    console.log(`Intentando enviar el correo a ${correoDestino} por Gmail...`);
     await transportadorGmail.sendMail({
       ...mensaje,
       from: remitente(process.env.GMAIL_USER),
