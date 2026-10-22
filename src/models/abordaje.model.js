@@ -28,6 +28,7 @@ const presentarVuelo = (vuelo, conteos = {}) => ({
   chequeados: Number(conteos.chequeados) || 0,
   abordados: Number(conteos.abordados) || 0,
   no_show: Number(conteos.no_show) || 0,
+  sin_checkin: Number(conteos.sin_checkin) || 0,
 });
 
 const conteosDe = async (executor, vueloId) => {
@@ -35,11 +36,12 @@ const conteosDe = async (executor, vueloId) => {
     `SELECT
       SUM(c.estado = 'chequeado') AS chequeados,
       SUM(c.estado = 'abordado') AS abordados,
-      SUM(c.estado = 'no_show') AS no_show
-    FROM checkins c
-    INNER JOIN reserva_pasajeros rp ON rp.id = c.reserva_pasajero_id
-    INNER JOIN reservas r ON r.id = rp.reserva_id
-    WHERE r.vuelo_id = ? AND r.estado_pago = 'aprobado' AND c.estado <> 'anulado'`,
+      SUM(c.estado = 'no_show') AS no_show,
+      SUM(rp.id IS NOT NULL AND c.id IS NULL) AS sin_checkin
+    FROM reserva_pasajeros rp
+    INNER JOIN reservas r ON r.id = rp.reserva_id AND r.estado_pago = 'aprobado'
+    LEFT JOIN checkins c ON c.reserva_pasajero_id = rp.id AND c.estado <> 'anulado'
+    WHERE r.vuelo_id = ?`,
     [vueloId]
   );
   return filas[0] || {};
@@ -57,19 +59,19 @@ const pasajerosDe = async (executor, vueloId) => {
   const [filas] = await executor.query(
     `SELECT
       c.codigo_boleto,
-      c.estado,
+      CASE WHEN c.id IS NULL THEN 'sin_checkin' ELSE c.estado END AS estado,
       p.nombre,
       p.apellido,
       p.tipo,
       p.documento_identidad,
       a.numero_asiento,
       r.codigo_pnr
-    FROM checkins c
-    INNER JOIN reserva_pasajeros rp ON rp.id = c.reserva_pasajero_id
+    FROM reserva_pasajeros rp
     INNER JOIN pasajeros p ON p.id = rp.pasajero_id
     INNER JOIN reservas r ON r.id = rp.reserva_id
     LEFT JOIN asientos a ON a.id = rp.asiento_id
-    WHERE r.vuelo_id = ? AND r.estado_pago = 'aprobado' AND c.estado <> 'anulado'
+    LEFT JOIN checkins c ON c.reserva_pasajero_id = rp.id AND c.estado <> 'anulado'
+    WHERE r.vuelo_id = ? AND r.estado_pago = 'aprobado'
     ORDER BY a.numero_asiento, rp.orden`,
     [vueloId]
   );
@@ -95,7 +97,8 @@ export const listarVuelosAbordaje = async () => {
       v.estado,
       SUM(c.estado = 'chequeado') AS chequeados,
       SUM(c.estado = 'abordado') AS abordados,
-      SUM(c.estado = 'no_show') AS no_show
+      SUM(c.estado = 'no_show') AS no_show,
+      SUM(rp.id IS NOT NULL AND c.id IS NULL) AS sin_checkin
     FROM vuelos v
     LEFT JOIN reservas r ON r.vuelo_id = v.id AND r.estado_pago = 'aprobado'
     LEFT JOIN reserva_pasajeros rp ON rp.reserva_id = r.id

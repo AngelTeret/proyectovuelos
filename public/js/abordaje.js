@@ -10,6 +10,7 @@ const titulosEstado = {
   chequeado: 'Todavía no entra',
   abordado: 'Ya entró',
   no_show: 'No se presentó',
+  sin_checkin: 'No hizo check-in',
 };
 const nombreEstadoVuelo = {
   Programado: 'Listo para empezar',
@@ -21,6 +22,7 @@ const clasesEstado = {
   chequeado: 'bg-amber-50 text-amber-800',
   abordado: 'bg-emerald-50 text-emerald-800',
   no_show: 'bg-slate-100 text-slate-600',
+  sin_checkin: 'bg-orange-50 text-orange-800',
 };
 
 let vueloActual = null;
@@ -52,22 +54,26 @@ const frasePersonas = (cantidad, una, varias) => `${cantidad} ${Number(cantidad)
 
 const resumenConteo = (vuelo) => {
   const conBoleto = Number(vuelo.chequeados) + Number(vuelo.abordados) + Number(vuelo.no_show);
-  const partes = [frasePersonas(conBoleto, 'persona con boleto', 'personas con boleto')];
+  const sinCheckin = Number(vuelo.sin_checkin) || 0;
+  const partes = [frasePersonas(conBoleto + sinCheckin, 'persona en el vuelo', 'personas en el vuelo')];
+  if (sinCheckin > 0) {
+    partes.push(frasePersonas(sinCheckin, 'no hizo check-in', 'no hicieron check-in'));
+  }
   partes.push(Number(vuelo.abordados) === 0
     ? 'nadie ha entrado'
     : frasePersonas(vuelo.abordados, 'ya entró', 'ya entraron'));
   if (Number(vuelo.no_show) > 0) {
-    partes.push(frasePersonas(vuelo.no_show, 'no se presentó', 'no se presentaron'));
+    partes.push(frasePersonas(vuelo.no_show, 'tenía boleto y no se presentó', 'tenían boleto y no se presentaron'));
   }
   return partes.join(' · ');
 };
 
 const guiaDe = (vuelo) => {
   if (vuelo.estado === 'Abordando') {
-    return 'Paso 2. Cuando la persona muestre su boleto, búscalo y pulsa Ya entró. Cuando ya no vaya a entrar nadie más, cierra la puerta.';
+    return 'Paso 2. Cuando la persona muestre su boleto, búscalo y pulsa Ya entró. Quien no hizo check-in no tiene boleto y no entra. Cuando ya no vaya a entrar nadie más, cierra la puerta.';
   }
   if (vuelo.estado === 'En Curso') {
-    return 'La puerta ya cerró. Quien tenía boleto y no entró quedó como que no se presentó.';
+    return 'La puerta ya cerró. Quien tenía boleto y no entró quedó como que no se presentó. Quien nunca hizo check-in sigue aparte: no tenía boleto.';
   }
   return 'Paso 1. Pulsa Empezar abordaje. Después podrás marcar a cada persona cuando muestre su boleto.';
 };
@@ -115,7 +121,7 @@ const pintarPasajeros = () => {
     if (!consulta) {
       return true;
     }
-    const texto = `${pasajero.codigo_boleto} ${pasajero.nombre} ${pasajero.apellido} ${pasajero.numero_asiento || ''} ${pasajero.codigo_pnr}`.toUpperCase();
+    const texto = `${pasajero.codigo_boleto || ''} ${pasajero.nombre} ${pasajero.apellido} ${pasajero.numero_asiento || ''} ${pasajero.codigo_pnr}`.toUpperCase();
     return texto.includes(consulta);
   });
   const vacio = document.getElementById('vacio-pasajeros');
@@ -123,7 +129,7 @@ const pintarPasajeros = () => {
   vacio.classList.toggle('hidden', (vueloActual?.pasajeros || []).length > 0);
   if (pasajeros.length === 0) {
     lista.innerHTML = consulta
-      ? '<p class="text-sm text-slate-500">Ese código no está en este vuelo.</p>'
+      ? '<p class="text-sm text-slate-500">No hay nadie con ese dato en este vuelo.</p>'
       : '';
     return;
   }
@@ -139,7 +145,7 @@ const pintarPasajeros = () => {
         <div>
           <p class="text-base font-bold text-slate-900">${escapar(nombre)}</p>
           <p class="mt-1 text-sm text-slate-500">${escapar(asiento)} · Reserva ${escapar(pasajero.codigo_pnr)}</p>
-          <p class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">${escapar(pasajero.codigo_boleto)}</p>
+          ${pasajero.codigo_boleto ? `<p class="mt-1 font-mono text-sm font-semibold tracking-wide text-slate-800">${escapar(pasajero.codigo_boleto)}</p>` : ''}
         </div>
         <div class="flex items-center gap-2">
           <span class="rounded-full px-2.5 py-1 text-xs font-semibold ${clasesEstado[pasajero.estado] || 'bg-slate-100 text-slate-600'}">${escapar(titulosEstado[pasajero.estado] || pasajero.estado)}</span>
@@ -232,9 +238,14 @@ document.getElementById('detalle-vuelo').addEventListener('click', async (evento
       Swal.fire({
         icon: 'success',
         title: 'Abordaje cerrado',
-        text: Number(data.ausentes) > 0
-          ? `${data.ausentes} quedaron como no se presentaron.`
-          : 'Todos los que tenían check-in abordaron.',
+        text: [
+          Number(data.ausentes) > 0
+            ? `${data.ausentes} ${Number(data.ausentes) === 1 ? 'tenía boleto y quedó como que no se presentó' : 'tenían boleto y quedaron como que no se presentaron'}.`
+            : 'Todos los que tenían boleto abordaron.',
+          Number(data.sin_checkin) > 0
+            ? 'Quien no hizo check-in no tenía boleto y no entra en esa cuenta.'
+            : '',
+        ].filter(Boolean).join(' '),
         confirmButtonText: 'Listo',
       });
     } catch (error) {

@@ -39,7 +39,8 @@
         <p id="estado-carga" class="text-sm text-slate-500">Cargando el abordaje...</p>
         <section id="lista-vuelos" class="hidden">
           <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Abordaje</h1>
-          <p class="mt-1 max-w-2xl text-sm text-slate-600">Elige un vuelo. Solo ves a quienes ya hicieron check-in y tienen boleto.</p>
+          <p class="mt-1 max-w-2xl text-sm text-slate-600">Elige un vuelo. La lista incluye a todos los que pagaron. Quien no hizo check-in aparece marcado y no puede entrar.</p>
+          <span class="hidden bg-orange-50 text-orange-800"></span>
           <div id="vuelos" class="mt-6 grid gap-3"></div>
         </section>
         <section id="detalle-vuelo" class="hidden">
@@ -57,7 +58,7 @@
             <span class="mb-1.5 block text-xs font-medium text-slate-600">Buscar a la persona</span>
             <input id="buscar-boleto" type="search" placeholder="Código del boleto, nombre o asiento" class="h-11 w-full max-w-md rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400">
           </label>
-          <p id="vacio-pasajeros" class="mt-6 hidden text-sm text-slate-500">Nadie ha hecho check-in en este vuelo.</p>
+          <p id="vacio-pasajeros" class="mt-6 hidden text-sm text-slate-500">Nadie pagó este vuelo.</p>
           <div id="pasajeros" class="mt-4 grid gap-3"></div>
         </section>
       </main>
