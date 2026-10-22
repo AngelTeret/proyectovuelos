@@ -49,7 +49,15 @@ const guardarSesion = (token, usuario) => {
   sessionStorage.setItem('sesionActiva', String(Date.now()));
 };
 
-const paginaDeRol = (rol) => (rol === 'admin' ? 'admin.html' : 'cliente.html');
+const paginaDeRol = (rol) => {
+  if (rol === 'admin') {
+    return 'administracion.html';
+  }
+  if (rol === 'despacho') {
+    return 'abordaje.html';
+  }
+  return 'cliente.html';
+};
 
 const cerrarSesion = () => {
   ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave', 'redirectAfterLogin', 'reservaConfirmada', 'correoEnviado', 'usuario_id', 'rol', 'nombre'].forEach((clave) => {

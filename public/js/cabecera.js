@@ -32,8 +32,10 @@ const claseNav = (id, actual) => {
     : id === 'abordaje'
       ? ' solo-personal'
       : id === 'mis-vuelos'
-        ? ' solo-sesion'
-        : '';
+        ? ' solo-sesion oculto-despacho'
+        : id === 'inicio'
+          ? ' oculto-despacho'
+          : '';
   const color = activo ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50';
   return `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${color}${extra}`;
 };
@@ -47,7 +49,7 @@ const pintarMenu = () => {
   const actual = paginaActual();
   marco.insertAdjacentHTML('afterbegin', `
     <aside id="menu-lateral" class="flex w-[232px] shrink-0 flex-col border-r border-slate-100 bg-white px-4 py-5">
-      <a href="index.html" class="mb-8 block px-1"><img src="/imagenes/logotipo.svg" alt="Quetzal Airlines" class="h-11 w-auto max-w-full"></a>
+      <a href="${rolDeSesion() === 'despacho' ? 'abordaje.html' : 'index.html'}" class="mb-8 block px-1"><img src="/imagenes/logotipo.svg" alt="Quetzal Airlines" class="h-11 w-auto max-w-full"></a>
       <nav class="flex flex-1 flex-col gap-1" aria-label="Principal">
         <a href="index.html" class="${claseNav('inicio', actual)}">${iconosNav.inicio}Inicio</a>
         <a href="mis-vuelos.html" class="${claseNav('mis-vuelos', actual)}">${iconosNav.vuelos}Mis vuelos</a>
@@ -123,6 +125,14 @@ if (rolDeSesion() !== 'admin') {
 
 if (rolDeSesion() !== 'admin' && rolDeSesion() !== 'despacho') {
   document.querySelectorAll('.solo-personal').forEach((enlace) => enlace.remove());
+}
+
+if (rolDeSesion() === 'despacho') {
+  document.querySelectorAll('.oculto-despacho').forEach((enlace) => enlace.remove());
+  const pagina = location.pathname.split('/').pop() || 'index.html';
+  if (pagina !== 'abordaje.html') {
+    location.replace('/abordaje.html');
+  }
 }
 
 if (!tokenDeSesion()) {
