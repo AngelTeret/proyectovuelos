@@ -39,8 +39,7 @@ const pedir = async (ruta, metodo = 'GET', cuerpo) => {
     body: cuerpo ? JSON.stringify(cuerpo) : undefined,
   });
   if (respuesta.status === 401) {
-    localStorage.setItem('redirectAfterLogin', `${window.location.pathname}${window.location.search}`);
-    window.location.replace('/login.html');
+    cerrarSesionInvalida(`${window.location.pathname}${window.location.search}`);
     return null;
   }
   const data = await respuesta.json().catch(() => ({}));

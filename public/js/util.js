@@ -220,6 +220,18 @@ const autorizacion = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const cerrarSesionInvalida = (destino) => {
+  const pagina = destino || `${window.location.pathname}${window.location.search}`;
+  cerrarDatosSesion();
+  if (pagina.startsWith('/') && !pagina.startsWith('//') && !pagina.startsWith('/login.html')) {
+    localStorage.setItem('redirectAfterLogin', pagina);
+  }
+  sessionStorage.setItem('avisoSesion', 'invalida');
+  if (!location.pathname.endsWith('/login.html')) {
+    window.location.replace('/login.html');
+  }
+};
+
 const descargarArchivo = async (url, boton, nombreReserva) => {
   const texto = boton ? boton.textContent : '';
   if (boton) {
@@ -231,8 +243,7 @@ const descargarArchivo = async (url, boton, nombreReserva) => {
       headers: autorizacion(),
     });
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', `${window.location.pathname}${window.location.search}`);
-      window.location.replace('/login.html');
+      cerrarSesionInvalida();
       return;
     }
     if (!respuesta.ok) {
@@ -297,6 +308,7 @@ Object.assign(window, {
   guardarIdUsuario,
   guardarDatosSesion,
   cerrarDatosSesion,
+  cerrarSesionInvalida,
   descargarBoleto,
   descargarArchivo,
 });

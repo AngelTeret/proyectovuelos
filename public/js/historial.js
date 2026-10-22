@@ -143,8 +143,7 @@ const cancelarReserva = async (reserva, boton) => {
     });
     const data = await respuesta.json().catch(() => ({}));
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', '/mis-vuelos.html');
-      window.location.replace('/login.html');
+      cerrarSesionInvalida('/mis-vuelos.html');
       return;
     }
     if (!respuesta.ok) {
@@ -290,8 +289,7 @@ const cargarHistorial = async (conservarPestana = false) => {
       headers: autorizacion(),
     });
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', '/mis-vuelos.html');
-      window.location.replace('/login.html');
+      cerrarSesionInvalida('/mis-vuelos.html');
       return;
     }
     if (!respuesta.ok) {

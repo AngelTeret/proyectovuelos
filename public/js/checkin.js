@@ -421,8 +421,7 @@ const pedir = async (metodo, cuerpo) => {
     body: JSON.stringify({ codigo_pnr: pnr, ...cuerpo }),
   });
   if (respuesta.status === 401) {
-    localStorage.setItem('redirectAfterLogin', `${window.location.pathname}${window.location.search}`);
-    window.location.replace('/login.html');
+    cerrarSesionInvalida(`${window.location.pathname}${window.location.search}`);
     return null;
   }
   const data = await respuesta.json().catch(() => ({}));
@@ -535,8 +534,7 @@ const cargar = async () => {
   try {
     const respuesta = await fetch(`/api/checkin/elegibilidad/${pnr}`, { headers: autorizacion() });
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', `${window.location.pathname}${window.location.search}`);
-      window.location.replace('/login.html');
+      cerrarSesionInvalida(`${window.location.pathname}${window.location.search}`);
       return;
     }
     const data = await respuesta.json().catch(() => ({}));

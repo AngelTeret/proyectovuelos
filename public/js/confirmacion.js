@@ -97,8 +97,7 @@ const cargarConfirmacion = async () => {
       headers: autorizacion(),
     });
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', '/confirmacion.html');
-      window.location.replace('/login.html');
+      cerrarSesionInvalida('/confirmacion.html');
       return;
     }
     const data = await respuesta.json().catch(() => ({}));

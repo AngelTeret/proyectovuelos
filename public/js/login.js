@@ -25,6 +25,15 @@ if (sessionStorage.getItem('avisoSesion') === 'inactiva') {
   });
 }
 
+if (sessionStorage.getItem('avisoSesion') === 'invalida') {
+  sessionStorage.removeItem('avisoSesion');
+  Swal.fire({
+    icon: 'info',
+    title: 'Sesión cerrada',
+    text: 'Esta sesión ya no sirve. Entra de nuevo.',
+  });
+}
+
 document.getElementById('form-login').addEventListener('submit', async (evento) => {
   evento.preventDefault();
 
