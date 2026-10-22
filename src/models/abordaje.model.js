@@ -1,6 +1,7 @@
 import pool from '../config/db.js';
 import { conTransaccion } from '../utils/transaccion.js';
 import { CIERRA_SEGUNDOS } from '../utils/checkinVentana.js';
+import { salidaReal, sumarRetraso } from '../utils/horarioVuelo.js';
 
 const HORAS_ABORDAJE = 2;
 const SEGUNDOS_ABORDAJE = HORAS_ABORDAJE * 60 * 60;
@@ -21,25 +22,25 @@ const idVuelo = (valor) => {
 
 const codigoBoleto = (valor) => String(valor || '').trim().toUpperCase();
 
-const segundosParaSalir = (fecha) => {
-  const salida = new Date(fecha).getTime();
-  if (!Number.isFinite(salida)) {
+const segundosParaSalir = (vuelo) => {
+  const salida = sumarRetraso(vuelo.fecha_salida, vuelo.retraso_minutos);
+  if (!salida) {
     return null;
   }
-  return Math.floor((salida - Date.now()) / 1000);
+  return Math.floor((salida.getTime() - Date.now()) / 1000);
 };
 
 export const marcarSalidas = async (executor = pool) => {
   await executor.query(
     `UPDATE vuelos
      SET estado = 'En Curso'
-     WHERE estado = 'Cerrado' AND fecha_salida <= NOW()`
+     WHERE estado = 'Cerrado' AND ${salidaReal()} <= NOW()`
   );
   await executor.query(
     `UPDATE vuelos
      SET estado = 'Completado'
      WHERE estado = 'En Curso'
-       AND DATE_ADD(fecha_salida, INTERVAL duracion_minutos MINUTE) <= NOW()`
+       AND DATE_ADD(${salidaReal()}, INTERVAL duracion_minutos MINUTE) <= NOW()`
   );
 };
 
@@ -47,7 +48,8 @@ const presentarVuelo = (vuelo, conteos = {}) => ({
   id: vuelo.id,
   origen: vuelo.origen,
   destino: vuelo.destino,
-  fecha_salida: vuelo.fecha_salida,
+  fecha_salida: sumarRetraso(vuelo.fecha_salida, vuelo.retraso_minutos) || vuelo.fecha_salida,
+  retraso_minutos: Number(vuelo.retraso_minutos) || 0,
   duracion_minutos: Number(vuelo.duracion_minutos) || 0,
   estado: vuelo.estado,
   chequeados: Number(conteos.chequeados) || 0,
@@ -74,7 +76,7 @@ const conteosDe = async (executor, vueloId) => {
 
 const bloquearVuelo = async (connection, vueloId) => {
   const [filas] = await connection.query(
-    'SELECT id, origen, destino, fecha_salida, estado FROM vuelos WHERE id = ? FOR UPDATE',
+    'SELECT id, origen, destino, fecha_salida, retraso_minutos, estado FROM vuelos WHERE id = ? FOR UPDATE',
     [vueloId]
   );
   return filas[0] || null;
@@ -120,6 +122,7 @@ export const listarVuelosAbordaje = async () => {
       v.origen,
       v.destino,
       v.fecha_salida,
+      v.retraso_minutos,
       v.duracion_minutos,
       v.estado,
       SUM(c.estado = 'chequeado') AS chequeados,
@@ -132,16 +135,16 @@ export const listarVuelosAbordaje = async () => {
     LEFT JOIN checkins c ON c.reserva_pasajero_id = rp.id AND c.estado <> 'anulado'
     WHERE (
         v.estado IN ('Programado', 'Retrasado')
-        AND TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) BETWEEN 0 AND ?
+        AND TIMESTAMPDIFF(SECOND, NOW(), ${salidaReal('v')}) BETWEEN 0 AND ?
       )
       OR (
         v.estado IN ('Abordando', 'Cerrado')
-        AND v.fecha_salida >= NOW() - INTERVAL 2 HOUR
-        AND TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) <= ?
+        AND ${salidaReal('v')} >= NOW() - INTERVAL 2 HOUR
+        AND TIMESTAMPDIFF(SECOND, NOW(), ${salidaReal('v')}) <= ?
       )
-      OR (v.estado = 'En Curso' AND v.fecha_salida >= NOW() - INTERVAL 1 DAY)
-    GROUP BY v.id, v.origen, v.destino, v.fecha_salida, v.duracion_minutos, v.estado
-    ORDER BY v.fecha_salida`,
+      OR (v.estado = 'En Curso' AND ${salidaReal('v')} >= NOW() - INTERVAL 1 DAY)
+    GROUP BY v.id, v.origen, v.destino, v.fecha_salida, v.retraso_minutos, v.duracion_minutos, v.estado
+    ORDER BY ${salidaReal('v')}`,
     [SEGUNDOS_ABORDAJE, SEGUNDOS_ABORDAJE]
   );
   return filas.map((vuelo) => presentarVuelo(vuelo, vuelo));
@@ -151,7 +154,7 @@ export const obtenerAbordaje = async (vueloId) => {
   const id = idVuelo(vueloId);
   await marcarSalidas();
   const [filas] = await pool.query(
-    'SELECT id, origen, destino, fecha_salida, duracion_minutos, estado FROM vuelos WHERE id = ?',
+    'SELECT id, origen, destino, fecha_salida, retraso_minutos, duracion_minutos, estado FROM vuelos WHERE id = ?',
     [id]
   );
   const vuelo = filas[0];
@@ -172,7 +175,7 @@ export const iniciarAbordaje = async (vueloId) => {
     if (!vuelo) {
       throw errorAbordaje('Vuelo no encontrado', 404);
     }
-    const falta = segundosParaSalir(vuelo.fecha_salida);
+    const falta = segundosParaSalir(vuelo);
     if (falta == null) {
       throw errorAbordaje('No se pudo leer la hora de salida', 400);
     }
@@ -208,7 +211,7 @@ export const marcarAbordado = async (vueloId, codigo) => {
     if (vuelo.estado !== 'Abordando') {
       throw errorAbordaje('Inicia el abordaje de este vuelo', 400);
     }
-    const falta = segundosParaSalir(vuelo.fecha_salida);
+    const falta = segundosParaSalir(vuelo);
     if (falta == null || falta > SEGUNDOS_ABORDAJE) {
       throw errorAbordaje('Puedes empezar el abordaje cuando falten dos horas o menos para la salida', 400);
     }
@@ -255,7 +258,7 @@ export const cerrarAbordaje = async (vueloId) => {
     if (vuelo.estado !== 'Abordando') {
       throw errorAbordaje('El abordaje de este vuelo no está abierto', 400);
     }
-    const falta = segundosParaSalir(vuelo.fecha_salida);
+    const falta = segundosParaSalir(vuelo);
     if (falta == null) {
       throw errorAbordaje('No se pudo leer la hora de salida', 400);
     }

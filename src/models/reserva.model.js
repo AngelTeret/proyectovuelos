@@ -4,6 +4,7 @@ import { fechaCalendario } from '../utils/fecha.js';
 import { evaluarCheckin } from '../utils/checkinVentana.js';
 import { anularCheckinsDeReserva } from './checkin.model.js';
 import { marcarSalidas } from './abordaje.model.js';
+import { salidaReal, sumarRetraso } from '../utils/horarioVuelo.js';
 import { conTransaccion } from '../utils/transaccion.js';
 
 const paises = new Set(JSON.parse(readFileSync(new URL('../../public/js/codigosTelefono.json', import.meta.url), 'utf8')).map((item) => item.pais));
@@ -202,14 +203,15 @@ const crearReservaGrupo = async (datos) => {
     });
 
     const [filasVuelo] = await connection.query(
-      'SELECT precio_base, fecha_salida FROM vuelos WHERE id = ? FOR UPDATE',
+      'SELECT precio_base, fecha_salida, retraso_minutos FROM vuelos WHERE id = ? FOR UPDATE',
       [vuelo_id]
     );
     if (filasVuelo.length === 0) {
       throw new Error('El vuelo no existe');
     }
     const precioBase = parseFloat(filasVuelo[0].precio_base ?? 0);
-    const edades = limpios.map((viajero) => edadAlVuelo(viajero.fecha_nacimiento, filasVuelo[0].fecha_salida));
+    const diaDelVuelo = sumarRetraso(filasVuelo[0].fecha_salida, filasVuelo[0].retraso_minutos) || filasVuelo[0].fecha_salida;
+    const edades = limpios.map((viajero) => edadAlVuelo(viajero.fecha_nacimiento, diaDelVuelo));
     edades.forEach((edad, indice) => {
       if (edad < 0) {
         throw errorCliente('La fecha de nacimiento no puede ser posterior al día del vuelo');
@@ -546,7 +548,8 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
       f.estado AS estado_factura,
       v.origen,
       v.destino,
-      v.fecha_salida,
+      ${salidaReal('v')} AS fecha_salida,
+      v.retraso_minutos,
       v.duracion_minutos,
       v.estado AS estado_vuelo,
       IFNULL((
@@ -559,7 +562,7 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
       r.metodo_pago,
       r.monto_total,
       r.monto_reembolsado,
-      TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) AS segundos_para_salida,
+      TIMESTAMPDIFF(SECOND, NOW(), ${salidaReal('v')}) AS segundos_para_salida,
       r.fecha_creacion,
       (
         SELECT COUNT(*)
@@ -632,7 +635,8 @@ export const obtenerComprobantePorUsuario = async (reservaId, usuarioId) => {
       DATE_FORMAT(p.fecha_nacimiento, '%Y-%m-%d') AS fecha_nacimiento,
       v.origen,
       v.destino,
-      v.fecha_salida,
+      ${salidaReal('v')} AS fecha_salida,
+      v.retraso_minutos,
       v.duracion_minutos,
       v.estado AS estado_vuelo,
       a.numero_asiento
@@ -705,7 +709,8 @@ export const obtenerDatosCorreoReserva = async (reservaId) => {
       p.documento_identidad,
       v.origen,
       v.destino,
-      v.fecha_salida,
+      ${salidaReal('v')} AS fecha_salida,
+      v.retraso_minutos,
       v.duracion_minutos,
       a.numero_asiento,
       a.categoria
@@ -844,7 +849,7 @@ export const cancelarReservaUsuario = async ({ reservaId, usuarioId }) => {
         r.metodo_pago,
         r.monto_total,
         r.asiento_id,
-        TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) AS segundos
+        TIMESTAMPDIFF(SECOND, NOW(), ${salidaReal('v')}) AS segundos
       FROM reservas r
       INNER JOIN vuelos v ON v.id = r.vuelo_id
       WHERE r.id = ?

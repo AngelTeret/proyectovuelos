@@ -27,6 +27,7 @@ const boletosNuevos = (resultado) => {
       origen: resultado.origen,
       destino: resultado.destino,
       fecha_salida: resultado.fecha_salida,
+      retraso_minutos: resultado.retraso_minutos,
       duracion_minutos: resultado.duracion_minutos,
       equipaje_extra_kg: resultado.equipaje_extra_kg,
     }));
@@ -129,6 +130,7 @@ export const descargarBoletos = async (req, res) => {
       origen: datos.origen,
       destino: datos.destino,
       fecha_salida: datos.fecha_salida,
+      retraso_minutos: datos.retraso_minutos,
       duracion_minutos: datos.duracion_minutos,
       equipaje_extra_kg: datos.equipaje_extra_kg,
     })));

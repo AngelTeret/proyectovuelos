@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS vuelos (
   destino VARCHAR(100) NOT NULL,
   fecha_salida DATETIME NOT NULL,
   duracion_minutos SMALLINT UNSIGNED NOT NULL DEFAULT 120,
+  retraso_minutos SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   fecha_regreso DATETIME NULL,
   estado ENUM(
     'Programado',

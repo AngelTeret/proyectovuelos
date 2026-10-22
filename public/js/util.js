@@ -31,6 +31,11 @@ const duracionVisible = (minutos) => {
   return texto ? `Duración: ${texto}` : '';
 };
 
+const retrasoVisible = (minutos) => {
+  const texto = textoDuracion(minutos);
+  return texto ? `Retraso: ${texto}` : '';
+};
+
 const sinAcentos = (texto) => String(texto ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
 const CLAVES_DE_RESERVA = ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave'];
@@ -310,6 +315,7 @@ Object.assign(window, {
   quetzales,
   textoDuracion,
   duracionVisible,
+  retrasoVisible,
   sinAcentos,
   leerJson,
   guardarJsonTemporal,

@@ -60,13 +60,14 @@ const pintarDestinos = (vuelos, mensajeVacio = 'No hay vuelos disponibles.') => 
   }
 
   contenedor.innerHTML = vuelos.map((vuelo) => `
-    <article class="relative h-44 overflow-hidden rounded-2xl shadow-md">
+    <article class="relative h-48 overflow-hidden rounded-2xl shadow-md">
       <img src="${escapar(vuelo.imagen_url)}" alt="${escapar(vuelo.destino)}" class="h-full w-full object-cover">
       <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent"></div>
       <div class="absolute bottom-3 left-4 right-14 text-white">
         <p class="text-base font-semibold">${escapar(vuelo.destino)}</p>
         <p class="text-xs text-white/80">${escapar(vuelo.origen)} · desde ${quetzales(vuelo.precio_base)}</p>
         <p class="text-xs text-white/90">Sale ${escapar(formatearDia(vuelo.fecha_salida))}</p>
+        ${retrasoVisible(vuelo.retraso_minutos) ? `<p class="text-xs text-amber-200">${escapar(retrasoVisible(vuelo.retraso_minutos))}</p>` : ''}
         ${duracionVisible(vuelo.duracion_minutos) ? `<p class="text-xs text-white/90">${escapar(duracionVisible(vuelo.duracion_minutos))}</p>` : ''}
       </div>
       <button type="button" data-vuelo-id="${vuelo.id}" class="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-700 shadow" aria-label="Ver ${escapar(vuelo.destino)}">

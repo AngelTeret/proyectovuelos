@@ -1,5 +1,6 @@
 import pool from '../config/db.js';
 import { conTransaccion } from '../utils/transaccion.js';
+import { salidaReal, sumarRetraso } from '../utils/horarioVuelo.js';
 
 const ESTADOS_EDITABLES = new Set(['Programado', 'Retrasado', 'Abordando']);
 
@@ -35,6 +36,7 @@ export const listarVuelosMantenimiento = async () => {
       v.origen,
       v.destino,
       v.fecha_salida,
+      v.retraso_minutos,
       v.duracion_minutos,
       v.estado,
       SUM(a.estado = 'bloqueado_mantenimiento') AS fuera_servicio,
@@ -42,15 +44,16 @@ export const listarVuelosMantenimiento = async () => {
     FROM vuelos v
     LEFT JOIN asientos a ON a.vuelo_id = v.id
     WHERE v.estado IN ('Programado', 'Retrasado', 'Abordando')
-      AND v.fecha_salida > NOW()
-    GROUP BY v.id, v.origen, v.destino, v.fecha_salida, v.duracion_minutos, v.estado
-    ORDER BY v.fecha_salida`
+      AND ${salidaReal('v')} > NOW()
+    GROUP BY v.id, v.origen, v.destino, v.fecha_salida, v.retraso_minutos, v.duracion_minutos, v.estado
+    ORDER BY ${salidaReal('v')}`
   );
   return filas.map((fila) => ({
     id: fila.id,
     origen: fila.origen,
     destino: fila.destino,
-    fecha_salida: fila.fecha_salida,
+    fecha_salida: sumarRetraso(fila.fecha_salida, fila.retraso_minutos) || fila.fecha_salida,
+    retraso_minutos: Number(fila.retraso_minutos) || 0,
     duracion_minutos: Number(fila.duracion_minutos) || 0,
     estado: fila.estado,
     fuera_servicio: Number(fila.fuera_servicio) || 0,
@@ -77,20 +80,22 @@ const asientosDe = async (executor, vueloId) => {
 export const obtenerVueloMantenimiento = async (vueloId) => {
   const id = idNumerico(vueloId, 'Ese vuelo no existe');
   const [filas] = await pool.query(
-    `SELECT id, origen, destino, fecha_salida, duracion_minutos, estado
+    `SELECT id, origen, destino, fecha_salida, retraso_minutos, duracion_minutos, estado
      FROM vuelos
      WHERE id = ?`,
     [id]
   );
   const vuelo = filas[0];
-  if (!vuelo || !ESTADOS_EDITABLES.has(vuelo.estado) || new Date(vuelo.fecha_salida).getTime() <= Date.now()) {
+  const salida = sumarRetraso(vuelo?.fecha_salida, vuelo?.retraso_minutos);
+  if (!vuelo || !ESTADOS_EDITABLES.has(vuelo.estado) || !salida || salida.getTime() <= Date.now()) {
     throw errorMantenimiento('Ese vuelo ya no se puede cambiar', 404);
   }
   return {
     id: vuelo.id,
     origen: vuelo.origen,
     destino: vuelo.destino,
-    fecha_salida: vuelo.fecha_salida,
+    fecha_salida: salida,
+    retraso_minutos: Number(vuelo.retraso_minutos) || 0,
     duracion_minutos: Number(vuelo.duracion_minutos) || 0,
     estado: vuelo.estado,
     asientos: await asientosDe(pool, id),
@@ -112,11 +117,12 @@ export const cambiarServicioAsiento = async (vueloId, asientoId, dejarFuera) => 
   const asiento = idNumerico(asientoId, 'Ese asiento no existe');
   return conTransaccion(async (conexion) => {
     const [vuelos] = await conexion.query(
-      'SELECT id, estado, fecha_salida FROM vuelos WHERE id = ? FOR UPDATE',
+      'SELECT id, estado, fecha_salida, retraso_minutos FROM vuelos WHERE id = ? FOR UPDATE',
       [vuelo]
     );
     const filaVuelo = vuelos[0];
-    if (!filaVuelo || !ESTADOS_EDITABLES.has(filaVuelo.estado) || new Date(filaVuelo.fecha_salida).getTime() <= Date.now()) {
+    const salidaVuelo = sumarRetraso(filaVuelo?.fecha_salida, filaVuelo?.retraso_minutos);
+    if (!filaVuelo || !ESTADOS_EDITABLES.has(filaVuelo.estado) || !salidaVuelo || salidaVuelo.getTime() <= Date.now()) {
       throw errorMantenimiento('Ese vuelo ya no se puede cambiar', 404);
     }
     const [asientos] = await conexion.query(

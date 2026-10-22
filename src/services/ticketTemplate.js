@@ -206,6 +206,7 @@ export const generarTemplateBoleto = (datosVuelo = {}) => {
               </table>
             </td>
           </tr>
+          ${textoDuracion(datosVuelo.retraso_minutos) ? `<tr><td style="padding:0 28px 4px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#92400e;">Retraso: ${escapar(textoDuracion(datosVuelo.retraso_minutos))}</td></tr>` : ''}
           ${textoDuracion(datosVuelo.duracion_minutos) ? `<tr><td style="padding:0 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;">Duración: ${escapar(textoDuracion(datosVuelo.duracion_minutos))}</td></tr>` : ''}
           <tr>
             <td style="padding:8px 20px 8px 20px;">
@@ -436,6 +437,7 @@ export const generarTemplateCheckin = (datos = {}) => {
             <td style="padding:18px 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;">
               <p style="margin:0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#166534;">Salida · reserva ${mostrar(codigo)}</p>
               <p style="margin:6px 0 0 0;font-size:16px;font-weight:700;color:#052e16;">${mostrar(salida)}</p>
+              ${textoDuracion(datos.retraso_minutos) ? `<p style="margin:4px 0 0 0;font-size:13px;color:#92400e;">Retraso: ${escapar(textoDuracion(datos.retraso_minutos))}</p>` : ''}
               ${duracion ? `<p style="margin:4px 0 0 0;font-size:13px;color:#166534;">Duración: ${escapar(duracion)}</p>` : ''}
             </td>
           </tr>

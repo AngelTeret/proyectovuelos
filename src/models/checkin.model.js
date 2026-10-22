@@ -3,6 +3,7 @@ import { conTransaccion } from '../utils/transaccion.js';
 import { emparejarInfantes, evaluarCheckin } from '../utils/checkinVentana.js';
 import { franquiciaDe } from '../utils/franquiciaEquipaje.js';
 import { marcarSalidas } from './abordaje.model.js';
+import { salidaReal } from '../utils/horarioVuelo.js';
 
 const errorCheckin = (mensaje, codigo) => {
   const error = new Error(mensaje);
@@ -72,10 +73,11 @@ const consultarReserva = async (executor, pnr, usuarioId, bloquear) => {
       p.email,
       v.origen,
       v.destino,
-      v.fecha_salida,
+      ${salidaReal('v')} AS fecha_salida,
+      v.retraso_minutos,
       v.duracion_minutos,
       v.estado AS estado_vuelo,
-      TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) AS segundos_para_salida
+      TIMESTAMPDIFF(SECOND, NOW(), ${salidaReal('v')}) AS segundos_para_salida
     FROM reservas r
     INNER JOIN vuelos v ON v.id = r.vuelo_id
     INNER JOIN pasajeros p ON p.id = r.pasajero_id
@@ -127,6 +129,7 @@ const armarRespuesta = (reserva, filas) => {
     origen: reserva.origen,
     destino: reserva.destino,
     fecha_salida: reserva.fecha_salida,
+    retraso_minutos: Number(reserva.retraso_minutos) || 0,
     duracion_minutos: Number(reserva.duracion_minutos) || 0,
     vuelo_id: reserva.vuelo_id,
     equipaje_extra_kg: Number(reserva.equipaje_extra_kg) || 0,

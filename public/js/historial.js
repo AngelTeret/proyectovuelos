@@ -210,10 +210,11 @@ const pintarGrupo = () => {
     const etiqueta = nodo.querySelector('[data-campo="estado"]');
     nodo.querySelector('[data-campo="pnr"]').textContent = reserva.codigo_pnr || '';
     nodo.querySelector('[data-campo="factura"]').textContent = reserva.numero_factura || '';
-    etiqueta.textContent = grupo.texto;
-    etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${grupo.clase}`;
+    const retrasado = pestanaActiva === 'proximos' && String(reserva.estado_vuelo || '').toLowerCase() === 'retrasado';
+    etiqueta.textContent = retrasado ? 'Retrasado' : grupo.texto;
+    etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${retrasado ? 'bg-amber-50 text-amber-800' : grupo.clase}`;
     nodo.querySelector('[data-campo="ruta"]').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;
-    nodo.querySelector('[data-campo="salida"]').textContent = [formatearSalida(reserva.fecha_salida), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
+    nodo.querySelector('[data-campo="salida"]').textContent = [formatearSalida(reserva.fecha_salida), retrasoVisible(reserva.retraso_minutos), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
     nodo.querySelector('[data-campo="asiento"]').textContent = reserva.numero_asiento || '';
     nodo.querySelector('[data-campo="total"]').textContent = quetzales(reserva.monto_total);
     const abordaje = nodo.querySelector('[data-campo="abordaje"]');

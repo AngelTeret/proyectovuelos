@@ -76,10 +76,12 @@ const dibujarBoleto = (doc, boleto, grupo) => {
   doc.fillColor('#166534').font('Helvetica').fontSize(10).text('RESERVA', x + 290, y + 232, { width: 185, align: 'right', lineBreak: false });
   doc.fillColor('#052e16').font('Helvetica-Bold').fontSize(12).text(boleto.codigo_pnr || '', x + 290, y + 248, { width: 185, align: 'right', lineBreak: false });
 
+  const retraso = textoDuracion(boleto.retraso_minutos);
   const duracion = textoDuracion(boleto.duracion_minutos);
-  const yDatos = duracion ? y + 282 : y + 274;
-  if (duracion) {
-    doc.fillColor('#166534').font('Helvetica').fontSize(10).text(`Duración: ${duracion}`, x + 24, y + 264, { width: 250, lineBreak: false });
+  const avisos = [retraso ? `Retraso: ${retraso}` : '', duracion ? `Duración: ${duracion}` : ''].filter(Boolean);
+  const yDatos = avisos.length > 0 ? y + 282 : y + 274;
+  if (avisos.length > 0) {
+    doc.fillColor('#166534').font('Helvetica').fontSize(10).text(avisos.join('   '), x + 24, y + 264, { width: 450, lineBreak: false });
   }
 
   const documento = boleto.documento_identidad ? `Documento ${boleto.documento_identidad}` : '';
