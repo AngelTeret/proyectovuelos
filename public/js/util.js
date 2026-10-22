@@ -220,18 +220,18 @@ const autorizacion = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const descargarBoleto = async (reservaId, boton) => {
+const descargarArchivo = async (url, boton, nombreReserva) => {
   const texto = boton ? boton.textContent : '';
   if (boton) {
     boton.disabled = true;
     boton.textContent = 'Descargando...';
   }
   try {
-    const respuesta = await fetch(`/api/reservas/${reservaId}/boleto`, {
+    const respuesta = await fetch(url, {
       headers: autorizacion(),
     });
     if (respuesta.status === 401) {
-      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      localStorage.setItem('redirectAfterLogin', `${window.location.pathname}${window.location.search}`);
       window.location.replace('/login.html');
       return;
     }
@@ -247,14 +247,14 @@ const descargarBoleto = async (reservaId, boton) => {
     const archivo = await respuesta.blob();
     const disposicion = respuesta.headers.get('Content-Disposition') || '';
     const coincidencia = disposicion.match(/filename="([^"]+)"/);
-    const url = URL.createObjectURL(archivo);
+    const archivoUrl = URL.createObjectURL(archivo);
     const enlace = document.createElement('a');
-    enlace.href = url;
-    enlace.download = coincidencia ? coincidencia[1] : 'confirmacion.pdf';
+    enlace.href = archivoUrl;
+    enlace.download = coincidencia ? coincidencia[1] : nombreReserva;
     document.body.appendChild(enlace);
     enlace.click();
     enlace.remove();
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(archivoUrl);
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'No se pudo descargar', text: 'Intenta de nuevo.' });
   } finally {
@@ -264,6 +264,12 @@ const descargarBoleto = async (reservaId, boton) => {
     }
   }
 };
+
+const descargarBoleto = (reservaId, boton) => descargarArchivo(
+  `/api/reservas/${reservaId}/factura/pdf`,
+  boton,
+  'factura.pdf',
+);
 
 Object.assign(window, {
   escapar,
@@ -292,6 +298,7 @@ Object.assign(window, {
   guardarDatosSesion,
   cerrarDatosSesion,
   descargarBoleto,
+  descargarArchivo,
 });
 
 const cerrarPorInactividad = () => {

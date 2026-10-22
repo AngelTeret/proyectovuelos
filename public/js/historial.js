@@ -46,8 +46,7 @@ const SEGUNDOS_DIA = 24 * 60 * 60;
 const SEGUNDOS_DOS_DIAS = 2 * SEGUNDOS_DIA;
 
 const puedeDescargar = (reserva) => (
-  reserva.estado_pago === 'aprobado'
-  && clasificar(reserva) !== 'cancelados'
+  reserva.estado_pago === 'aprobado' || reserva.estado_pago === 'reembolsado'
 );
 
 const puedeCancelar = (reserva) => (
@@ -187,6 +186,7 @@ const pintarGrupo = () => {
     const nodo = plantilla.content.cloneNode(true);
     const etiqueta = nodo.querySelector('[data-campo="estado"]');
     nodo.querySelector('[data-campo="pnr"]').textContent = reserva.codigo_pnr || '';
+    nodo.querySelector('[data-campo="factura"]').textContent = reserva.numero_factura || '';
     etiqueta.textContent = grupo.texto;
     etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${grupo.clase}`;
     nodo.querySelector('[data-campo="ruta"]').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;
@@ -197,6 +197,25 @@ const pintarGrupo = () => {
     if (Number(reserva.monto_reembolsado) > 0) {
       reembolso.textContent = `Se devolvieron ${quetzales(reserva.monto_reembolsado)} a tu billetera.`;
       reembolso.classList.remove('hidden');
+    }
+    const emitidos = Number(reserva.boletos_emitidos) || 0;
+    const total = Number(reserva.viajeros_total) || 0;
+    const checkinListo = total > 0 && emitidos >= total;
+    const checkin = nodo.querySelector('[data-checkin]');
+    const avisoCheckin = nodo.querySelector('[data-checkin-aviso]');
+    if (checkinListo) {
+      checkin.textContent = 'Ver boletos';
+      checkin.href = `/checkin.html?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
+      checkin.classList.remove('hidden');
+      checkin.classList.add('inline-flex');
+    } else if (reserva.checkin_abierto) {
+      checkin.textContent = 'Hacer check-in';
+      checkin.href = `/checkin.html?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
+      checkin.classList.remove('hidden');
+      checkin.classList.add('inline-flex');
+    } else if (reserva.checkin_motivo === 'pronto' || reserva.checkin_motivo === 'cerrado') {
+      avisoCheckin.textContent = reserva.checkin_mensaje || '';
+      avisoCheckin.classList.remove('hidden');
     }
     const boleto = nodo.querySelector('[data-boleto]');
     if (puedeDescargar(reserva)) {
@@ -252,5 +271,11 @@ const cargarHistorial = async (conservarPestana = false) => {
     mostrar('error-historial');
   }
 };
+
+window.addEventListener('pageshow', (evento) => {
+  if (evento.persisted) {
+    cargarHistorial(true);
+  }
+});
 
 cargarHistorial();

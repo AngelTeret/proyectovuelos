@@ -55,7 +55,7 @@ const valor = (doc, texto, x, y) => {
   doc.font('Helvetica-Bold').fontSize(12).fillColor('#0f172a').text(texto, x, y, { width: ancho, lineBreak: false });
 };
 
-export const crearPdfBoleto = (boleto) => new Promise((resolve, reject) => {
+export const crearPdfFactura = (boleto) => new Promise((resolve, reject) => {
   const doc = new PDFDocument({ size: 'A4', margin: 48 });
   const partes = [];
   doc.on('data', (parte) => partes.push(parte));
@@ -69,11 +69,14 @@ export const crearPdfBoleto = (boleto) => new Promise((resolve, reject) => {
     height: altoLogo,
     preserveAspectRatio: 'xMinYMin meet',
   });
-  doc.font('Helvetica').fontSize(11).fillColor('#475569').text('Comprobante de reserva', izquierda, 54, { width: 499, align: 'right', lineBreak: false });
+  const anulada = boleto.estado_factura === 'anulada';
+  doc.font('Helvetica').fontSize(11).fillColor(anulada ? '#8b1c1c' : '#475569').text(anulada ? 'Factura anulada' : 'Factura', izquierda, 54, { width: 499, align: 'right', lineBreak: false });
   doc.moveTo(izquierda, 102).lineTo(547, 102).strokeColor('#e2e8f0').stroke();
 
-  etiqueta(doc, 'CODIGO DE RESERVA', izquierda, 114);
-  doc.font('Helvetica-Bold').fontSize(18).fillColor('#0f172a').text(boleto.codigo_pnr || '', izquierda, 128, { width: 499, lineBreak: false });
+  etiqueta(doc, 'FACTURA', izquierda, 114);
+  doc.font('Helvetica-Bold').fontSize(18).fillColor('#0f172a').text(boleto.numero_factura || '', izquierda, 128, { width: ancho, lineBreak: false });
+  etiqueta(doc, 'CODIGO DE RESERVA', derecha, 114);
+  valor(doc, boleto.codigo_pnr || '', derecha, 132);
 
   const viajeros = viajerosDe(boleto);
   const asientos = viajeros.map((viajero) => viajero.numero_asiento).filter(Boolean);
@@ -130,7 +133,9 @@ export const crearPdfBoleto = (boleto) => new Promise((resolve, reject) => {
   });
 
   doc.font('Helvetica').fontSize(9).fillColor('#64748b').text(
-    'Este documento es un comprobante de reserva. No es un pase de abordar.',
+    anulada
+      ? 'Esta factura quedó anulada por la cancelación de la reserva.'
+      : 'Factura del pago de tu reserva.',
     izquierda,
     cursor + 6,
     { width: 499, lineBreak: false },

@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS reserva_pasajeros (
   pasajero_id INT UNSIGNED NOT NULL,
   asiento_id INT UNSIGNED NULL,
   orden TINYINT UNSIGNED NOT NULL,
+  cambios_asiento TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   CONSTRAINT fk_reserva_pasajeros_reserva
     FOREIGN KEY (reserva_id) REFERENCES reservas (id)
@@ -119,6 +120,39 @@ CREATE TABLE IF NOT EXISTS reserva_pasajeros (
     FOREIGN KEY (pasajero_id) REFERENCES pasajeros (id),
   CONSTRAINT fk_reserva_pasajeros_asiento
     FOREIGN KEY (asiento_id) REFERENCES asientos (id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS facturas (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  reserva_id INT UNSIGNED NOT NULL,
+  numero VARCHAR(20) NOT NULL,
+  monto_total DECIMAL(10, 2) NOT NULL,
+  estado ENUM('emitida', 'anulada') NOT NULL DEFAULT 'emitida',
+  fecha_emision TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_anulacion DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_facturas_reserva (reserva_id),
+  UNIQUE KEY uk_facturas_numero (numero),
+  CONSTRAINT fk_facturas_reserva
+    FOREIGN KEY (reserva_id) REFERENCES reservas (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS checkins (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  reserva_pasajero_id INT UNSIGNED NOT NULL,
+  codigo_boleto CHAR(8) NOT NULL,
+  estado ENUM('chequeado', 'abordado', 'no_show', 'anulado') NOT NULL DEFAULT 'chequeado',
+  maleta_mano TINYINT(1) NOT NULL DEFAULT 1,
+  maleta_bodega_kg DECIMAL(5,1) NOT NULL DEFAULT 0.0,
+  fecha_checkin DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_anulacion DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_checkin_pasajero (reserva_pasajero_id),
+  UNIQUE KEY uk_codigo_boleto (codigo_boleto),
+  CONSTRAINT fk_checkins_reserva_pasajero
+    FOREIGN KEY (reserva_pasajero_id) REFERENCES reserva_pasajeros (id)
+    ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS idempotencia_pagos (

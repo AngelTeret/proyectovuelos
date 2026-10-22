@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="/imagenes/isotipo.svg" type="image/svg+xml">
+  <script>
+    ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
+    if (!sessionStorage.getItem('token')) {
+      localStorage.setItem('redirectAfterLogin', location.pathname + location.search);
+      location.replace('/login.html');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Abordaje - Quetzal Airlines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="h-[100dvh] overflow-hidden bg-slate-50 font-sans text-slate-800 antialiased">
+  <div class="flex h-[100dvh] bg-slate-50">
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="flex h-16 shrink-0 items-center justify-end border-b border-slate-100 bg-white px-6">
+        <p id="nombre-usuario" class="text-sm font-semibold text-slate-800"></p>
+      </header>
+      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
+        <p id="estado-carga" class="text-sm text-slate-500">Cargando el abordaje...</p>
+        <section id="lista-vuelos" class="hidden">
+          <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Abordaje</h1>
+          <p class="mt-1 max-w-2xl text-sm text-slate-600">Elige un vuelo. Solo ves a quienes ya hicieron check-in y tienen boleto.</p>
+          <div id="vuelos" class="mt-6 grid gap-3"></div>
+        </section>
+        <section id="detalle-vuelo" class="hidden">
+          <a href="/abordaje.html" class="text-sm font-semibold text-slate-500 hover:text-slate-800">Volver a los vuelos</a>
+          <div class="mt-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p id="estado-vuelo" class="text-sm font-semibold text-emerald-800"></p>
+              <h1 id="ruta-vuelo" class="text-xl font-bold text-slate-900 sm:text-2xl"></h1>
+              <p id="salida-vuelo" class="mt-1 text-sm text-slate-500"></p>
+            </div>
+            <div id="acciones-vuelo" class="flex flex-wrap gap-2"></div>
+          </div>
+          <p id="guia-vuelo" class="mt-4 max-w-2xl rounded-2xl bg-white p-4 text-sm leading-6 text-slate-700 shadow-sm"></p>
+          <label class="mt-6 block">
+            <span class="mb-1.5 block text-xs font-medium text-slate-600">Buscar a la persona</span>
+            <input id="buscar-boleto" type="search" placeholder="Código del boleto, nombre o asiento" class="h-11 w-full max-w-md rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400">
+          </label>
+          <p id="vacio-pasajeros" class="mt-6 hidden text-sm text-slate-500">Nadie ha hecho check-in en este vuelo.</p>
+          <div id="pasajeros" class="mt-4 grid gap-3"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="/js/util.js"></script>
+  <script src="/js/cabecera.js"></script>
+  <script src="/js/abordaje.js"></script>
+</body>
+</html>

@@ -56,6 +56,7 @@ const pintarConfirmacion = (boleto) => {
   const viajeros = viajerosDe(boleto);
   const asientos = viajeros.map((viajero) => viajero.numero_asiento).filter(Boolean);
   document.getElementById('pnr').textContent = boleto.codigo_pnr || '';
+  document.getElementById('factura').textContent = boleto.numero_factura || '';
   document.getElementById('origen').textContent = boleto.origen || '';
   document.getElementById('destino').textContent = boleto.destino || '';
   document.getElementById('salida').textContent = formatearSalida(boleto.fecha_salida);
@@ -67,15 +68,15 @@ const pintarConfirmacion = (boleto) => {
   const correoEnviado = sessionStorage.getItem('correoEnviado');
   const avisoCorreo = document.getElementById('aviso-correo');
   if (correoEnviado === '1' && boleto.email) {
-    avisoCorreo.textContent = `Enviamos el comprobante de reserva a ${boleto.email}.`;
+    avisoCorreo.textContent = `Enviamos la factura a ${boleto.email}.`;
   } else if (correoEnviado === '0' && boleto.email) {
-    avisoCorreo.textContent = `La reserva quedó confirmada, pero no pudimos enviar el comprobante a ${boleto.email}. Puedes descargarlo.`;
+    avisoCorreo.textContent = `La reserva quedó confirmada, pero no pudimos enviar la factura a ${boleto.email}. Puedes descargarla.`;
   } else if (correoEnviado === '0') {
-    avisoCorreo.textContent = 'La reserva quedó confirmada, pero no pudimos enviar el comprobante. Puedes descargarlo.';
+    avisoCorreo.textContent = 'La reserva quedó confirmada, pero no pudimos enviar la factura. Puedes descargarla.';
   } else if (boleto.email) {
-    avisoCorreo.textContent = `El comprobante de reserva corresponde al correo ${boleto.email}.`;
+    avisoCorreo.textContent = `La factura corresponde al correo ${boleto.email}.`;
   } else {
-    avisoCorreo.textContent = 'Puedes descargar la confirmación de tu reserva.';
+    avisoCorreo.textContent = 'Puedes descargar la factura de tu reserva.';
   }
   pintarPasajeros(viajeros);
   document.getElementById('btn-boleto').addEventListener('click', (evento) => {
@@ -92,7 +93,7 @@ const cargarConfirmacion = async () => {
   }
 
   try {
-    const respuesta = await fetch(`/api/reservas/${reservaId}/comprobante`, {
+    const respuesta = await fetch(`/api/reservas/${reservaId}/factura`, {
       headers: autorizacion(),
     });
     if (respuesta.status === 401) {
@@ -102,7 +103,7 @@ const cargarConfirmacion = async () => {
     }
     const data = await respuesta.json().catch(() => ({}));
     if (!respuesta.ok) {
-      document.getElementById('mensaje-error').textContent = data.mensaje || 'No se pudo mostrar el comprobante.';
+      document.getElementById('mensaje-error').textContent = data.mensaje || 'No se pudo mostrar la factura.';
       mostrar('error-confirmacion');
       return;
     }

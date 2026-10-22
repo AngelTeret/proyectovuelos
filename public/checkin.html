@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="/imagenes/isotipo.svg" type="image/svg+xml">
+  <script>
+    ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
+    if (!sessionStorage.getItem('token')) {
+      localStorage.setItem('redirectAfterLogin', location.pathname + location.search);
+      location.replace('/login.html');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Check-in - Quetzal Airlines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="h-[100dvh] overflow-hidden bg-slate-50 font-sans text-slate-800 antialiased">
+  <div class="flex h-[100dvh] bg-slate-50">
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="flex h-16 shrink-0 items-center justify-end border-b border-slate-100 bg-white px-6">
+        <p id="nombre-usuario" class="text-sm font-semibold text-slate-800"></p>
+      </header>
+      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
+        <p id="estado-carga" class="text-sm text-slate-500">Cargando el check-in...</p>
+        <article id="panel-checkin" class="hidden overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div class="flex justify-center border-b border-slate-100 bg-white px-6 py-4">
+            <img src="/imagenes/logotipo_frase.svg" alt="Quetzal Airlines. El cielo de Guatemala" class="h-16 w-auto">
+          </div>
+          <div class="flex flex-col gap-4 bg-emerald-950 px-6 py-5 text-white sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p class="text-xs font-medium uppercase tracking-widest text-emerald-200">Boleto de vuelo</p>
+              <h1 class="text-xl font-bold sm:text-2xl">Check-in</h1>
+              <p id="mensaje-checkin" class="mt-1 text-sm text-emerald-100"></p>
+            </div>
+            <div class="sm:text-right">
+              <p class="text-xs font-medium uppercase tracking-wide text-emerald-200">Reserva</p>
+              <p id="pnr" class="text-3xl font-bold tracking-wide"></p>
+            </div>
+          </div>
+          <div class="h-1.5 bg-[#8B2026]"></div>
+          <div class="p-6">
+            <p id="ruta" class="text-2xl font-bold text-slate-900"></p>
+            <p id="salida" class="mt-1 text-sm text-slate-500"></p>
+            <p id="equipaje" class="mt-3 text-sm text-slate-600"></p>
+            <div id="lista-viajeros" class="mt-6 grid gap-3"></div>
+            <p id="aviso-correo" class="mt-4 hidden text-sm text-slate-600"></p>
+            <div class="mt-6 flex flex-col gap-2 border-t border-slate-100 pt-5 sm:flex-row">
+              <button type="button" id="btn-confirmar" class="hidden h-11 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900">Confirmar check-in</button>
+              <button type="button" id="btn-guardar" class="hidden h-11 rounded-lg border border-emerald-800 bg-white px-4 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">Guardar cambios</button>
+              <button type="button" id="btn-descargar" class="hidden h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Descargar boletos</button>
+              <a href="/mis-vuelos.html" class="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Volver a mis vuelos</a>
+            </div>
+          </div>
+        </article>
+        <div id="error-checkin" class="hidden max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm">
+          <p id="mensaje-error" class="text-sm text-slate-600">No se pudo abrir el check-in.</p>
+          <a href="/mis-vuelos.html" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Ver mis vuelos</a>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/util.js"></script>
+  <script src="/js/cabecera.js"></script>
+  <script src="/js/checkin.js"></script>
+</body>
+</html>

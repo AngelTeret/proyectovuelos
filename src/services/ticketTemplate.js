@@ -128,16 +128,17 @@ export const generarTemplateBoleto = (datosVuelo = {}) => {
   const metodo = metodoTexto(datosVuelo.metodo_pago || datosVuelo.metodo);
   const compra = texto(datosVuelo.fechaCompra) || formatearInstante(datosVuelo.fecha_creacion);
   const equipaje = Number(datosVuelo.equipaje_extra_kg);
+  const numeroFactura = texto(datosVuelo.numero_factura) || texto(datosVuelo.numeroFactura);
   const cierre = equipaje > 0
-    ? `Este correo es el comprobante de tu reserva. Incluye ${equipaje} kg de equipaje extra. Quetzal Airlines.`
-    : 'Este correo es el comprobante de tu reserva. Quetzal Airlines.';
+    ? `Adjuntamos la factura ${numeroFactura} de tu reserva. Incluye ${equipaje} kg de equipaje extra. Quetzal Airlines.`
+    : `Adjuntamos la factura ${numeroFactura} de tu reserva. Quetzal Airlines.`;
 
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Comprobante de reserva - Quetzal Airlines</title>
+  <title>Factura ${escapar(numeroFactura)} - Quetzal Airlines</title>
 </head>
 <body style="margin:0;padding:0;background:#f3f4f6;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px;">
@@ -147,7 +148,7 @@ export const generarTemplateBoleto = (datosVuelo = {}) => {
           <tr>
             <td style="background:#05402d;padding:22px 28px;">
               <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#d1fae5;">Quetzal Airlines</p>
-              <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#ffffff;">Comprobante de reserva</p>
+              <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#ffffff;">Factura ${escapar(numeroFactura)}</p>
             </td>
           </tr>
           <tr>
@@ -156,7 +157,7 @@ export const generarTemplateBoleto = (datosVuelo = {}) => {
           <tr>
             <td style="padding:16px 28px;background:#ecfdf5;font-family:Arial,Helvetica,sans-serif;">
               <p style="margin:0;font-size:13px;font-weight:700;color:#05402d;">Reserva confirmada</p>
-              <p style="margin:4px 0 0 0;font-size:13px;line-height:1.5;color:#3f6212;">Tu pago quedó registrado. Guarda este comprobante. No es un pase de abordar.</p>
+              <p style="margin:4px 0 0 0;font-size:13px;line-height:1.5;color:#3f6212;">Tu pago quedó registrado. La factura va adjunta a este correo.</p>
             </td>
           </tr>
           <tr>
@@ -245,11 +246,13 @@ export const generarTemplateCancelacion = (datos = {}) => {
   const devuelto = quetzales(datos.reembolso);
   const pagado = quetzales(datos.monto_total ?? datos.monto);
   const tipoReembolso = datos.parcial ? 'Parcial' : 'Total';
+  const factura = texto(datos.numero_factura);
+  const avisoFactura = factura ? ` La factura ${factura} quedó anulada.` : '';
   const explicacion = datos.parcial && pagado
-    ? `De ${pagado} pagados, volvieron ${devuelto} a tu billetera.`
+    ? `De ${pagado} pagados, volvieron ${devuelto} a tu billetera.${avisoFactura}`
     : datos.parcial
-      ? `Volvieron ${devuelto} a tu billetera.`
-      : `Volvió el total, ${devuelto}, a tu billetera.`;
+      ? `Volvieron ${devuelto} a tu billetera.${avisoFactura}`
+      : `Volvió el total, ${devuelto}, a tu billetera.${avisoFactura}`;
   const asientosLibres = varios
     ? 'Los asientos volvieron a estar disponibles.'
     : 'El asiento volvió a estar disponible.';
@@ -360,6 +363,66 @@ export const generarTemplateVerificacion = ({ nombre, enlace }) => {
                 <a href="${url}" style="display:inline-block;background:#05402d;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:12px 18px;border-radius:10px;">Confirmar cuenta</a>
               </p>
               <p style="margin:20px 0 0 0;font-size:12px;line-height:1.5;color:#6b7280;">Si el botón no abre, copia este enlace en el navegador:<br>${url}</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};
+
+export const generarTemplateCheckin = (datos = {}) => {
+  const { fecha, hora } = fechaYHora(datos);
+  const codigo = texto(datos.codigo_pnr);
+  const salida = [fecha, hora].filter(Boolean).join(', ');
+  const filas = (Array.isArray(datos.viajeros) ? datos.viajeros : []).map((viajero) => {
+    const nombre = `${texto(viajero.nombre)} ${texto(viajero.apellido)}`.trim();
+    const asiento = texto(viajero.numero_asiento) || 'Regazo';
+    return `
+      <tr>
+        <td style="padding:14px 0;border-top:1px dashed #86efac;font-family:Arial,Helvetica,sans-serif;">
+          <p style="margin:0;font-size:16px;font-weight:700;color:#052e16;">${escapar(nombre)}</p>
+          <p style="margin:4px 0 0 0;font-size:12px;letter-spacing:0.08em;color:#166534;">BOLETO ${escapar(viajero.codigo_boleto)}</p>
+        </td>
+        <td style="padding:14px 0;border-top:1px dashed #86efac;font-family:Arial,Helvetica,sans-serif;text-align:right;">
+          <p style="margin:0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#166534;">Asiento</p>
+          <p style="margin:2px 0 0 0;font-size:28px;font-weight:700;color:#14532d;">${escapar(asiento)}</p>
+        </td>
+      </tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boletos ${escapar(codigo)} - Quetzal Airlines</title>
+</head>
+<body style="margin:0;padding:0;background:#ecfdf5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ecfdf5;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;border:2px solid #14532d;">
+          <tr>
+            <td style="background:#14532d;padding:22px 28px;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#bbf7d0;">Boleto de vuelo</p>
+              <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#ffffff;">${mostrar(datos.origen)} → ${mostrar(datos.destino)}</p>
+              <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#dcfce7;">No es la factura de tu compra. El asiento es lo que presentas para viajar.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;">
+              <p style="margin:0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#166534;">Salida · reserva ${mostrar(codigo)}</p>
+              <p style="margin:6px 0 0 0;font-size:16px;font-weight:700;color:#052e16;">${mostrar(salida)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 28px 24px 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                ${filas}
+              </table>
             </td>
           </tr>
         </table>

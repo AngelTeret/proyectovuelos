@@ -8,11 +8,14 @@
     if (sessionStorage.getItem('token')) {
       const destino = localStorage.getItem('redirectAfterLogin');
       const rol = sessionStorage.getItem('rol');
-      if (destino && destino.startsWith('/') && !destino.startsWith('//')) {
+      if (rol === 'despacho') {
+        localStorage.removeItem('redirectAfterLogin');
+        location.replace('/abordaje.html');
+      } else if (destino && destino.startsWith('/') && !destino.startsWith('//')) {
         localStorage.removeItem('redirectAfterLogin');
         location.replace(destino);
       } else {
-        location.replace(rol === 'admin' ? '/administracion.html' : '/index.html');
+        location.replace(rol === 'admin' ? '/administracion.html' : rol === 'despacho' ? '/abordaje.html' : '/index.html');
       }
     }
   </script>

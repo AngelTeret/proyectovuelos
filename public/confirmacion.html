@@ -37,7 +37,7 @@
       </header>
 
       <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
-        <p id="estado-carga" class="text-sm text-slate-500">Cargando tu comprobante...</p>
+        <p id="estado-carga" class="text-sm text-slate-500">Cargando tu factura...</p>
         <div id="panel-confirmacion" class="hidden">
           <article class="overflow-hidden rounded-2xl bg-white shadow-sm">
             <div class="flex justify-center border-b border-slate-100 bg-white px-6 py-4">
@@ -46,7 +46,8 @@
             <div class="flex flex-col gap-4 bg-blue-950 px-6 py-5 text-white sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h1 class="text-xl font-bold sm:text-2xl">Reserva confirmada</h1>
-                <p class="mt-1 text-sm text-blue-100">Tu pago quedó registrado. Guarda este comprobante.</p>
+                <p class="mt-1 text-sm text-blue-100">Tu pago quedó registrado. Guarda esta factura.</p>
+                <p class="mt-2 text-sm font-semibold tracking-wide text-blue-100">Factura <span id="factura"></span></p>
               </div>
               <div class="sm:text-right">
                 <p class="text-xs font-medium uppercase tracking-wide text-blue-200">Código</p>
@@ -87,10 +88,10 @@
               <div class="mt-6 flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p id="compra" class="text-sm text-slate-500"></p>
-                  <p id="aviso-correo" class="mt-1 text-xs text-slate-400">Puedes descargar la confirmación de tu reserva.</p>
+                  <p id="aviso-correo" class="mt-1 text-xs text-slate-400">Puedes descargar la factura de tu reserva.</p>
                 </div>
                 <div class="flex flex-col gap-2 sm:flex-row">
-                  <button type="button" id="btn-boleto" class="h-11 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Descargar confirmación</button>
+                  <button type="button" id="btn-boleto" class="h-11 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Descargar factura</button>
                   <a href="/mis-vuelos.html" class="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver mis vuelos</a>
                 </div>
               </div>
@@ -98,7 +99,7 @@
           </article>
         </div>
         <div id="error-confirmacion" class="hidden max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm">
-          <p id="mensaje-error" class="text-sm text-slate-600">No se pudo mostrar el comprobante.</p>
+          <p id="mensaje-error" class="text-sm text-slate-600">No se pudo mostrar la factura.</p>
           <a href="/mis-vuelos.html" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Ver mis vuelos</a>
         </div>
       </main>
