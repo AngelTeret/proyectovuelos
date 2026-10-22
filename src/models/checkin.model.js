@@ -294,7 +294,7 @@ const maletasDe = (maletas, filas, extraKg) => {
   });
   const tope = Number(extraKg) || 0;
   if (Math.round(suma * 10) / 10 > tope) {
-    throw errorCheckin(`Los kilos extra de bodega no pueden pasar de ${tope} kg ya pagados`, 400);
+    throw errorCheckin(`Los kilos de bodega no pueden pasar de ${tope} kg.`, 400);
   }
   return propuestas;
 };

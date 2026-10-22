@@ -407,7 +407,7 @@ const validarMaletas = () => {
     Swal.fire({
       icon: 'warning',
       title: 'Revisa el equipaje',
-      text: `Los kilos extra de bodega no pueden pasar de ${tope} kg ya pagados.`,
+      text: `Los kilos de bodega no pueden pasar de ${tope} kg.`,
     });
     return false;
   }
