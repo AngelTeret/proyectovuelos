@@ -1,6 +1,6 @@
-if (!localStorage.getItem('token')) {
+if (!tokenDeSesion()) {
   window.location.replace('/login.html');
-} else if (localStorage.getItem('rol') !== 'admin') {
+} else if (rolDeSesion() !== 'admin') {
   window.location.replace('/index.html');
 }
 
@@ -173,7 +173,10 @@ const eliminarVuelo = async (id) => {
   }
 
   try {
-    const respuesta = await fetch(`/api/vuelos/${id}`, { method: 'DELETE' });
+    const respuesta = await fetch(`/api/vuelos/${id}`, {
+      method: 'DELETE',
+      headers: autorizacion(),
+    });
     const data = await respuesta.json();
 
     if (!respuesta.ok) {
@@ -316,7 +319,7 @@ const cerrarModal = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!localStorage.getItem('token') || localStorage.getItem('rol') !== 'admin') {
+  if (!tokenDeSesion() || rolDeSesion() !== 'admin') {
     return;
   }
 
@@ -372,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const respuesta = await fetch(id ? `/api/vuelos/${id}` : '/api/vuelos', {
         method: id ? 'PUT' : 'POST',
+        headers: autorizacion(),
         body: datos,
       });
       const data = await respuesta.json();

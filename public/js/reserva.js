@@ -19,6 +19,6 @@ document.getElementById('btnContinuar').addEventListener('click', (evento) => {
     telefono: valor('telefono'),
   };
 
-  localStorage.setItem('datosPasajeros', JSON.stringify(pasajero));
+  guardarJsonTemporal('datosPasajeros', pasajero);
   window.location.href = '/asientos.html';
 });

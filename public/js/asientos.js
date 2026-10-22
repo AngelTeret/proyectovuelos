@@ -1,19 +1,29 @@
-const exigirVuelo = () => {
+const tieneVuelo = () => {
   let busqueda = {};
   try {
     busqueda = JSON.parse(localStorage.getItem('busquedaVuelo')) || {};
   } catch (error) {
     busqueda = {};
   }
-  if (!busqueda.vuelo_id) {
+  return Boolean(busqueda.vuelo_id);
+};
+
+const prepararEntrada = () => {
+  if (!tieneVuelo()) {
     location.replace('/index.html');
+    return;
+  }
+  ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
+  if (!sessionStorage.getItem('token')) {
+    localStorage.setItem('redirectAfterLogin', '/asientos.html');
+    location.replace('/login.html');
   }
 };
 
-exigirVuelo();
+prepararEntrada();
 window.addEventListener('pageshow', (evento) => {
   if (evento.persisted) {
-    exigirVuelo();
+    prepararEntrada();
   }
 });
 
@@ -151,7 +161,7 @@ const cargarAsientos = async () => {
   }
 
   const version = ++mapaVersion;
-  const llave = localStorage.getItem('bloqueoLlave') || '';
+  const llave = leerTextoTemporal('bloqueoLlave');
   const respuesta = await fetch(`/api/vuelos/${vueloId}/asientos`, {
     headers: llave ? { 'x-bloqueo-llave': llave } : {},
   });
@@ -180,13 +190,13 @@ const cargarAsientos = async () => {
 };
 
 const viajerosSentados = () => {
-  const datos = leerJson('datosPasajeros');
+  const datos = leerJsonTemporal('datosPasajeros');
   const lista = Array.isArray(datos.viajeros) ? datos.viajeros : [];
   return lista.filter((viajero) => viajero.tipo !== 'infante');
 };
 
 const asientosGuardados = () => {
-  const lista = leerJson('datosAsientos');
+  const lista = leerJsonTemporal('datosAsientos');
   return Array.isArray(lista) ? lista : [];
 };
 
@@ -214,13 +224,13 @@ const asientosCompletos = () => {
 
 const guardarSeleccion = (lista) => {
   const cupos = Array.isArray(lista) ? lista : [];
-  localStorage.setItem('datosAsientos', JSON.stringify(cupos));
+  guardarJsonTemporal('datosAsientos', cupos);
   const primero = cupos.find(Boolean);
   if (primero) {
-    localStorage.setItem('datosAsiento', JSON.stringify(primero));
+    guardarJsonTemporal('datosAsiento', primero);
     return;
   }
-  localStorage.removeItem('datosAsiento');
+  borrarTemporal('datosAsiento');
 };
 
 const nombreViajero = (viajero) => [viajero?.nombre, viajero?.apellido].filter(Boolean).join(' ') || 'Pasajero';
@@ -228,7 +238,7 @@ const nombreViajero = (viajero) => [viajero?.nombre, viajero?.apellido].filter(B
 const mostrarResumen = () => {
   const sentados = viajerosSentados();
   const guardados = cuposPasajeros();
-  const datos = leerJson('datosPasajeros');
+  const datos = leerJsonTemporal('datosPasajeros');
   const infantes = Array.isArray(datos.viajeros) ? datos.viajeros.filter((viajero) => viajero.tipo === 'infante').length : 0;
   const nota = document.getElementById('nota-infantes');
   if (infantes) {
@@ -284,17 +294,17 @@ const mostrarResumen = () => {
 };
 
 const asegurarLlave = () => {
-  let llave = localStorage.getItem('bloqueoLlave');
-  if (!/^[A-Za-z0-9-]{16,64}$/.test(llave || '')) {
+  let llave = leerTextoTemporal('bloqueoLlave');
+  if (!/^[A-Za-z0-9-]{16,64}$/.test(llave)) {
     llave = crypto.randomUUID();
-    localStorage.setItem('bloqueoLlave', llave);
+    guardarTextoTemporal('bloqueoLlave', llave);
   }
   return llave;
 };
 
 const liberarAsiento = async (asientoId) => {
   const busqueda = leerBusqueda();
-  const llave = localStorage.getItem('bloqueoLlave') || '';
+  const llave = leerTextoTemporal('bloqueoLlave');
   if (!asientoId || !llave) {
     return null;
   }
@@ -311,7 +321,7 @@ const liberarAsiento = async (asientoId) => {
 
 const liberarTodos = async () => {
   const busqueda = leerBusqueda();
-  const llave = localStorage.getItem('bloqueoLlave') || '';
+  const llave = leerTextoTemporal('bloqueoLlave');
   if (!llave || !busqueda.vuelo_id) {
     return;
   }
@@ -385,7 +395,7 @@ const elegirAsiento = async (boton, asientos) => {
     const busqueda = leerBusqueda();
     const respuesta = await fetch('/api/asientos/bloquear', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
+      headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave, ...autorizacion() },
       body: JSON.stringify({
         asiento_id: asiento.id,
         vuelo_id: Number(busqueda.vuelo_id),
@@ -394,6 +404,11 @@ const elegirAsiento = async (boton, asientos) => {
       }),
     });
     const data = await respuesta.json().catch(() => ({}));
+    if (respuesta.status === 401) {
+      localStorage.setItem('redirectAfterLogin', '/asientos.html');
+      window.location.replace('/login.html');
+      return;
+    }
     if (!respuesta.ok) {
       await cargarAsientos();
       Swal.fire({
@@ -424,6 +439,7 @@ const elegirAsiento = async (boton, asientos) => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  olvidarCopiasDurables();
   const sentados = viajerosSentados();
   if (!sentados.length) {
     window.location.replace('/pasajeros.html');
@@ -443,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!asientosCompletos()) {
       return;
     }
-    if (!localStorage.getItem('token')) {
+    if (!tokenDeSesion()) {
       localStorage.setItem('redirectAfterLogin', '/pago.html');
       window.location.replace('/login.html');
       return;

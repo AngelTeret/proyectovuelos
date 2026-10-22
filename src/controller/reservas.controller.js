@@ -85,7 +85,6 @@ export const crearReserva = async (req, res) => {
       vuelo_id,
       asiento_id,
       monto_total,
-      usuario_id,
       pasajero_id,
       equipaje_extra_kg,
       costo_servicios_extra,
@@ -96,20 +95,7 @@ export const crearReserva = async (req, res) => {
     } = req.body;
 
     const metodo = metodo_pago === 'saldo' ? 'saldo' : 'tarjeta';
-    let usuarioCobro = usuario_id;
-
-    if (metodo === 'saldo') {
-      let sesion;
-      try {
-        sesion = usuarioDesdeToken(req);
-      } catch (error) {
-        return res.status(401).json({ mensaje: 'Sesión no válida' });
-      }
-      if (!sesion?.id) {
-        return res.status(401).json({ mensaje: 'Inicia sesión para pagar con tu saldo' });
-      }
-      usuarioCobro = sesion.id;
-    }
+    const usuarioCobro = req.usuario.id;
 
     const llave_idempotencia = req.headers['idempotency-key'];
 
@@ -180,12 +166,15 @@ export const consultarReserva = async (req, res) => {
   try {
     const { pnr } = req.params;
     const reserva = await obtenerPorPNR(pnr);
+    const esDueno = Number(reserva?.usuario_id) === Number(req.usuario.id);
+    const esAdmin = req.usuario.rol === 'admin';
 
-    if (!reserva) {
+    if (!reserva || (!esDueno && !esAdmin)) {
       return res.status(404).json({ mensaje: 'Reserva no encontrada' });
     }
 
-    res.status(200).json(reserva);
+    const { usuario_id, ...datos } = reserva;
+    res.status(200).json(datos);
   } catch (error) {
     responderErrorInterno(res, error);
   }
@@ -300,13 +289,15 @@ export const descargarBoleto = async (req, res) => {
 
 export const pagarReserva = async (req, res) => {
   try {
-    const { id } = req.params;
-    const pago = await actualizarPago(id);
+    const pago = await actualizarPago(Number(req.params.id), req.usuario.id);
     res.status(200).json({
       mensaje: 'Pago actualizado correctamente',
       saldo_virtual: pago.saldo_virtual,
     });
   } catch (error) {
+    if (error.codigo === 404 || error.codigo === 400) {
+      return res.status(error.codigo).json({ mensaje: error.message });
+    }
     responderErrorInterno(res, error);
   }
 };

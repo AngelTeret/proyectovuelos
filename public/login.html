@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <link rel="icon" href="/imagenes/isotipo.svg" type="image/svg+xml">
   <script>
-    if (localStorage.getItem('token')) {
+    ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
+    if (sessionStorage.getItem('token')) {
       const destino = localStorage.getItem('redirectAfterLogin');
-      const rol = localStorage.getItem('rol');
+      const rol = sessionStorage.getItem('rol');
       if (destino && destino.startsWith('/') && !destino.startsWith('//')) {
         localStorage.removeItem('redirectAfterLogin');
         location.replace(destino);

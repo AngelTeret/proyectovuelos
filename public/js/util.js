@@ -10,7 +10,81 @@ const quetzales = (monto) => `Q ${Number(monto || 0).toFixed(2)}`;
 
 const sinAcentos = (texto) => String(texto ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
+const CLAVES_DE_RESERVA = ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave'];
+
+const liberarLlave = (llave) => {
+  if (!llave) {
+    return;
+  }
+  let vueloId = 0;
+  try {
+    vueloId = Number(JSON.parse(localStorage.getItem('busquedaVuelo') || '{}').vuelo_id) || 0;
+  } catch {
+    vueloId = 0;
+  }
+  if (!vueloId) {
+    return;
+  }
+  fetch('/api/asientos/liberar', {
+    method: 'POST',
+    keepalive: true,
+    headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
+    body: JSON.stringify({ vuelo_id: vueloId, llave, todos: true }),
+  }).catch(() => {});
+};
+
+const borrarTemporal = (clave) => {
+  localStorage.removeItem(clave);
+  sessionStorage.removeItem(clave);
+};
+
+const guardarJsonTemporal = (clave, valor) => {
+  sessionStorage.setItem(clave, JSON.stringify(valor));
+  localStorage.removeItem(clave);
+};
+
+const leerJsonTemporal = (clave, vacio = {}) => {
+  localStorage.removeItem(clave);
+  try {
+    const crudo = sessionStorage.getItem(clave);
+    if (!crudo) {
+      return vacio;
+    }
+    return JSON.parse(crudo) ?? vacio;
+  } catch {
+    sessionStorage.removeItem(clave);
+    return vacio;
+  }
+};
+
+const guardarTextoTemporal = (clave, valor) => {
+  sessionStorage.setItem(clave, String(valor ?? ''));
+  localStorage.removeItem(clave);
+};
+
+const leerTextoTemporal = (clave) => {
+  localStorage.removeItem(clave);
+  return sessionStorage.getItem(clave) || '';
+};
+
+const olvidarCopiasDurables = () => {
+  const llaveLocal = localStorage.getItem('bloqueoLlave') || '';
+  const llaveSesion = sessionStorage.getItem('bloqueoLlave') || '';
+  if (llaveLocal && llaveLocal !== llaveSesion) {
+    liberarLlave(llaveLocal);
+  }
+  CLAVES_DE_RESERVA.forEach((clave) => localStorage.removeItem(clave));
+};
+
+const abandonarReserva = () => {
+  liberarLlave(sessionStorage.getItem('bloqueoLlave') || localStorage.getItem('bloqueoLlave') || '');
+  CLAVES_DE_RESERVA.forEach(borrarTemporal);
+};
+
 const leerJson = (clave, vacio = {}) => {
+  if (clave === 'tempPasajero' || clave === 'datosPasajeros' || clave === 'datosAsientos' || clave === 'datosAsiento') {
+    return leerJsonTemporal(clave, vacio);
+  }
   try {
     return JSON.parse(localStorage.getItem(clave)) || vacio;
   } catch {
@@ -88,30 +162,61 @@ const formatearSalida = (valor) => {
 const formatearFecha = (valor) => formatearSalida(valor);
 
 const limpiarDatosPersonales = () => {
-  const llave = localStorage.getItem('bloqueoLlave');
-  let vueloId = 0;
-  try {
-    vueloId = Number(JSON.parse(localStorage.getItem('busquedaVuelo') || '{}').vuelo_id) || 0;
-  } catch {
-    vueloId = 0;
-  }
-  if (llave && vueloId) {
-    fetch('/api/asientos/liberar', {
-      method: 'POST',
-      keepalive: true,
-      headers: { 'Content-Type': 'application/json', 'x-bloqueo-llave': llave },
-      body: JSON.stringify({ vuelo_id: vueloId, llave, todos: true }),
-    }).catch(() => {});
-  }
-
-  ['tempPasajero', 'datosPasajeros', 'datosAsientos', 'datosAsiento', 'bloqueoLlave', 'redirectAfterLogin', 'reservaConfirmada', 'correoEnviado'].forEach((clave) => {
+  abandonarReserva();
+  ['redirectAfterLogin', 'reservaConfirmada', 'correoEnviado'].forEach((clave) => {
     localStorage.removeItem(clave);
     sessionStorage.removeItem(clave);
   });
 };
 
+const CLAVES_SESION = ['token', 'rol', 'nombre', 'usuario_id'];
+const MINUTOS_INACTIVIDAD = 15;
+
+const olvidarSesionDurable = () => {
+  CLAVES_SESION.forEach((clave) => localStorage.removeItem(clave));
+};
+
+const leerDatoSesion = (clave) => {
+  olvidarSesionDurable();
+  return sessionStorage.getItem(clave) || '';
+};
+
+const tokenDeSesion = () => leerDatoSesion('token');
+
+const rolDeSesion = () => leerDatoSesion('rol');
+
+const nombreGuardado = () => leerDatoSesion('nombre');
+
+const idUsuarioSesion = () => leerDatoSesion('usuario_id');
+
+const guardarIdUsuario = (id) => {
+  sessionStorage.setItem('usuario_id', String(id));
+  localStorage.removeItem('usuario_id');
+};
+
+const guardarDatosSesion = ({ token, rol, nombre, usuarioId }) => {
+  sessionStorage.setItem('token', token || '');
+  sessionStorage.setItem('rol', rol || '');
+  sessionStorage.setItem('nombre', nombre || '');
+  if (usuarioId) {
+    sessionStorage.setItem('usuario_id', String(usuarioId));
+  } else {
+    sessionStorage.removeItem('usuario_id');
+  }
+  olvidarSesionDurable();
+  sessionStorage.setItem('sesionActiva', String(Date.now()));
+};
+
+const cerrarDatosSesion = () => {
+  CLAVES_SESION.forEach((clave) => {
+    localStorage.removeItem(clave);
+    sessionStorage.removeItem(clave);
+  });
+  sessionStorage.removeItem('sesionActiva');
+};
+
 const autorizacion = () => {
-  const token = localStorage.getItem('token');
+  const token = tokenDeSesion();
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -165,6 +270,13 @@ Object.assign(window, {
   quetzales,
   sinAcentos,
   leerJson,
+  guardarJsonTemporal,
+  leerJsonTemporal,
+  guardarTextoTemporal,
+  leerTextoTemporal,
+  borrarTemporal,
+  olvidarCopiasDurables,
+  abandonarReserva,
   partesGuatemala,
   fechaCalendario,
   formatearDia,
@@ -172,5 +284,59 @@ Object.assign(window, {
   formatearFecha,
   limpiarDatosPersonales,
   autorizacion,
+  tokenDeSesion,
+  rolDeSesion,
+  nombreGuardado,
+  idUsuarioSesion,
+  guardarIdUsuario,
+  guardarDatosSesion,
+  cerrarDatosSesion,
   descargarBoleto,
 });
+
+const cerrarPorInactividad = () => {
+  limpiarDatosPersonales();
+  cerrarDatosSesion();
+  sessionStorage.setItem('avisoSesion', 'inactiva');
+  if (!location.pathname.endsWith('/login.html')) {
+    location.replace('/login.html');
+  }
+};
+
+const vencerSesionSiInactiva = () => {
+  if (!sessionStorage.getItem('token')) {
+    return;
+  }
+  const marca = Number(sessionStorage.getItem('sesionActiva') || 0);
+  if (!marca) {
+    sessionStorage.setItem('sesionActiva', String(Date.now()));
+    return;
+  }
+  if (Date.now() - marca > MINUTOS_INACTIVIDAD * 60 * 1000) {
+    cerrarPorInactividad();
+  }
+};
+
+let ultimaActividad = 0;
+const tocarActividad = () => {
+  if (!sessionStorage.getItem('token')) {
+    return;
+  }
+  const ahora = Date.now();
+  if (ahora - ultimaActividad < 15000) {
+    return;
+  }
+  ultimaActividad = ahora;
+  sessionStorage.setItem('sesionActiva', String(ahora));
+};
+
+vencerSesionSiInactiva();
+['pointerdown', 'keydown', 'input'].forEach((evento) => {
+  window.addEventListener(evento, tocarActividad, { passive: true });
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    vencerSesionSiInactiva();
+  }
+});
+window.setInterval(vencerSesionSiInactiva, 30000);

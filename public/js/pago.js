@@ -1,7 +1,9 @@
-if (!localStorage.getItem('token')) {
+if (!tokenDeSesion()) {
   localStorage.setItem('redirectAfterLogin', window.location.pathname);
   window.location.replace('/login.html');
 } else {
+
+olvidarCopiasDurables();
 
 const metodoSeleccionado = () => document.querySelector('input[name="metodo_pago"]:checked')?.value || 'saldo';
 
@@ -11,7 +13,7 @@ const mostrarFormularioTarjeta = () => {
 
 const cargarSaldo = async () => {
   const saldo = document.getElementById('saldo-disponible');
-  const token = localStorage.getItem('token');
+  const token = tokenDeSesion();
   if (!token) {
     saldo.textContent = '0.00';
     return;
@@ -28,7 +30,7 @@ const cargarSaldo = async () => {
     const usuario = await respuesta.json();
     saldo.textContent = Number(usuario.saldo_virtual || 0).toFixed(2);
     if (usuario.id) {
-      localStorage.setItem('usuario_id', String(usuario.id));
+      guardarIdUsuario(usuario.id);
     }
   } catch (error) {
     saldo.textContent = '0.00';
@@ -47,8 +49,8 @@ const mostrarTotal = async () => {
     }
   }
   const tarifa = precio || 0;
-  const guardados = leerJson('datosAsientos');
-  const asientos = Array.isArray(guardados) && guardados.length ? guardados : [leerJson('datosAsiento')];
+  const guardados = leerJsonTemporal('datosAsientos');
+  const asientos = Array.isArray(guardados) && guardados.length ? guardados : [leerJsonTemporal('datosAsiento')];
   const cargo = asientos.reduce((suma, asiento) => suma + (Number(asiento.precioAdicional) || 0), 0);
   const etiqueta = document.querySelector('#precio-vuelo')?.previousElementSibling;
   if (etiqueta) {
@@ -69,7 +71,7 @@ const textoTiempo = (segundos) => {
   const restante = Math.max(0, segundos);
   const minutos = String(Math.floor(restante / 60)).padStart(2, '0');
   const segs = String(restante % 60).padStart(2, '0');
-  const guardados = leerJson('datosAsientos');
+  const guardados = leerJsonTemporal('datosAsientos');
   const varios = Array.isArray(guardados) && guardados.length > 1;
   if (varios) {
     return `Asientos reservados por ${minutos}:${segs}. Si el tiempo termina, vuelven a quedar libres.`;
@@ -94,14 +96,14 @@ const liberarPantalla = async () => {
     title: 'Asiento liberado',
     text: 'El tiempo para completar el pago terminó. Vuelve a elegir un asiento.',
   });
-  localStorage.removeItem('datosAsiento');
-  localStorage.removeItem('datosAsientos');
+  borrarTemporal('datosAsiento');
+  borrarTemporal('datosAsientos');
   window.location.replace('/asientos.html');
 };
 
 const iniciarReloj = async () => {
-  const asiento = leerJson('datosAsiento');
-  const llave = localStorage.getItem('bloqueoLlave');
+  const asiento = leerJsonTemporal('datosAsiento');
+  const llave = leerTextoTemporal('bloqueoLlave');
   if (!asiento.asientoId || !llave) {
     window.location.replace('/asientos.html');
     return;
@@ -151,12 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const enlace = evento.currentTarget;
     enlace.classList.add('pointer-events-none', 'opacity-70');
-    const asiento = leerJson('datosAsiento');
+    const asiento = leerJsonTemporal('datosAsiento');
     const busqueda = leerJson('busquedaVuelo');
-    const llave = localStorage.getItem('bloqueoLlave') || '';
+    const llave = leerTextoTemporal('bloqueoLlave');
 
     try {
-      const guardados = leerJson('datosAsientos');
+      const guardados = leerJsonTemporal('datosAsientos');
       const hayAsientos = asiento.asientoId || (Array.isArray(guardados) && guardados.length);
       if (llave && hayAsientos) {
         const respuesta = await fetch('/api/asientos/liberar', {
@@ -181,8 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (relojBloqueo) {
         clearInterval(relojBloqueo);
       }
-      localStorage.removeItem('datosAsiento');
-      localStorage.removeItem('datosAsientos');
+      borrarTemporal('datosAsiento');
+      borrarTemporal('datosAsientos');
       window.location.replace('/asientos.html');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo liberar el asiento' });
@@ -218,9 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const busqueda = leerJson('busquedaVuelo');
-    const pasajero = leerJson('datosPasajeros');
-    const asiento = leerJson('datosAsiento');
-    const guardados = leerJson('datosAsientos');
+    const pasajero = leerJsonTemporal('datosPasajeros');
+    const asiento = leerJsonTemporal('datosAsiento');
+    const guardados = leerJsonTemporal('datosAsientos');
     const asientosElegidos = Array.isArray(guardados) && guardados.length ? guardados : (asiento.asientoId ? [asiento] : []);
     const metodo = metodoSeleccionado();
 
@@ -233,7 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let pagoConfirmado = false;
     const idempotencyKey = crypto.randomUUID();
     const payload = {
-      usuario_id: pasajero.usuario_id || Number(localStorage.getItem('usuario_id')) || null,
       email: pasajero.email,
       telefono: pasajero.telefono,
       equipaje_extra_kg: 0,
@@ -243,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
       viajeros: pasajero.viajeros,
       asientos: asientosElegidos.map((item) => Number(item.asientoId)),
       metodo_pago: metodo,
-      bloqueo_llave: localStorage.getItem('bloqueoLlave'),
+      bloqueo_llave: leerTextoTemporal('bloqueoLlave'),
     };
 
     try {
@@ -264,10 +265,11 @@ document.addEventListener('DOMContentLoaded', () => {
           clearInterval(relojBloqueo);
         }
         localStorage.removeItem('busquedaVuelo');
-        localStorage.removeItem('datosPasajeros');
-        localStorage.removeItem('datosAsiento');
-        localStorage.removeItem('datosAsientos');
-        sessionStorage.removeItem('tempPasajero');
+        borrarTemporal('datosPasajeros');
+        borrarTemporal('datosAsiento');
+        borrarTemporal('datosAsientos');
+        borrarTemporal('tempPasajero');
+        borrarTemporal('bloqueoLlave');
         if (data.id) {
           sessionStorage.setItem('reservaConfirmada', String(data.id));
           sessionStorage.setItem('correoEnviado', data.correo_enviado ? '1' : '0');
@@ -290,8 +292,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (/tiempo para completar el pago|ya no está disponible/i.test(data.mensaje || '')) {
         pagoConfirmado = true;
         Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje }).then(() => {
-          localStorage.removeItem('datosAsiento');
-          localStorage.removeItem('datosAsientos');
+          borrarTemporal('datosAsiento');
+          borrarTemporal('datosAsientos');
           window.location.replace('/asientos.html');
         });
         return;

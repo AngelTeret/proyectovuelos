@@ -656,7 +656,8 @@ export const obtenerPorPNR = async (codigo_pnr) => {
       v.origen,
       v.destino,
       a.numero_asiento,
-      r.estado_pago
+      r.estado_pago,
+      r.usuario_id
     FROM reservas r
     INNER JOIN pasajeros p ON r.pasajero_id = p.id
     INNER JOIN vuelos v ON r.vuelo_id = v.id
@@ -668,21 +669,22 @@ export const obtenerPorPNR = async (codigo_pnr) => {
   return rows[0] || null;
 };
 
-export const actualizarPago = async (id) => {
+export const actualizarPago = async (id, usuarioId) => {
   return conTransaccion(async (connection) => {
     const [reservas] = await connection.query(
-      'SELECT monto_total, usuario_id FROM reservas WHERE id = ? FOR UPDATE',
+      'SELECT monto_total, usuario_id, estado_pago FROM reservas WHERE id = ? FOR UPDATE',
       [id]
     );
 
-    if (reservas.length === 0) {
-      throw new Error('La reserva no existe');
+    const reserva = reservas[0];
+    if (!reserva || Number(reserva.usuario_id) !== Number(usuarioId)) {
+      throw errorDeReserva('Reserva no encontrada', 404);
+    }
+    if (reserva.estado_pago === 'aprobado' || reserva.estado_pago === 'reembolsado') {
+      throw errorDeReserva('Esta reserva ya está pagada', 400);
     }
 
-    const { monto_total, usuario_id } = reservas[0];
-    if (!usuario_id) {
-      throw new Error('La reserva no está asociada a un usuario');
-    }
+    const { monto_total, usuario_id } = reserva;
 
     await connection.query(
       "UPDATE reservas SET estado_pago = 'aprobado' WHERE id = ?",

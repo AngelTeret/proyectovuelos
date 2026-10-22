@@ -6,25 +6,25 @@
   <script>
     (function () {
       const salir = () => {
-        if (!localStorage.getItem('token')) {
+        ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
+        if (!sessionStorage.getItem('token')) {
           localStorage.setItem('redirectAfterLogin', '/pago.html');
           location.replace('/login.html');
           return;
         }
-        let asiento = {};
-        try {
-          asiento = JSON.parse(localStorage.getItem('datosAsiento')) || {};
-        } catch (error) {
-          asiento = {};
-        }
-        let lista = [];
-        try {
-          const guardados = JSON.parse(localStorage.getItem('datosAsientos')) || [];
-          lista = Array.isArray(guardados) ? guardados : [];
-        } catch (error) {
-          lista = [];
-        }
-        if ((!asiento.asientoId && !lista.length) || !localStorage.getItem('bloqueoLlave')) {
+        const jsonTemporal = (clave, vacio) => {
+          localStorage.removeItem(clave);
+          try {
+            return JSON.parse(sessionStorage.getItem(clave) || 'null') || vacio;
+          } catch (error) {
+            return vacio;
+          }
+        };
+        const asiento = jsonTemporal('datosAsiento', {});
+        const guardados = jsonTemporal('datosAsientos', []);
+        const lista = Array.isArray(guardados) ? guardados : [];
+        localStorage.removeItem('bloqueoLlave');
+        if ((!asiento.asientoId && !lista.length) || !sessionStorage.getItem('bloqueoLlave')) {
           location.replace('/asientos.html');
         }
       };
