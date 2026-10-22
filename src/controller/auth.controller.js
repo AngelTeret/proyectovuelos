@@ -2,16 +2,19 @@ import { createHash, randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import {
+  aplicarRestablecer,
   buscarPorEmail,
   buscarPorId,
   confirmarCorreo,
   crearUsuarioPendiente,
+  guardarRestablecer,
   prepararReenvio,
   renovarVerificacion,
+  revisarRestablecer,
 } from '../models/usuario.model.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 import { enviarBoleto } from '../services/emailService.js';
-import { generarTemplateVerificacion } from '../services/ticketTemplate.js';
+import { generarTemplateRestablecer, generarTemplateVerificacion } from '../services/ticketTemplate.js';
 
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -25,11 +28,24 @@ const nuevoToken = () => {
   return { token, hash };
 };
 
-const enlaceDe = (req, token) => {
+const baseDe = (req) => {
   const configurada = String(process.env.APP_URL || '').trim().replace(/\/$/, '');
-  const base = configurada || `${req.protocol}://${req.get('host')}`;
-  return `${base}/verificar.html?token=${token}`;
+  return configurada || `${req.protocol}://${req.get('host')}`;
 };
+
+const enlaceDe = (req, token) => `${baseDe(req)}/verificar.html?token=${token}`;
+
+const enlaceRestablecer = (req, token) => `${baseDe(req)}/restablecer.html?token=${token}`;
+
+const MENSAJE_OLVIDE = 'Si el correo tiene una cuenta confirmada, enviamos un enlace para elegir otra contraseña.';
+
+const tokenHex = (valor) => /^[a-f0-9]{64}$/i.test(String(valor || '').trim());
+
+const mensajeDeEnlace = (estado) => (
+  estado === 'expirado'
+    ? 'El enlace venció. Pide uno nuevo.'
+    : 'El enlace no es válido.'
+);
 
 const enviarVerificacion = async (req, { nombre, email, token }) => {
   await enviarBoleto(
@@ -145,6 +161,72 @@ export const reenviarVerificacion = async (req, res) => {
     }
 
     res.status(200).json({ mensaje: 'Enviamos un nuevo enlace. Revisa tu correo.' });
+  } catch (error) {
+    responderErrorInterno(res, error);
+  }
+};
+
+export const olvidarContrasena = async (req, res) => {
+  try {
+    const email = normalizarCorreo(req.body.email);
+    if (!correoValido(email)) {
+      return res.status(400).json({ mensaje: 'Ingresa un correo electrónico válido' });
+    }
+
+    const usuario = await buscarPorEmail(email);
+    if (!usuario || !Number(usuario.email_verificado)) {
+      return res.status(200).json({ mensaje: MENSAJE_OLVIDE });
+    }
+
+    const { token, hash } = nuevoToken();
+    await guardarRestablecer({ id: usuario.id, tokenHash: hash });
+    res.status(200).json({ mensaje: MENSAJE_OLVIDE });
+    enviarBoleto(
+      email,
+      'Elige otra contraseña - Quetzal Airlines',
+      generarTemplateRestablecer({ nombre: usuario.nombre, enlace: enlaceRestablecer(req, token) }),
+    ).catch((error) => {
+      console.log(`No se pudo enviar el restablecimiento a ${email}: ${error.message}`);
+    });
+  } catch (error) {
+    responderErrorInterno(res, error);
+  }
+};
+
+export const revisarEnlaceRestablecer = async (req, res) => {
+  try {
+    const token = String(req.body.token || '').trim();
+    if (!tokenHex(token)) {
+      return res.status(400).json({ mensaje: 'El enlace no es válido' });
+    }
+    const estado = await revisarRestablecer(createHash('sha256').update(token).digest('hex'));
+    if (estado !== 'ok') {
+      return res.status(400).json({ mensaje: mensajeDeEnlace(estado) });
+    }
+    res.status(200).json({ mensaje: 'El enlace sigue vigente.' });
+  } catch (error) {
+    responderErrorInterno(res, error);
+  }
+};
+
+export const restablecerContrasena = async (req, res) => {
+  try {
+    const token = String(req.body.token || '').trim();
+    const password = String(req.body.password || '');
+    if (!tokenHex(token)) {
+      return res.status(400).json({ mensaje: 'El enlace no es válido' });
+    }
+    if (password.length < 8 || password.length > 72) {
+      return res.status(400).json({ mensaje: 'La contraseña debe tener de 8 a 72 caracteres' });
+    }
+
+    const hash = createHash('sha256').update(token).digest('hex');
+    const passwordHash = await bcrypt.hash(password, 10);
+    const estado = await aplicarRestablecer({ tokenHash: hash, passwordHash });
+    if (estado !== 'ok') {
+      return res.status(400).json({ mensaje: mensajeDeEnlace(estado) });
+    }
+    res.status(200).json({ mensaje: 'La contraseña quedó actualizada. Ya puedes entrar.' });
   } catch (error) {
     responderErrorInterno(res, error);
   }

@@ -70,7 +70,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
   saldo_virtual DECIMAL(10,2) DEFAULT 1000.00,
   email_verificado TINYINT(1) NOT NULL DEFAULT 0,
   token_verificacion CHAR(64) NULL,
-  token_expira DATETIME NULL
+  token_expira DATETIME NULL,
+  token_restablecer CHAR(64) NULL,
+  token_restablecer_expira DATETIME NULL,
+  UNIQUE KEY uk_token_restablecer (token_restablecer)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS reservas (

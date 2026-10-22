@@ -69,6 +69,42 @@ export const prepararReenvio = async ({ id, tokenHash }) => {
   );
 };
 
+export const guardarRestablecer = async ({ id, tokenHash }) => {
+  await pool.query(
+    `UPDATE usuarios
+     SET token_restablecer = ?, token_restablecer_expira = DATE_ADD(NOW(), INTERVAL 1 HOUR)
+     WHERE id = ? AND email_verificado = 1`,
+    [tokenHash, id]
+  );
+};
+
+export const revisarRestablecer = async (tokenHash) => {
+  const [rows] = await pool.query(
+    `SELECT token_restablecer_expira > NOW() AS vigente
+     FROM usuarios
+     WHERE token_restablecer = ?`,
+    [tokenHash]
+  );
+  const fila = rows[0];
+  if (!fila) {
+    return 'invalido';
+  }
+  return Number(fila.vigente) === 1 ? 'ok' : 'expirado';
+};
+
+export const aplicarRestablecer = async ({ tokenHash, passwordHash }) => {
+  const [resultado] = await pool.query(
+    `UPDATE usuarios
+     SET password = ?, token_restablecer = NULL, token_restablecer_expira = NULL
+     WHERE token_restablecer = ? AND token_restablecer_expira > NOW()`,
+    [passwordHash, tokenHash]
+  );
+  if (resultado.affectedRows === 1) {
+    return 'ok';
+  }
+  return revisarRestablecer(tokenHash);
+};
+
 export const confirmarCorreo = async (tokenHash) => {
   const [rows] = await pool.query(
     `SELECT id, email_verificado, token_expira > NOW() AS vigente

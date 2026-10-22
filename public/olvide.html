@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="/imagenes/isotipo.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Olvidé mi contraseña - Quetzal Airlines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="flex min-h-[100dvh] items-center justify-center overflow-y-auto bg-slate-50 px-4 py-6 font-sans text-slate-800 antialiased" style="padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right));">
+  <main class="w-full max-w-md rounded-2xl bg-white p-5 shadow-sm sm:p-8">
+    <a href="/index.html" class="mb-8 flex justify-center">
+      <img src="/imagenes/logotipo_frase.svg" alt="Quetzal Airlines. El cielo de Guatemala" class="h-24 w-auto">
+    </a>
+    <h1 class="text-center text-2xl font-bold text-slate-900">Olvidé mi contraseña</h1>
+    <p class="mt-2 text-center text-sm text-slate-500">Escribe el correo de tu cuenta. Si está confirmada, te enviamos un enlace para elegir otra.</p>
+    <form id="form-olvide" class="mt-8 space-y-4">
+      <label class="block">
+        <span class="mb-1.5 block text-xs font-medium text-slate-600">Email</span>
+        <input id="email" name="email" type="email" required autocomplete="email" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+      </label>
+      <button type="submit" class="h-11 w-full rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Enviar enlace</button>
+    </form>
+    <p class="mt-6 text-center text-sm text-slate-500">
+      <a href="/login.html" class="font-semibold text-blue-600 hover:text-blue-700">Volver a iniciar sesión</a>
+    </p>
+  </main>
+  <script src="/js/olvide.js"></script>
+</body>
+</html>
