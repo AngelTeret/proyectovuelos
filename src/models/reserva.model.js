@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import pool from '../config/db.js';
 import { fechaCalendario } from '../utils/fecha.js';
+import { evaluarCheckin } from '../utils/checkinVentana.js';
+import { anularCheckinsDeReserva } from './checkin.model.js';
 import { conTransaccion } from '../utils/transaccion.js';
 
 const paises = new Set(JSON.parse(readFileSync(new URL('../../public/js/codigosTelefono.json', import.meta.url), 'utf8')).map((item) => item.pais));
@@ -555,7 +557,18 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
       r.monto_total,
       r.monto_reembolsado,
       TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) AS segundos_para_salida,
-      r.fecha_creacion
+      r.fecha_creacion,
+      (
+        SELECT COUNT(*)
+        FROM checkins c
+        INNER JOIN reserva_pasajeros rp ON rp.id = c.reserva_pasajero_id
+        WHERE rp.reserva_id = r.id AND c.estado = 'chequeado'
+      ) AS boletos_emitidos,
+      (
+        SELECT COUNT(*)
+        FROM reserva_pasajeros rp
+        WHERE rp.reserva_id = r.id
+      ) AS viajeros_total
     FROM reservas r
     INNER JOIN vuelos v ON r.vuelo_id = v.id
     INNER JOIN asientos a ON r.asiento_id = a.id
@@ -565,7 +578,21 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
     [usuarioId]
   );
 
-  return rows;
+  return rows.map((fila) => {
+    const checkin = evaluarCheckin({
+      estadoPago: fila.estado_pago,
+      estadoVuelo: fila.estado_vuelo,
+      segundosParaSalida: fila.segundos_para_salida,
+    });
+    return {
+      ...fila,
+      boletos_emitidos: Number(fila.boletos_emitidos) || 0,
+      viajeros_total: Number(fila.viajeros_total) || 0,
+      checkin_abierto: checkin.abierto,
+      checkin_motivo: checkin.motivo,
+      checkin_mensaje: checkin.mensaje,
+    };
+  });
 };
 
 export const obtenerComprobantePorUsuario = async (reservaId, usuarioId) => {
@@ -848,6 +875,7 @@ export const cancelarReservaUsuario = async ({ reservaId, usuarioId }) => {
       [calculo.reembolso, reserva.id]
     );
     await anularFactura(connection, reserva.id, reserva.monto_total);
+    await anularCheckinsDeReserva(connection, reserva.id);
 
     const [usuarios] = await connection.query(
       'SELECT saldo_virtual FROM usuarios WHERE id = ?',

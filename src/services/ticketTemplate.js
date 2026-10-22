@@ -372,3 +372,79 @@ export const generarTemplateVerificacion = ({ nombre, enlace }) => {
 </body>
 </html>`;
 };
+
+export const generarTemplateCheckin = (datos = {}) => {
+  const { fecha, hora } = fechaYHora(datos);
+  const codigo = texto(datos.codigo_pnr);
+  const salida = [fecha, hora].filter(Boolean).join(', ');
+  const filas = (Array.isArray(datos.viajeros) ? datos.viajeros : []).map((viajero) => {
+    const nombre = `${texto(viajero.nombre)} ${texto(viajero.apellido)}`.trim();
+    const asiento = texto(viajero.numero_asiento) || 'Regazo';
+    return `
+      <tr>
+        <td style="padding:12px 0;border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;">
+          <p style="margin:0;font-size:15px;font-weight:700;color:#111827;">${escapar(nombre)}</p>
+          <p style="margin:4px 0 0 0;font-size:13px;color:#6b7280;">Asiento ${escapar(asiento)}</p>
+        </td>
+        <td style="padding:12px 0;border-top:1px solid #e5e7eb;font-family:Arial,Helvetica,sans-serif;text-align:right;font-size:16px;font-weight:700;letter-spacing:0.08em;color:#05402d;">${escapar(viajero.codigo_boleto)}</td>
+      </tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boletos ${escapar(codigo)} - Quetzal Airlines</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td style="background:#05402d;padding:22px 28px;">
+              <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#d1fae5;">Quetzal Airlines</p>
+              <p style="margin:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:700;color:#ffffff;">Boletos de vuelo</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="height:4px;background:#8b1c1c;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:16px 28px;background:#ecfdf5;font-family:Arial,Helvetica,sans-serif;">
+              <p style="margin:0;font-size:13px;font-weight:700;color:#05402d;">Check-in listo</p>
+              <p style="margin:4px 0 0 0;font-size:13px;line-height:1.5;color:#3f6212;">Adjuntamos los boletos. Puedes mostrarlos en el teléfono o imprimirlos.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;">
+              <p style="margin:0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#6b7280;">Código de reserva</p>
+              <p style="margin:6px 0 0 0;display:inline-block;background:#05402d;color:#ffffff;font-size:20px;font-weight:700;letter-spacing:0.18em;padding:8px 14px;border-radius:8px;">${mostrar(codigo)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 28px 18px 28px;">
+              ${bloqueRuta(datos.origen, datos.destino)}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;">
+              <p style="margin:0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#6b7280;">Salida</p>
+              <p style="margin:6px 0 0 0;font-size:15px;font-weight:700;color:#111827;">${mostrar(salida)}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 28px 24px 28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                ${filas}
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};

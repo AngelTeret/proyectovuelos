@@ -198,6 +198,24 @@ const pintarGrupo = () => {
       reembolso.textContent = `Se devolvieron ${quetzales(reserva.monto_reembolsado)} a tu billetera.`;
       reembolso.classList.remove('hidden');
     }
+    const emitidos = Number(reserva.boletos_emitidos) || 0;
+    const total = Number(reserva.viajeros_total) || 0;
+    const checkin = nodo.querySelector('[data-checkin]');
+    const avisoCheckin = nodo.querySelector('[data-checkin-aviso]');
+    if (reserva.checkin_abierto && emitidos < total) {
+      checkin.textContent = 'Hacer check-in';
+      checkin.href = `/checkin.html?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
+      checkin.classList.remove('hidden');
+      checkin.classList.add('inline-flex');
+    } else if (emitidos > 0) {
+      checkin.textContent = 'Ver boletos';
+      checkin.href = `/checkin.html?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
+      checkin.classList.remove('hidden');
+      checkin.classList.add('inline-flex');
+    } else if (reserva.checkin_motivo === 'pronto' || reserva.checkin_motivo === 'cerrado') {
+      avisoCheckin.textContent = reserva.checkin_mensaje || '';
+      avisoCheckin.classList.remove('hidden');
+    }
     const boleto = nodo.querySelector('[data-boleto]');
     if (puedeDescargar(reserva)) {
       boleto.classList.remove('hidden');

@@ -137,6 +137,23 @@ CREATE TABLE IF NOT EXISTS facturas (
     ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS checkins (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  reserva_pasajero_id INT UNSIGNED NOT NULL,
+  codigo_boleto CHAR(8) NOT NULL,
+  estado ENUM('chequeado', 'abordado', 'no_show', 'anulado') NOT NULL DEFAULT 'chequeado',
+  maleta_mano TINYINT(1) NOT NULL DEFAULT 1,
+  maleta_bodega_kg DECIMAL(5,1) NOT NULL DEFAULT 0.0,
+  fecha_checkin DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_anulacion DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_checkin_pasajero (reserva_pasajero_id),
+  UNIQUE KEY uk_codigo_boleto (codigo_boleto),
+  CONSTRAINT fk_checkins_reserva_pasajero
+    FOREIGN KEY (reserva_pasajero_id) REFERENCES reserva_pasajeros (id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS idempotencia_pagos (
     llave_idempotencia VARCHAR(50) PRIMARY KEY,
     reserva_id INT UNSIGNED NOT NULL,

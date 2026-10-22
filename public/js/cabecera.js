@@ -15,7 +15,7 @@ const paginaActual = () => {
   if (ruta === 'finanzas.html') {
     return 'finanzas';
   }
-  if (ruta === 'mis-vuelos.html' || ruta === 'confirmacion.html') {
+  if (ruta === 'mis-vuelos.html' || ruta === 'confirmacion.html' || ruta === 'checkin.html') {
     return 'mis-vuelos';
   }
   return 'inicio';
