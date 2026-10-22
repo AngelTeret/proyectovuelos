@@ -67,6 +67,7 @@ const pintarDestinos = (vuelos, mensajeVacio = 'No hay vuelos disponibles.') => 
         <p class="text-base font-semibold">${escapar(vuelo.destino)}</p>
         <p class="text-xs text-white/80">${escapar(vuelo.origen)} · desde ${quetzales(vuelo.precio_base)}</p>
         <p class="text-xs text-white/90">Sale ${escapar(formatearDia(vuelo.fecha_salida))}</p>
+        ${duracionVisible(vuelo.duracion_minutos) ? `<p class="text-xs text-white/90">${escapar(duracionVisible(vuelo.duracion_minutos))}</p>` : ''}
       </div>
       <button type="button" data-vuelo-id="${vuelo.id}" class="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-700 shadow" aria-label="Ver ${escapar(vuelo.destino)}">
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>

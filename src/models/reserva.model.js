@@ -3,6 +3,7 @@ import pool from '../config/db.js';
 import { fechaCalendario } from '../utils/fecha.js';
 import { evaluarCheckin } from '../utils/checkinVentana.js';
 import { anularCheckinsDeReserva } from './checkin.model.js';
+import { marcarSalidas } from './abordaje.model.js';
 import { conTransaccion } from '../utils/transaccion.js';
 
 const paises = new Set(JSON.parse(readFileSync(new URL('../../public/js/codigosTelefono.json', import.meta.url), 'utf8')).map((item) => item.pais));
@@ -535,6 +536,7 @@ export const obtenerTodas = async () => {
 };
 
 export const obtenerHistorialPorUsuario = async (usuarioId) => {
+  await marcarSalidas();
   await completarFacturas('r.usuario_id = ?', [usuarioId]);
   const [rows] = await pool.query(
     `SELECT
@@ -545,6 +547,7 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
       v.origen,
       v.destino,
       v.fecha_salida,
+      v.duracion_minutos,
       v.estado AS estado_vuelo,
       IFNULL((
         SELECT GROUP_CONCAT(ax.numero_asiento ORDER BY rp.orden SEPARATOR ', ')
@@ -630,6 +633,7 @@ export const obtenerComprobantePorUsuario = async (reservaId, usuarioId) => {
       v.origen,
       v.destino,
       v.fecha_salida,
+      v.duracion_minutos,
       v.estado AS estado_vuelo,
       a.numero_asiento
     FROM reservas r
@@ -702,6 +706,7 @@ export const obtenerDatosCorreoReserva = async (reservaId) => {
       v.origen,
       v.destino,
       v.fecha_salida,
+      v.duracion_minutos,
       a.numero_asiento,
       a.categoria
     FROM reservas r

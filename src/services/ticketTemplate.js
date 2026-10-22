@@ -12,6 +12,24 @@ const escapar = (valor) => texto(valor)
 
 const mostrar = (valor, reserva = '—') => escapar(valor) || reserva;
 
+const textoDuracion = (minutos) => {
+  const total = Number(minutos);
+  if (!Number.isInteger(total) || total <= 0) {
+    return '';
+  }
+  const horas = Math.floor(total / 60);
+  const resto = total % 60;
+  const horasTexto = horas === 1 ? '1 hora' : `${horas} horas`;
+  const minutosTexto = resto === 1 ? '1 minuto' : `${resto} minutos`;
+  if (horas === 0) {
+    return minutosTexto;
+  }
+  if (resto === 0) {
+    return horasTexto;
+  }
+  return `${horasTexto} ${minutosTexto}`;
+};
+
 const nombrePasajero = (datos) => {
   const completo = `${texto(datos.nombre)} ${texto(datos.apellido)}`.trim();
   return completo || texto(datos.nombrePasajero) || 'Pasajero';
@@ -188,6 +206,7 @@ export const generarTemplateBoleto = (datosVuelo = {}) => {
               </table>
             </td>
           </tr>
+          ${textoDuracion(datosVuelo.duracion_minutos) ? `<tr><td style="padding:0 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#111827;">Duración: ${escapar(textoDuracion(datosVuelo.duracion_minutos))}</td></tr>` : ''}
           <tr>
             <td style="padding:8px 20px 8px 20px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:8px 0;">
@@ -377,6 +396,7 @@ export const generarTemplateCheckin = (datos = {}) => {
   const { fecha, hora } = fechaYHora(datos);
   const codigo = texto(datos.codigo_pnr);
   const salida = [fecha, hora].filter(Boolean).join(', ');
+  const duracion = textoDuracion(datos.duracion_minutos);
   const filas = (Array.isArray(datos.viajeros) ? datos.viajeros : []).map((viajero) => {
     const nombre = `${texto(viajero.nombre)} ${texto(viajero.apellido)}`.trim();
     const asiento = texto(viajero.numero_asiento) || 'Regazo';
@@ -416,6 +436,7 @@ export const generarTemplateCheckin = (datos = {}) => {
             <td style="padding:18px 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;">
               <p style="margin:0;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#166534;">Salida · reserva ${mostrar(codigo)}</p>
               <p style="margin:6px 0 0 0;font-size:16px;font-weight:700;color:#052e16;">${mostrar(salida)}</p>
+              ${duracion ? `<p style="margin:4px 0 0 0;font-size:13px;color:#166534;">Duración: ${escapar(duracion)}</p>` : ''}
             </td>
           </tr>
           <tr>

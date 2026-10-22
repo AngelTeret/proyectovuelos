@@ -26,7 +26,7 @@ let vuelosCargados = [];
 const pintarVuelos = (vuelos) => {
   const cuerpo = document.getElementById('cuerpo-vuelos');
   if (vuelos.length === 0) {
-    cuerpo.innerHTML = '<tr><td colspan="8" class="px-5 py-8 text-center text-sm text-slate-500">No hay vuelos registrados.</td></tr>';
+    cuerpo.innerHTML = '<tr><td colspan="9" class="px-5 py-8 text-center text-sm text-slate-500">No hay vuelos registrados.</td></tr>';
     return;
   }
 
@@ -37,6 +37,7 @@ const pintarVuelos = (vuelos) => {
       <td class="px-5 py-4">${escapar(vuelo.origen)}</td>
       <td class="px-5 py-4">${escapar(vuelo.destino)}</td>
       <td class="px-5 py-4">${escapar(formatearSalida(vuelo.fecha_salida))}</td>
+      <td class="px-5 py-4">${escapar(textoDuracion(vuelo.duracion_minutos))}</td>
       <td class="px-5 py-4">${escapar(vuelo.capacidad_asientos)}</td>
       <td class="px-5 py-4">${escapar(quetzales(vuelo.precio_base))}</td>
       <td class="px-5 py-4">
@@ -120,6 +121,8 @@ const prepararNuevoVuelo = () => {
   reiniciarNombreArchivo();
   document.getElementById('campo-capacidad').classList.remove('hidden');
   document.getElementById('capacidad-asientos').value = 30;
+  document.getElementById('duracion-horas').value = 2;
+  document.getElementById('duracion-minutos').value = 0;
   buscadorOrigen.limpiar();
   buscadorDestino.limpiar();
   abrirModal();
@@ -136,6 +139,9 @@ const editarVuelo = (id) => {
   buscadorOrigen.fijar(vuelo.origen);
   buscadorDestino.fijar(vuelo.destino);
   document.getElementById('fecha-salida').value = aDatetimeLocal(vuelo.fecha_salida);
+  const minutos = Number(vuelo.duracion_minutos) || 120;
+  document.getElementById('duracion-horas').value = Math.floor(minutos / 60);
+  document.getElementById('duracion-minutos').value = minutos % 60;
   document.getElementById('precio-base').value = Number(vuelo.precio_base);
   document.getElementById('imagen-archivo').value = '';
   reiniciarNombreArchivo();
@@ -356,6 +362,13 @@ document.addEventListener('DOMContentLoaded', () => {
       Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Elige un país de la lista para el origen y el destino.' });
       return;
     }
+    const horas = Number(document.getElementById('duracion-horas').value);
+    const minutosDuracion = Number(document.getElementById('duracion-minutos').value);
+    const duracionTotal = (horas * 60) + minutosDuracion;
+    if (!Number.isInteger(horas) || !Number.isInteger(minutosDuracion) || duracionTotal < 15 || duracionTotal > 1440) {
+      Swal.fire({ icon: 'warning', title: 'Revisa la duración', text: 'Usa de 15 minutos a 24 horas.' });
+      return;
+    }
 
     marcarGuardando();
 
@@ -363,6 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
     datos.append('origen', origen);
     datos.append('destino', destino);
     datos.append('fecha_salida', document.getElementById('fecha-salida').value);
+    datos.append('duracion_minutos', String(duracionTotal));
     datos.append('precio_base', document.getElementById('precio-base').value);
     const archivo = document.getElementById('imagen-archivo').files[0];
     if (archivo) {

@@ -100,7 +100,7 @@ const pintarVuelos = (vuelos) => {
     <a href="/abordaje.html?vuelo=${vuelo.id}" class="block rounded-2xl bg-white p-5 shadow-sm hover:bg-slate-50">
       <p class="text-sm font-semibold text-emerald-800">${escapar(nombreEstadoVuelo[vuelo.estado] || vuelo.estado)}</p>
       <p class="mt-1 text-lg font-bold text-slate-900">${escapar(vuelo.origen)} → ${escapar(vuelo.destino)}</p>
-      <p class="mt-1 text-sm text-slate-500">${escapar(formatearSalida(vuelo.fecha_salida))}</p>
+      <p class="mt-1 text-sm text-slate-500">${escapar([formatearSalida(vuelo.fecha_salida), duracionVisible(vuelo.duracion_minutos)].filter(Boolean).join(' · '))}</p>
       <p class="mt-3 text-sm text-slate-700">${escapar(resumenConteo(vuelo))}</p>
       <p class="mt-3 text-sm font-semibold text-emerald-800">Abrir la lista</p>
     </a>
@@ -170,7 +170,7 @@ const pintarDetalle = (vuelo) => {
   vueloActual = vuelo;
   document.getElementById('estado-vuelo').textContent = nombreEstadoVuelo[vuelo.estado] || vuelo.estado;
   document.getElementById('ruta-vuelo').textContent = `${vuelo.origen} → ${vuelo.destino}`;
-  document.getElementById('salida-vuelo').textContent = `${formatearSalida(vuelo.fecha_salida)} · ${resumenConteo(vuelo)}`;
+  document.getElementById('salida-vuelo').textContent = [formatearSalida(vuelo.fecha_salida), duracionVisible(vuelo.duracion_minutos), resumenConteo(vuelo)].filter(Boolean).join(' · ');
   document.getElementById('guia-vuelo').textContent = guiaDe(vuelo);
   document.getElementById('acciones-vuelo').innerHTML = accionesVuelo(vuelo);
   pintarPasajeros();

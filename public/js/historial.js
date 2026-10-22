@@ -48,23 +48,25 @@ const SEGUNDOS_DOS_DIAS = 2 * SEGUNDOS_DIA;
 const resumenAbordaje = (reserva) => {
   const entro = Number(reserva.abordados) || 0;
   const falta = Number(reserva.ausentes) || 0;
-  if (entro === 0 && falta === 0) {
-    return '';
-  }
+  let texto = '';
   if (entro === 1 && falta === 0) {
-    return 'Ya entró al avión';
+    texto = 'Ya entró al avión';
+  } else if (entro === 0 && falta === 1) {
+    texto = 'No se presentó';
+  } else if (entro > 0 || falta > 0) {
+    const partes = [];
+    if (entro > 0) {
+      partes.push(entro === 1 ? '1 ya entró al avión' : `${entro} ya entraron al avión`);
+    }
+    if (falta > 0) {
+      partes.push(falta === 1 ? '1 no se presentó' : `${falta} no se presentaron`);
+    }
+    texto = partes.join(' · ');
   }
-  if (entro === 0 && falta === 1) {
-    return 'No se presentó';
+  if (String(reserva.estado_vuelo || '').toLowerCase() !== 'completado') {
+    return texto;
   }
-  const partes = [];
-  if (entro > 0) {
-    partes.push(entro === 1 ? '1 ya entró al avión' : `${entro} ya entraron al avión`);
-  }
-  if (falta > 0) {
-    partes.push(falta === 1 ? '1 no se presentó' : `${falta} no se presentaron`);
-  }
-  return partes.join(' · ');
+  return texto ? `${texto}. El vuelo ya terminó` : 'El vuelo ya terminó';
 };
 
 const puedeDescargar = (reserva) => (
@@ -211,7 +213,7 @@ const pintarGrupo = () => {
     etiqueta.textContent = grupo.texto;
     etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${grupo.clase}`;
     nodo.querySelector('[data-campo="ruta"]').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;
-    nodo.querySelector('[data-campo="salida"]').textContent = formatearSalida(reserva.fecha_salida);
+    nodo.querySelector('[data-campo="salida"]').textContent = [formatearSalida(reserva.fecha_salida), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
     nodo.querySelector('[data-campo="asiento"]').textContent = reserva.numero_asiento || '';
     nodo.querySelector('[data-campo="total"]').textContent = quetzales(reserva.monto_total);
     const abordaje = nodo.querySelector('[data-campo="abordaje"]');

@@ -59,7 +59,7 @@ const pintarConfirmacion = (boleto) => {
   document.getElementById('factura').textContent = boleto.numero_factura || '';
   document.getElementById('origen').textContent = boleto.origen || '';
   document.getElementById('destino').textContent = boleto.destino || '';
-  document.getElementById('salida').textContent = formatearSalida(boleto.fecha_salida);
+  document.getElementById('salida').textContent = [formatearSalida(boleto.fecha_salida), duracionVisible(boleto.duracion_minutos)].filter(Boolean).join(' · ');
   document.getElementById('etiqueta-asiento').textContent = asientos.length > 1 ? 'Asientos' : 'Asiento';
   document.getElementById('asiento').textContent = asientos.join(', ') || boleto.numero_asiento || 'Regazo';
   document.getElementById('total').textContent = quetzales(boleto.monto_total);

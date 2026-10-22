@@ -34,6 +34,12 @@ export const marcarSalidas = async (executor = pool) => {
      SET estado = 'En Curso'
      WHERE estado = 'Cerrado' AND fecha_salida <= NOW()`
   );
+  await executor.query(
+    `UPDATE vuelos
+     SET estado = 'Completado'
+     WHERE estado = 'En Curso'
+       AND DATE_ADD(fecha_salida, INTERVAL duracion_minutos MINUTE) <= NOW()`
+  );
 };
 
 const presentarVuelo = (vuelo, conteos = {}) => ({
@@ -41,6 +47,7 @@ const presentarVuelo = (vuelo, conteos = {}) => ({
   origen: vuelo.origen,
   destino: vuelo.destino,
   fecha_salida: vuelo.fecha_salida,
+  duracion_minutos: Number(vuelo.duracion_minutos) || 0,
   estado: vuelo.estado,
   chequeados: Number(conteos.chequeados) || 0,
   abordados: Number(conteos.abordados) || 0,
@@ -112,6 +119,7 @@ export const listarVuelosAbordaje = async () => {
       v.origen,
       v.destino,
       v.fecha_salida,
+      v.duracion_minutos,
       v.estado,
       SUM(c.estado = 'chequeado') AS chequeados,
       SUM(c.estado = 'abordado') AS abordados,
@@ -127,7 +135,7 @@ export const listarVuelosAbordaje = async () => {
         v.estado IN ('Programado', 'Retrasado')
         AND TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) BETWEEN 0 AND ?
       )
-    GROUP BY v.id, v.origen, v.destino, v.fecha_salida, v.estado
+    GROUP BY v.id, v.origen, v.destino, v.fecha_salida, v.duracion_minutos, v.estado
     ORDER BY v.fecha_salida`,
     [HORAS_LISTA * 60 * 60]
   );
@@ -138,7 +146,7 @@ export const obtenerAbordaje = async (vueloId) => {
   const id = idVuelo(vueloId);
   await marcarSalidas();
   const [filas] = await pool.query(
-    'SELECT id, origen, destino, fecha_salida, estado FROM vuelos WHERE id = ?',
+    'SELECT id, origen, destino, fecha_salida, duracion_minutos, estado FROM vuelos WHERE id = ?',
     [id]
   );
   const vuelo = filas[0];

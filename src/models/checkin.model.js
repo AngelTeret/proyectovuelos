@@ -2,6 +2,7 @@ import pool from '../config/db.js';
 import { conTransaccion } from '../utils/transaccion.js';
 import { emparejarInfantes, evaluarCheckin } from '../utils/checkinVentana.js';
 import { franquiciaDe } from '../utils/franquiciaEquipaje.js';
+import { marcarSalidas } from './abordaje.model.js';
 
 const errorCheckin = (mensaje, codigo) => {
   const error = new Error(mensaje);
@@ -72,6 +73,7 @@ const consultarReserva = async (executor, pnr, usuarioId, bloquear) => {
       v.origen,
       v.destino,
       v.fecha_salida,
+      v.duracion_minutos,
       v.estado AS estado_vuelo,
       TIMESTAMPDIFF(SECOND, NOW(), v.fecha_salida) AS segundos_para_salida
     FROM reservas r
@@ -125,6 +127,7 @@ const armarRespuesta = (reserva, filas) => {
     origen: reserva.origen,
     destino: reserva.destino,
     fecha_salida: reserva.fecha_salida,
+    duracion_minutos: Number(reserva.duracion_minutos) || 0,
     vuelo_id: reserva.vuelo_id,
     equipaje_extra_kg: Number(reserva.equipaje_extra_kg) || 0,
     estado_vuelo: reserva.estado_vuelo,
@@ -338,6 +341,7 @@ export const anularCheckinsDeReserva = async (connection, reservaId) => {
 };
 
 export const obtenerElegibilidad = async (pnr, usuarioId) => {
+  await marcarSalidas();
   const codigo = codigoPnr(pnr);
   const reserva = await consultarReserva(pool, codigo, usuarioId, false);
   if (!reserva) {

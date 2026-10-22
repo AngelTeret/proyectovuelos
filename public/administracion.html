@@ -45,6 +45,7 @@
                   <th class="px-5 py-3">Origen</th>
                   <th class="px-5 py-3">Destino</th>
                   <th class="px-5 py-3">Salida</th>
+                  <th class="px-5 py-3">Duración</th>
                   <th class="px-5 py-3">Capacidad</th>
                   <th class="px-5 py-3">Precio Base</th>
                   <th class="px-5 py-3">Acciones</th>
@@ -76,6 +77,19 @@
           <span class="mb-1.5 block text-xs font-medium text-slate-600">Fecha y Hora de Salida</span>
           <input id="fecha-salida" name="fecha_salida" type="datetime-local" required class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
         </label>
+        <div>
+          <span class="mb-1.5 block text-xs font-medium text-slate-600">Duración</span>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="block">
+              <span class="mb-1.5 block text-xs text-slate-500">Horas</span>
+              <input id="duracion-horas" name="duracion_horas" type="number" min="0" max="24" step="1" value="2" required class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+            </label>
+            <label class="block">
+              <span class="mb-1.5 block text-xs text-slate-500">Minutos</span>
+              <input id="duracion-minutos" name="duracion_minutos" type="number" min="0" max="59" step="1" value="0" required class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+            </label>
+          </div>
+        </div>
         <div>
           <span class="mb-1.5 block text-xs font-medium text-slate-600">Imagen</span>
           <img id="vista-imagen" alt="" class="mb-3 hidden h-24 w-40 rounded-xl object-cover">

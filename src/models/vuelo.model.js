@@ -31,10 +31,11 @@ const crear = async (datos) => {
     estado = 'Programado',
     imagen_url = '/imagenes/avion-fondo.webp',
     capacidad_asientos = 30,
+    duracion_minutos = 120,
   } = datos;
   const [result] = await pool.query(
-    'INSERT INTO vuelos (origen, destino, fecha_salida, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [origen, destino, fecha_salida, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos]
+    'INSERT INTO vuelos (origen, destino, fecha_salida, duracion_minutos, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [origen, destino, fecha_salida, duracion_minutos, fecha_regreso, precio_base, estado, imagen_url, capacidad_asientos]
   );
   return result;
 };
@@ -47,10 +48,11 @@ const actualizar = async (id, datos) => {
     fecha_regreso = null,
     precio_base,
     imagen_url = '/imagenes/avion-fondo.webp',
+    duracion_minutos = 120,
   } = datos;
   const [resultado] = await pool.query(
-    'UPDATE vuelos SET origen = ?, destino = ?, fecha_salida = ?, fecha_regreso = ?, precio_base = ?, imagen_url = ? WHERE id = ?',
-    [origen, destino, fecha_salida, fecha_regreso, precio_base, imagen_url, id]
+    'UPDATE vuelos SET origen = ?, destino = ?, fecha_salida = ?, duracion_minutos = ?, fecha_regreso = ?, precio_base = ?, imagen_url = ? WHERE id = ?',
+    [origen, destino, fecha_salida, duracion_minutos, fecha_regreso, precio_base, imagen_url, id]
   );
   return resultado;
 };

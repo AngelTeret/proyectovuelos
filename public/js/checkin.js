@@ -343,7 +343,7 @@ const pintar = (aviso) => {
   document.getElementById('pnr').textContent = reserva.codigo_pnr || pnr;
   document.getElementById('mensaje-checkin').textContent = resumenAbordaje() || reserva.mensaje || '';
   document.getElementById('ruta').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;
-  document.getElementById('salida').textContent = formatearSalida(reserva.fecha_salida);
+  document.getElementById('salida').textContent = [formatearSalida(reserva.fecha_salida), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
   document.getElementById('lista-viajeros').innerHTML = (reserva.viajeros || []).map(pintarViajero).join('');
   actualizarEquipaje();
 
