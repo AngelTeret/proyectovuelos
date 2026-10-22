@@ -1,8 +1,12 @@
 import bcrypt from 'bcrypt';
 import {
+  actualizarPersonal,
   actualizarPersonalDespacho,
+  crearPersonal,
   crearPersonalDespacho,
+  eliminarPersonal,
   eliminarPersonalDespacho,
+  listarPersonal,
   listarPersonalDespacho,
 } from '../models/usuario.model.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
@@ -106,6 +110,78 @@ export const borrarDespacho = async (req, res) => {
   try {
     const id = idCuenta(req.params.id);
     if (!id || !(await eliminarPersonalDespacho(id))) {
+      return res.status(404).json({ mensaje: 'Esa cuenta no existe' });
+    }
+    res.status(200).json({ mensaje: 'Cuenta eliminada' });
+  } catch (error) {
+    responderErrorInterno(res, error);
+  }
+};
+
+export const listarMantenimiento = async (req, res) => {
+  try {
+    res.status(200).json(await listarPersonal('mantenimiento'));
+  } catch (error) {
+    responderErrorInterno(res, error);
+  }
+};
+
+export const crearMantenimiento = async (req, res) => {
+  try {
+    const datos = datosCuenta(req.body, true);
+    if (datos.error) {
+      return res.status(400).json({ mensaje: datos.error });
+    }
+    const passwordHash = await bcrypt.hash(datos.password, 10);
+    const cuenta = await crearPersonal({
+      nombre: datos.nombre,
+      email: datos.email,
+      password: passwordHash,
+      rol: 'mantenimiento',
+    });
+    res.status(201).json(cuenta);
+  } catch (error) {
+    if (responderDuplicado(res, error)) {
+      return;
+    }
+    responderErrorInterno(res, error);
+  }
+};
+
+export const editarMantenimiento = async (req, res) => {
+  try {
+    const id = idCuenta(req.params.id);
+    const datos = datosCuenta(req.body, false);
+    if (!id) {
+      return res.status(404).json({ mensaje: 'Esa cuenta no existe' });
+    }
+    if (datos.error) {
+      return res.status(400).json({ mensaje: datos.error });
+    }
+    const passwordHash = datos.password ? await bcrypt.hash(datos.password, 10) : '';
+    const actualizada = await actualizarPersonal({
+      id,
+      nombre: datos.nombre,
+      email: datos.email,
+      password: passwordHash,
+      rol: 'mantenimiento',
+    });
+    if (!actualizada) {
+      return res.status(404).json({ mensaje: 'Esa cuenta no existe' });
+    }
+    res.status(200).json({ id, nombre: datos.nombre, email: datos.email, rol: 'mantenimiento' });
+  } catch (error) {
+    if (responderDuplicado(res, error)) {
+      return;
+    }
+    responderErrorInterno(res, error);
+  }
+};
+
+export const borrarMantenimiento = async (req, res) => {
+  try {
+    const id = idCuenta(req.params.id);
+    if (!id || !(await eliminarPersonal(id, 'mantenimiento'))) {
       return res.status(404).json({ mensaje: 'Esa cuenta no existe' });
     }
     res.status(200).json({ mensaje: 'Cuenta eliminada' });

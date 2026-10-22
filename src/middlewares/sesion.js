@@ -55,6 +55,25 @@ export const exigirPersonal = async (req, res, next) => {
   }
 };
 
+export const exigirMantenimiento = async (req, res, next) => {
+  try {
+    const usuario = await usuarioDeEncabezado(req);
+    if (!usuario) {
+      return res.status(401).json({ mensaje: 'No autorizado' });
+    }
+    if (usuario.rol !== 'admin' && usuario.rol !== 'mantenimiento') {
+      return res.status(403).json({ mensaje: 'No tienes permiso para esta acción' });
+    }
+    req.usuario = usuario;
+    next();
+  } catch (error) {
+    if (rechazarToken(res, error)) {
+      return;
+    }
+    responderErrorInterno(res, error);
+  }
+};
+
 export const exigirAdmin = async (req, res, next) => {
   try {
     const usuario = await usuarioDeEncabezado(req);

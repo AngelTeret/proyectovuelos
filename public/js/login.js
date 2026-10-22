@@ -87,6 +87,10 @@ document.getElementById('form-login').addEventListener('submit', async (evento) 
       window.location.replace('/abordaje.html');
       return;
     }
+    if (data.rol === 'mantenimiento') {
+      window.location.replace('/mantenimiento.html');
+      return;
+    }
 
     const destino = localStorage.getItem('redirectAfterLogin');
     if (destino && destino.startsWith('/') && !destino.startsWith('//')) {

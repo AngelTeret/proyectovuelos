@@ -56,6 +56,9 @@ const paginaDeRol = (rol) => {
   if (rol === 'despacho') {
     return 'abordaje.html';
   }
+  if (rol === 'mantenimiento') {
+    return 'mantenimiento.html';
+  }
   return 'cliente.html';
 };
 

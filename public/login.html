@@ -11,6 +11,9 @@
       if (rol === 'despacho') {
         localStorage.removeItem('redirectAfterLogin');
         location.replace('/abordaje.html');
+      } else if (rol === 'mantenimiento') {
+        localStorage.removeItem('redirectAfterLogin');
+        location.replace('/mantenimiento.html');
       } else if (destino && destino.startsWith('/') && !destino.startsWith('//')) {
         localStorage.removeItem('redirectAfterLogin');
         location.replace(destino);

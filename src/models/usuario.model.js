@@ -96,54 +96,73 @@ export const confirmarCorreo = async (tokenHash) => {
   return 'ok';
 };
 
-export const listarPersonalDespacho = async () => {
+const ROLES_PERSONAL = new Set(['despacho', 'mantenimiento']);
+
+const rolPersonal = (rol) => {
+  if (!ROLES_PERSONAL.has(rol)) {
+    throw new Error('Rol no permitido');
+  }
+  return rol;
+};
+
+export const listarPersonal = async (rol) => {
   const [filas] = await pool.query(
     `SELECT id, nombre, email
      FROM usuarios
-     WHERE rol = 'despacho'
-     ORDER BY nombre, id`
+     WHERE rol = ?
+     ORDER BY nombre, id`,
+    [rolPersonal(rol)]
   );
   return filas;
 };
 
-export const actualizarPersonalDespacho = async ({ id, nombre, email, password }) => {
+export const actualizarPersonal = async ({ id, nombre, email, password, rol }) => {
   const campos = ['nombre = ?', 'email = ?'];
   const valores = [nombre, email];
   if (password) {
     campos.push('password = ?');
     valores.push(password);
   }
-  valores.push(id);
+  valores.push(id, rolPersonal(rol));
   const [resultado] = await pool.query(
     `UPDATE usuarios
      SET ${campos.join(', ')}
-     WHERE id = ? AND rol = 'despacho'`,
+     WHERE id = ? AND rol = ?`,
     valores
   );
   return resultado.affectedRows === 1;
 };
 
-export const eliminarPersonalDespacho = async (id) => {
+export const eliminarPersonal = async (id, rol) => {
   const [resultado] = await pool.query(
     'DELETE FROM usuarios WHERE id = ? AND rol = ?',
-    [id, 'despacho']
+    [id, rolPersonal(rol)]
   );
   return resultado.affectedRows === 1;
 };
 
-export const crearPersonalDespacho = async ({ nombre, email, password }) => {
+export const crearPersonal = async ({ nombre, email, password, rol }) => {
+  const papel = rolPersonal(rol);
   const [resultado] = await pool.query(
     `INSERT INTO usuarios (nombre, email, password, rol, saldo_virtual, email_verificado)
-     VALUES (?, ?, ?, 'despacho', 0, 1)`,
-    [nombre, email, password]
+     VALUES (?, ?, ?, ?, 0, 1)`,
+    [nombre, email, password, papel]
   );
   return {
     id: resultado.insertId,
     nombre,
     email,
-    rol: 'despacho',
+    rol: papel,
   };
 };
+
+export const listarPersonalDespacho = () => listarPersonal('despacho');
+
+export const actualizarPersonalDespacho = (datos) => actualizarPersonal({ ...datos, rol: 'despacho' });
+
+export const eliminarPersonalDespacho = (id) => eliminarPersonal(id, 'despacho');
+
+export const crearPersonalDespacho = (datos) => crearPersonal({ ...datos, rol: 'despacho' });
 
 export const actualizarSaldo = async (id, saldo) => {
   const [result] = await pool.query(
