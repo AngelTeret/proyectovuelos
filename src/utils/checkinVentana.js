@@ -3,7 +3,7 @@ export const MINUTOS_CIERRE = 60;
 export const ABRE_SEGUNDOS = HORAS_APERTURA * 60 * 60;
 export const CIERRA_SEGUNDOS = MINUTOS_CIERRE * 60;
 
-const ESTADOS_ABIERTOS = new Set(['programado', 'retrasado']);
+const ESTADOS_ABIERTOS = new Set(['programado', 'retrasado', 'abordando']);
 
 export const evaluarCheckin = ({ estadoPago, estadoVuelo, segundosParaSalida }) => {
   if (estadoPago === 'reembolsado') {
