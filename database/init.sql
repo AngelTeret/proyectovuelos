@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS reserva_pasajeros (
   pasajero_id INT UNSIGNED NOT NULL,
   asiento_id INT UNSIGNED NULL,
   orden TINYINT UNSIGNED NOT NULL,
+  cambios_asiento TINYINT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (id),
   CONSTRAINT fk_reserva_pasajeros_reserva
     FOREIGN KEY (reserva_id) REFERENCES reservas (id)

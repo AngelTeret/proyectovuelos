@@ -1,4 +1,10 @@
-import { emitirCheckin, obtenerBoletosEmitidos, obtenerElegibilidad } from '../models/checkin.model.js';
+import {
+  ajustarCheckin,
+  emitirCheckin,
+  obtenerAsientosCheckin,
+  obtenerBoletosEmitidos,
+  obtenerElegibilidad,
+} from '../models/checkin.model.js';
 import { enviarBoleto } from '../services/emailService.js';
 import { generarTemplateCheckin } from '../services/ticketTemplate.js';
 import { crearPdfBoletos } from '../utils/boletoVueloPdf.js';
@@ -21,6 +27,7 @@ const boletosNuevos = (resultado) => {
       origen: resultado.origen,
       destino: resultado.destino,
       fecha_salida: resultado.fecha_salida,
+      equipaje_extra_kg: resultado.equipaje_extra_kg,
     }));
 };
 
@@ -70,12 +77,43 @@ export const crearCheckin = async (req, res) => {
       pnr: req.body?.codigo_pnr || req.body?.pnr,
       usuarioId: req.usuario.id,
       viajeros: req.body?.viajeros,
+      maletas: req.body?.maletas,
+      asientos: req.body?.asientos,
     });
-    const correoEnviado = resultado.creados > 0 ? await enviarBoletos(resultado) : false;
+    const enviaraCorreo = resultado.creados > 0 && Boolean(resultado.email);
     res.status(200).json({
       ...sinInternos(resultado),
-      correo_enviado: correoEnviado,
+      correo_enviado: enviaraCorreo,
     });
+    if (enviaraCorreo) {
+      setImmediate(() => {
+        enviarBoletos(resultado);
+      });
+    }
+  } catch (error) {
+    responder(res, error);
+  }
+};
+
+export const guardarAjustes = async (req, res) => {
+  try {
+    const resultado = await ajustarCheckin({
+      pnr: req.body?.codigo_pnr || req.body?.pnr,
+      usuarioId: req.usuario.id,
+      maletas: req.body?.maletas,
+      asientos: req.body?.asientos,
+    });
+    const { email, ...publico } = resultado;
+    res.status(200).json(publico);
+  } catch (error) {
+    responder(res, error);
+  }
+};
+
+export const consultarAsientos = async (req, res) => {
+  try {
+    const datos = await obtenerAsientosCheckin(req.params.pnr, req.usuario.id);
+    res.status(200).json(datos);
   } catch (error) {
     responder(res, error);
   }
@@ -90,6 +128,7 @@ export const descargarBoletos = async (req, res) => {
       origen: datos.origen,
       destino: datos.destino,
       fecha_salida: datos.fecha_salida,
+      equipaje_extra_kg: datos.equipaje_extra_kg,
     })));
     const codigo = String(datos.codigo_pnr || 'reserva').replace(/[^A-Za-z0-9]/g, '');
     res.setHeader('Content-Type', 'application/pdf');

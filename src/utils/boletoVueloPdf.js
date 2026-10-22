@@ -1,19 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import PDFDocument from 'pdfkit';
-import SVGtoPDF from 'svg-to-pdfkit';
 import { partesGuatemala } from './fecha.js';
-
-const logoFrase = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '../../public/imagenes/logotipo_frase.svg'),
-  'utf8',
-).replace(/<metadata[\s\S]*?<\/metadata>/, '');
+import { textoEquipajeBoleto } from './franquiciaEquipaje.js';
 
 const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const izquierda = 48;
-const derecha = 300;
-const ancho = 220;
 
 const textoFecha = (valor) => {
   const partes = partesGuatemala(valor);
@@ -24,66 +13,74 @@ const textoFecha = (valor) => {
   return partes.hora ? `${dia}, ${partes.hora}:${partes.minuto}` : dia;
 };
 
-const etiqueta = (doc, texto, x, y) => {
-  doc.font('Helvetica').fontSize(10).fillColor('#64748b').text(texto, x, y, { width: ancho, lineBreak: false });
-};
-
-const valor = (doc, texto, x, y) => {
-  doc.font('Helvetica-Bold').fontSize(12).fillColor('#0f172a').text(texto, x, y, { width: ancho, lineBreak: false });
-};
-
-const dibujarBoleto = (doc, boleto) => {
-  const altoLogo = 58;
-  const anchoLogo = altoLogo * (3440 / 1520);
-  SVGtoPDF(doc, logoFrase, izquierda, 32, {
-    width: anchoLogo,
-    height: altoLogo,
-    preserveAspectRatio: 'xMinYMin meet',
-  });
-  doc.font('Helvetica').fontSize(11).fillColor('#475569').text('Boleto de vuelo', izquierda, 54, { width: 499, align: 'right', lineBreak: false });
-  doc.moveTo(izquierda, 102).lineTo(547, 102).strokeColor('#e2e8f0').stroke();
-
-  etiqueta(doc, 'BOLETO', izquierda, 114);
-  doc.font('Helvetica-Bold').fontSize(18).fillColor('#0f172a').text(boleto.codigo_boleto || '', izquierda, 128, { width: ancho, lineBreak: false });
-  etiqueta(doc, 'CODIGO DE RESERVA', derecha, 114);
-  valor(doc, boleto.codigo_pnr || '', derecha, 132);
-
+const dibujarBoleto = (doc, boleto, grupo) => {
+  const x = 48;
+  const y = 56;
+  const ancho = 499;
+  const alto = 420;
   const nombre = `${boleto.nombre || ''} ${boleto.apellido || ''}`.trim();
-  etiqueta(doc, 'PASAJERO', izquierda, 168);
-  doc.font('Helvetica-Bold').fontSize(14).fillColor('#0f172a').text(nombre, izquierda, 182, { width: 499, lineBreak: false });
-  if (boleto.documento_identidad) {
-    doc.font('Helvetica').fontSize(10).fillColor('#64748b').text(`Documento ${boleto.documento_identidad}`, izquierda, 202, { width: 499, lineBreak: false });
-  }
-
-  etiqueta(doc, 'RUTA', izquierda, 228);
-  doc.font('Helvetica-Bold').fontSize(13).fillColor('#0f172a').text(
-    `${boleto.origen || ''} - ${boleto.destino || ''}`,
-    izquierda,
-    242,
-    { width: 499, lineBreak: false },
-  );
-
-  etiqueta(doc, 'SALIDA', izquierda, 270);
-  valor(doc, textoFecha(boleto.fecha_salida), izquierda, 284);
-  etiqueta(doc, 'ASIENTO', derecha, 270);
-  valor(doc, boleto.numero_asiento || 'Regazo', derecha, 284);
-
-  let cursor = 320;
+  const asiento = boleto.numero_asiento || 'Regazo';
   const infantes = Array.isArray(boleto.infantes_en_regazo) ? boleto.infantes_en_regazo.filter(Boolean) : [];
-  if (infantes.length > 0) {
-    etiqueta(doc, 'INFANTE EN REGAZO', izquierda, cursor);
-    valor(doc, infantes.join(', '), izquierda, cursor + 14);
-    cursor += 48;
-  } else if (boleto.tipo === 'infante') {
-    doc.font('Helvetica').fontSize(11).fillColor('#334155').text('Viaja en regazo.', izquierda, cursor, { width: 499, lineBreak: false });
-    cursor += 28;
-  }
 
-  doc.font('Helvetica').fontSize(9).fillColor('#64748b').text(
-    'Presenta este boleto en tu teléfono. También puedes imprimirlo.',
-    izquierda,
-    cursor + 12,
-    { width: 499, lineBreak: false },
+  doc.save();
+  doc.roundedRect(x, y, ancho, alto, 18).clip();
+  doc.rect(x, y, ancho, 112).fill('#0B4C37');
+  doc.rect(x, y + 112, ancho, 8).fill('#8B2026');
+  doc.rect(x, y + 120, ancho, alto - 120).fill('#f3faf6');
+  doc.restore();
+  doc.roundedRect(x, y, ancho, alto, 18).lineWidth(2).strokeColor('#0B4C37').stroke();
+
+  doc.fillColor('#d7efe4').font('Helvetica').fontSize(11).text('BOLETO DE VUELO', x + 24, y + 22, { width: 280, lineBreak: false });
+  doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(13).text('Quetzal Airlines', x + 24, y + 40, { width: 280, lineBreak: false });
+
+  doc.fillColor('#d7efe4').font('Helvetica').fontSize(10).text('ASIENTO', x + 300, y + 18, { width: 175, align: 'right', lineBreak: false });
+  doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(asiento.length > 3 ? 22 : 36).text(asiento, x + 250, y + 36, { width: 225, align: 'right', lineBreak: false });
+
+  doc.fillColor('#166534').font('Helvetica').fontSize(10).text('PASAJERO', x + 24, y + 142, { width: 450, lineBreak: false });
+  doc.fillColor('#052e16').font('Helvetica-Bold').fontSize(20).text(nombre, x + 24, y + 158, { width: 450, lineBreak: false });
+
+  doc.font('Helvetica-Bold').fontSize(16).fillColor('#052e16');
+  const origen = boleto.origen || '';
+  const destino = boleto.destino || '';
+  const anchoOrigen = doc.widthOfString(origen);
+  doc.text(origen, x + 24, y + 196, { lineBreak: false });
+  const flechaX = x + 24 + anchoOrigen + 10;
+  const flechaY = y + 204;
+  doc.save();
+  doc.strokeColor('#8B2026').lineWidth(1.8).lineCap('round').lineJoin('round');
+  doc.moveTo(flechaX, flechaY).lineTo(flechaX + 22, flechaY).stroke();
+  doc.moveTo(flechaX + 15, flechaY - 5).lineTo(flechaX + 22, flechaY).lineTo(flechaX + 15, flechaY + 5).stroke();
+  doc.restore();
+  doc.fillColor('#052e16').text(destino, flechaX + 30, y + 196, { lineBreak: false });
+
+  doc.fillColor('#166534').font('Helvetica').fontSize(10).text('SALIDA', x + 24, y + 232, { width: 220, lineBreak: false });
+  doc.fillColor('#052e16').font('Helvetica-Bold').fontSize(12).text(textoFecha(boleto.fecha_salida), x + 24, y + 248, { width: 250, lineBreak: false });
+  doc.fillColor('#166534').font('Helvetica').fontSize(10).text('RESERVA', x + 290, y + 232, { width: 185, align: 'right', lineBreak: false });
+  doc.fillColor('#052e16').font('Helvetica-Bold').fontSize(12).text(boleto.codigo_pnr || '', x + 290, y + 248, { width: 185, align: 'right', lineBreak: false });
+
+  const documento = boleto.documento_identidad ? `Documento ${boleto.documento_identidad}` : '';
+  const regazo = infantes.length > 0 ? `Infante en regazo: ${infantes.join(', ')}` : '';
+  const lineaUno = [documento, regazo].filter(Boolean).join('  ·  ');
+  doc.fillColor('#166534').font('Helvetica').fontSize(10).text(lineaUno, x + 24, y + 274, { width: 450, lineBreak: false });
+  doc.text(textoEquipajeBoleto(boleto, grupo), x + 24, y + 290, { width: 450, lineBreak: false });
+
+  doc.save();
+  doc.dash(4, { space: 4 });
+  doc.moveTo(x + 24, y + 318).lineTo(x + ancho - 24, y + 318).strokeColor('#86efac').lineWidth(1).stroke();
+  doc.restore();
+
+  doc.fillColor('#166534').font('Helvetica').fontSize(10).text('CÓDIGO DE BOLETO', x + 24, y + 334, { width: 450, lineBreak: false });
+  doc.fillColor('#8B2026').font('Helvetica-Bold').fontSize(22).text(boleto.codigo_boleto || '', x + 24, y + 350, {
+    width: 450,
+    characterSpacing: 2,
+    lineBreak: false,
+  });
+
+  doc.fillColor('#64748b').font('Helvetica').fontSize(9).text(
+    'Muestra este boleto en tu teléfono o imprímelo. La factura de la compra es otro documento.',
+    x,
+    y + alto + 18,
+    { width: ancho, align: 'center', lineBreak: false },
   );
 };
 
@@ -98,7 +95,7 @@ export const crearPdfBoletos = (boletos) => new Promise((resolve, reject) => {
     if (indice > 0) {
       doc.addPage();
     }
-    dibujarBoleto(doc, boleto);
+    dibujarBoleto(doc, boleto, boletos);
   });
 
   doc.end();

@@ -200,15 +200,16 @@ const pintarGrupo = () => {
     }
     const emitidos = Number(reserva.boletos_emitidos) || 0;
     const total = Number(reserva.viajeros_total) || 0;
+    const checkinListo = total > 0 && emitidos >= total;
     const checkin = nodo.querySelector('[data-checkin]');
     const avisoCheckin = nodo.querySelector('[data-checkin-aviso]');
-    if (reserva.checkin_abierto && emitidos < total) {
-      checkin.textContent = 'Hacer check-in';
+    if (checkinListo) {
+      checkin.textContent = 'Ver boletos';
       checkin.href = `/checkin.html?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
       checkin.classList.remove('hidden');
       checkin.classList.add('inline-flex');
-    } else if (emitidos > 0) {
-      checkin.textContent = 'Ver boletos';
+    } else if (reserva.checkin_abierto) {
+      checkin.textContent = 'Hacer check-in';
       checkin.href = `/checkin.html?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
       checkin.classList.remove('hidden');
       checkin.classList.add('inline-flex');
@@ -270,5 +271,11 @@ const cargarHistorial = async (conservarPestana = false) => {
     mostrar('error-historial');
   }
 };
+
+window.addEventListener('pageshow', (evento) => {
+  if (evento.persisted) {
+    cargarHistorial(true);
+  }
+});
 
 cargarHistorial();
