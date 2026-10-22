@@ -186,11 +186,8 @@ const cambiosDeAsiento = (cambios, filas) => {
     if (viajero.tipo === 'infante' || !viajero.asiento_id) {
       throw errorCheckin('El infante viaja en regazo y no cambia de asiento', 400);
     }
-    if (
-      asientoId !== Number(viajero.asiento_id)
-      && (viajero.estado_checkin === 'abordado' || viajero.estado_checkin === 'no_show')
-    ) {
-      throw errorCheckin('Ese pasajero ya no puede cambiar de asiento', 400);
+    if (asientoId !== Number(viajero.asiento_id) && tieneBoleto(viajero)) {
+      throw errorCheckin('El asiento queda fijo después del check-in', 400);
     }
     if (!Number.isInteger(asientoId) || asientoId <= 0) {
       throw errorCheckin('Elige un asiento libre', 400);

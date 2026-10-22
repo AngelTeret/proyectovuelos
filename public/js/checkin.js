@@ -234,7 +234,7 @@ const controlesViaje = (viajero) => {
   if (viajero.tipo === 'infante' || !viajero.asiento_id) {
     return '';
   }
-  if (viajero.estado_checkin === 'abordado' || viajero.estado_checkin === 'no_show') {
+  if (viajero.codigo_boleto) {
     return '';
   }
   return preguntaAsiento(viajero);
@@ -358,7 +358,7 @@ const pintar = (aviso) => {
 };
 
 const cambioPendiente = () => (reserva?.viajeros || []).some((viajero) => {
-  if (viajero.tipo === 'infante' || !viajero.asiento_id || Number(viajero.cambios_asiento) >= 1) {
+  if (viajero.tipo === 'infante' || !viajero.asiento_id || viajero.codigo_boleto || Number(viajero.cambios_asiento) >= 1) {
     return false;
   }
   const elegido = asientoElegido.get(viajero.id);
