@@ -194,6 +194,9 @@ export const eliminarVuelo = async (req, res) => {
     });
     res.status(200).json({ mensaje: 'Vuelo eliminado correctamente' });
   } catch (error) {
+    if (error.codigo === 400) {
+      return res.status(400).json({ mensaje: error.message });
+    }
     responderErrorInterno(res, error);
   }
 };

@@ -90,6 +90,59 @@ describe('api', () => {
     assert.match(data.mensaje, /Demasiados intentos/);
   });
 
+  it('no elimina un vuelo que ya tiene reservas', async () => {
+    const encabezado = { Authorization: `Bearer ${tokenDe(admin)}` };
+    const crear = async () => {
+      const datos = new FormData();
+      datos.append('origen', 'Prueba');
+      datos.append('destino', 'Borrado');
+      datos.append('fecha_salida', '2026-12-31 10:00:00');
+      datos.append('precio_base', '100');
+      datos.append('capacidad_asientos', '18');
+      datos.append('duracion_minutos', '120');
+      const respuesta = await fetch(`${base}/api/vuelos`, {
+        method: 'POST',
+        headers: encabezado,
+        body: datos,
+      });
+      const cuerpo = await respuesta.json();
+      assert.equal(respuesta.status, 201);
+      return cuerpo.id;
+    };
+
+    const vacio = await crear();
+    const borrado = await fetch(`${base}/api/vuelos/${vacio}`, { method: 'DELETE', headers: encabezado });
+    assert.equal(borrado.status, 200);
+
+    const ocupado = await crear();
+    const [asientos] = await pool.query(
+      'SELECT id FROM asientos WHERE vuelo_id = ? LIMIT 1',
+      [ocupado]
+    );
+    const [pasajero] = await pool.query(
+      'INSERT INTO pasajeros (nombre, apellido, documento_identidad, email, telefono) VALUES (?, ?, ?, ?, ?)',
+      ['Prueba', 'Borrado', `PB${Date.now()}`.slice(0, 15), 'borrado@example.com', '55555555']
+    );
+    const codigo = `T${String(Date.now()).slice(-5)}`;
+    const [reserva] = await pool.query(
+      'INSERT INTO reservas (codigo_pnr, pasajero_id, vuelo_id, asiento_id, usuario_id, estado_pago, metodo_pago, monto_total) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [codigo, pasajero.insertId, ocupado, asientos[0].id, cliente.id, 'aprobado', 'saldo', 100]
+    );
+
+    try {
+      const respuesta = await fetch(`${base}/api/vuelos/${ocupado}`, { method: 'DELETE', headers: encabezado });
+      const cuerpo = await respuesta.json();
+      assert.equal(respuesta.status, 400);
+      assert.match(cuerpo.mensaje, /ya tiene reservas/);
+      const [sigue] = await pool.query('SELECT id FROM vuelos WHERE id = ?', [ocupado]);
+      assert.equal(sigue.length, 1);
+    } finally {
+      await pool.query('DELETE FROM reservas WHERE id = ?', [reserva.insertId]);
+      await pool.query('DELETE FROM pasajeros WHERE id = ?', [pasajero.insertId]);
+      await fetch(`${base}/api/vuelos/${ocupado}`, { method: 'DELETE', headers: encabezado });
+    }
+  });
+
   it('avisa la hora sin actividad cuando el servidor cierra la sesión', () => {
     const error = new Error('jwt expired');
     error.name = 'TokenExpiredError';

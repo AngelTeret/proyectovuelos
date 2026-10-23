@@ -199,7 +199,11 @@ const eliminarVuelo = async (id) => {
     }
 
     if (!respuesta.ok) {
-      Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje || 'No se pudo eliminar el vuelo' });
+      Swal.fire({
+        icon: respuesta.status === 400 ? 'warning' : 'error',
+        title: respuesta.status === 400 ? 'No se puede eliminar' : 'No se pudo eliminar',
+        text: data.mensaje || 'No se pudo eliminar el vuelo',
+      });
       return;
     }
 
