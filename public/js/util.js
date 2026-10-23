@@ -160,6 +160,18 @@ const partesGuatemala = (valor) => {
   return partesDeInstante(fecha);
 };
 
+const MINUTOS_CIERRE_VENTA = 60;
+const ESTADOS_EN_VENTA = new Set(['programado', 'retrasado', 'abordando']);
+
+const vueloEnVenta = (vuelo) => {
+  const estado = String(vuelo?.estado || '').toLowerCase();
+  const salida = new Date(vuelo?.fecha_salida).getTime();
+  if (!ESTADOS_EN_VENTA.has(estado) || Number.isNaN(salida)) {
+    return false;
+  }
+  return salida - Date.now() > MINUTOS_CIERRE_VENTA * 60 * 1000;
+};
+
 const fechaCalendario = (valor) => {
   const partes = partesGuatemala(valor);
   if (!partes) {
@@ -326,6 +338,7 @@ Object.assign(window, {
   olvidarCopiasDurables,
   abandonarReserva,
   partesGuatemala,
+  vueloEnVenta,
   fechaCalendario,
   formatearDia,
   formatearSalida,

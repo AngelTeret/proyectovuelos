@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import pool from '../config/db.js';
 import { fechaCalendario } from '../utils/fecha.js';
-import { evaluarCheckin } from '../utils/checkinVentana.js';
+import { evaluarCheckin, motivoVentaCerrada } from '../utils/checkinVentana.js';
 import { anularCheckinsDeReserva } from './checkin.model.js';
 import { marcarSalidas } from './abordaje.model.js';
 import { salidaReal, sumarRetraso } from '../utils/horarioVuelo.js';
@@ -203,11 +203,20 @@ const crearReservaGrupo = async (datos) => {
     });
 
     const [filasVuelo] = await connection.query(
-      'SELECT precio_base, fecha_salida, retraso_minutos FROM vuelos WHERE id = ? FOR UPDATE',
+      `SELECT precio_base, fecha_salida, retraso_minutos, estado,
+              TIMESTAMPDIFF(SECOND, NOW(), ${salidaReal()}) AS segundos
+       FROM vuelos WHERE id = ? FOR UPDATE`,
       [vuelo_id]
     );
     if (filasVuelo.length === 0) {
       throw new Error('El vuelo no existe');
+    }
+    const ventaCerrada = motivoVentaCerrada({
+      estado: filasVuelo[0].estado,
+      segundosParaSalida: filasVuelo[0].segundos,
+    });
+    if (ventaCerrada) {
+      throw errorCliente(ventaCerrada);
     }
     const precioBase = parseFloat(filasVuelo[0].precio_base ?? 0);
     const diaDelVuelo = sumarRetraso(filasVuelo[0].fecha_salida, filasVuelo[0].retraso_minutos) || filasVuelo[0].fecha_salida;

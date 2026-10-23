@@ -289,6 +289,20 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      if (/ya no se puede comprar|ya salió/i.test(data.mensaje || '')) {
+        pagoConfirmado = true;
+        abandonarReserva();
+        localStorage.removeItem('busquedaVuelo');
+        Swal.fire({
+          icon: 'warning',
+          title: 'Este vuelo ya no se puede comprar',
+          text: data.mensaje,
+        }).then(() => {
+          window.location.replace('/index.html');
+        });
+        return;
+      }
+
       if (/tiempo para completar el pago|ya no está disponible/i.test(data.mensaje || '')) {
         pagoConfirmado = true;
         Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje }).then(() => {

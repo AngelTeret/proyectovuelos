@@ -1,4 +1,6 @@
 import pool from '../config/db.js';
+import { motivoVentaCerrada } from '../utils/checkinVentana.js';
+import { salidaReal } from '../utils/horarioVuelo.js';
 import { conTransaccion } from '../utils/transaccion.js';
 
 export const MINUTOS_BLOQUEO = 5;
@@ -22,6 +24,22 @@ export const reservarTemporal = async ({ asientoId, vueloId, llave, conservarIds
   }
 
   return conTransaccion(async (connection) => {
+    const [filasVuelo] = await connection.query(
+      `SELECT estado, TIMESTAMPDIFF(SECOND, NOW(), ${salidaReal()}) AS segundos
+       FROM vuelos WHERE id = ? FOR UPDATE`,
+      [vueloId]
+    );
+    if (filasVuelo.length === 0) {
+      throw new Error('El vuelo no existe');
+    }
+    const cerrado = motivoVentaCerrada({
+      estado: filasVuelo[0].estado,
+      segundosParaSalida: filasVuelo[0].segundos,
+    });
+    if (cerrado) {
+      throw new Error(cerrado);
+    }
+
     const [filas] = await connection.query(
       `SELECT id, estado, bloqueo_llave, bloqueo_hasta > NOW() AS vigente
        FROM asientos

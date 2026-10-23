@@ -4,10 +4,7 @@ const fechaISO = (valor) => fechaCalendario(valor);
 
 const hoyISO = () => fechaCalendario(new Date());
 
-const vueloVigente = (vuelo) => {
-  const fecha = fechaISO(vuelo.fecha_salida);
-  return fecha !== '' && fecha >= hoyISO();
-};
+const vueloVigente = (vuelo) => vueloEnVenta(vuelo);
 
 const llenarSelect = (select, lugares) => {
   const opciones = lugares.map((lugar) => `<option value="${escapar(lugar)}">${escapar(lugar)}</option>`);
