@@ -1,14 +1,20 @@
 import jwt from 'jsonwebtoken';
 import { buscarPorId } from '../models/usuario.model.js';
+import { actividadVigente } from '../utils/actividadSesion.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 
-const usuarioDeEncabezado = async (req) => {
+export const leerSesion = async (req) => {
   const encabezado = req.headers.authorization || '';
   const token = encabezado.startsWith('Bearer ') ? encabezado.slice(7) : '';
   if (!token) {
     return null;
   }
   const datos = jwt.verify(token, process.env.JWT_SECRET);
+  if (!actividadVigente(datos.id, datos.iat)) {
+    const error = new Error('jwt expired');
+    error.name = 'TokenExpiredError';
+    throw error;
+  }
   return buscarPorId(datos.id);
 };
 
@@ -22,7 +28,7 @@ const rechazarToken = (res, error) => {
 
 export const exigirSesion = async (req, res, next) => {
   try {
-    const usuario = await usuarioDeEncabezado(req);
+    const usuario = await leerSesion(req);
     if (!usuario) {
       return res.status(401).json({ mensaje: 'No autorizado' });
     }
@@ -38,7 +44,7 @@ export const exigirSesion = async (req, res, next) => {
 
 export const exigirPersonal = async (req, res, next) => {
   try {
-    const usuario = await usuarioDeEncabezado(req);
+    const usuario = await leerSesion(req);
     if (!usuario) {
       return res.status(401).json({ mensaje: 'No autorizado' });
     }
@@ -57,7 +63,7 @@ export const exigirPersonal = async (req, res, next) => {
 
 export const exigirMantenimiento = async (req, res, next) => {
   try {
-    const usuario = await usuarioDeEncabezado(req);
+    const usuario = await leerSesion(req);
     if (!usuario) {
       return res.status(401).json({ mensaje: 'No autorizado' });
     }
@@ -76,7 +82,7 @@ export const exigirMantenimiento = async (req, res, next) => {
 
 export const exigirAdmin = async (req, res, next) => {
   try {
-    const usuario = await usuarioDeEncabezado(req);
+    const usuario = await leerSesion(req);
     if (!usuario) {
       return res.status(401).json({ mensaje: 'No autorizado' });
     }
