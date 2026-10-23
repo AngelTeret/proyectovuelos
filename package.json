@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --test tests/reglas.test.js"
+    "test": "node --test tests/reglas.test.js tests/api.test.js"
   },
   "keywords": [],
   "author": "",
