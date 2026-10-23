@@ -1,6 +1,7 @@
 import pool from '../config/db.js';
 import { motivoVentaCerrada } from '../utils/checkinVentana.js';
 import { salidaReal } from '../utils/horarioVuelo.js';
+import { cargoDeCategoria, dinero } from '../utils/precioAsiento.js';
 import { conTransaccion } from '../utils/transaccion.js';
 
 export const MINUTOS_BLOQUEO = 5;
@@ -215,8 +216,6 @@ export const liberarBloqueosDeLlave = async ({ vueloId, llave }) => {
 const LETRAS = ['A', 'B', 'C', 'D', 'E', 'F'];
 const CATEGORIAS = ['Premium', 'Estándar', 'Básica'];
 
-const dinero = (monto) => Math.round((Number(monto) || 0) * 100) / 100;
-
 export const repartirFilas = (filas) => {
   const total = Math.max(3, Number(filas) || 3);
   let premium = Math.max(1, Math.round(total * 0.25));
@@ -243,16 +242,7 @@ export const categoriaDeFila = (fila, reparto) => {
   return 'Básica';
 };
 
-export const cargoDeCategoria = (precioBase, categoria) => {
-  const base = Number(precioBase) || 0;
-  if (categoria === 'Premium') {
-    return dinero(base * 0.5);
-  }
-  if (categoria === 'Estándar') {
-    return dinero(base * 0.2);
-  }
-  return 0;
-};
+export { cargoDeCategoria };
 
 const filaDeAsiento = (numero) => {
   const coincidencia = String(numero ?? '').match(/^(\d+)/);
