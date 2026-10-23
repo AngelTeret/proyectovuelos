@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import {
   aplicarRestablecer,
   buscarPorEmail,
-  buscarPorId,
   confirmarCorreo,
   crearUsuarioPendiente,
   guardarRestablecer,
@@ -12,6 +11,10 @@ import {
   renovarVerificacion,
   revisarRestablecer,
 } from '../models/usuario.model.js';
+import { registrarBitacora } from '../models/bitacora.model.js';
+import { anotarIntento, cupoLleno, ipDe, MENSAJE_CUPO, olvidarIntentos } from '../middlewares/cupo.js';
+import { leerSesion } from '../middlewares/sesion.js';
+import { tocarActividad } from '../utils/actividadSesion.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 import { enviarBoleto } from '../services/emailService.js';
 import { generarTemplateRestablecer, generarTemplateVerificacion } from '../services/ticketTemplate.js';
@@ -38,6 +41,11 @@ const enlaceDe = (req, token) => `${baseDe(req)}/verificar.html?token=${token}`;
 const enlaceRestablecer = (req, token) => `${baseDe(req)}/restablecer.html?token=${token}`;
 
 const MENSAJE_OLVIDE = 'Si el correo tiene una cuenta confirmada, enviamos un enlace para elegir otra contraseña.';
+const VENTANA_CORREO = 60 * 60 * 1000;
+const VENTANA_CORTA = 15 * 60 * 1000;
+const hashDeRelleno = bcrypt.hashSync('tiempo-de-comparacion', 10);
+
+const rechazarCupo = (res) => res.status(429).json({ mensaje: MENSAJE_CUPO });
 
 const tokenHex = (valor) => /^[a-f0-9]{64}$/i.test(String(valor || '').trim());
 
@@ -60,6 +68,11 @@ export const registro = async (req, res) => {
     const nombre = String(req.body.nombre || '').trim();
     const email = normalizarCorreo(req.body.email);
     const password = String(req.body.password || '');
+
+    if (cupoLleno({ nombre: 'registro', clave: ipDe(req), maximo: 80, ventanaMs: VENTANA_CORREO })) {
+      return rechazarCupo(res);
+    }
+    anotarIntento({ nombre: 'registro', clave: ipDe(req), ventanaMs: VENTANA_CORREO });
 
     if (!nombre || !email || !password) {
       return res.status(400).json({ mensaje: 'Nombre, email y contraseña son obligatorios' });
@@ -142,6 +155,14 @@ export const reenviarVerificacion = async (req, res) => {
     if (!correoValido(email)) {
       return res.status(400).json({ mensaje: 'Ingresa un correo electrónico válido' });
     }
+    if (
+      cupoLleno({ nombre: 'reenvio', clave: email, maximo: 5, ventanaMs: VENTANA_CORREO })
+      || cupoLleno({ nombre: 'reenvio-ip', clave: ipDe(req), maximo: 80, ventanaMs: VENTANA_CORREO })
+    ) {
+      return rechazarCupo(res);
+    }
+    anotarIntento({ nombre: 'reenvio', clave: email, ventanaMs: VENTANA_CORREO });
+    anotarIntento({ nombre: 'reenvio-ip', clave: ipDe(req), ventanaMs: VENTANA_CORREO });
 
     const usuario = await buscarPorEmail(email);
     if (!usuario) {
@@ -172,6 +193,14 @@ export const olvidarContrasena = async (req, res) => {
     if (!correoValido(email)) {
       return res.status(400).json({ mensaje: 'Ingresa un correo electrónico válido' });
     }
+    if (
+      cupoLleno({ nombre: 'olvide', clave: email, maximo: 5, ventanaMs: VENTANA_CORREO })
+      || cupoLleno({ nombre: 'olvide-ip', clave: ipDe(req), maximo: 80, ventanaMs: VENTANA_CORREO })
+    ) {
+      return rechazarCupo(res);
+    }
+    anotarIntento({ nombre: 'olvide', clave: email, ventanaMs: VENTANA_CORREO });
+    anotarIntento({ nombre: 'olvide-ip', clave: ipDe(req), ventanaMs: VENTANA_CORREO });
 
     const usuario = await buscarPorEmail(email);
     if (!usuario || !Number(usuario.email_verificado)) {
@@ -211,6 +240,11 @@ export const revisarEnlaceRestablecer = async (req, res) => {
 
 export const restablecerContrasena = async (req, res) => {
   try {
+    if (cupoLleno({ nombre: 'restablecer', clave: ipDe(req), maximo: 20, ventanaMs: VENTANA_CORTA })) {
+      return rechazarCupo(res);
+    }
+    anotarIntento({ nombre: 'restablecer', clave: ipDe(req), ventanaMs: VENTANA_CORTA });
+
     const token = String(req.body.token || '').trim();
     const password = String(req.body.password || '');
     if (!tokenHex(token)) {
@@ -226,6 +260,11 @@ export const restablecerContrasena = async (req, res) => {
     if (estado !== 'ok') {
       return res.status(400).json({ mensaje: mensajeDeEnlace(estado) });
     }
+    await registrarBitacora({
+      accion: 'restablecer',
+      detalle: 'Contraseña actualizada',
+      ip: ipDe(req),
+    });
     res.status(200).json({ mensaje: 'La contraseña quedó actualizada. Ya puedes entrar.' });
   } catch (error) {
     responderErrorInterno(res, error);
@@ -233,16 +272,12 @@ export const restablecerContrasena = async (req, res) => {
 };
 
 export const perfil = async (req, res) => {
-  const encabezado = req.headers.authorization || '';
-  const token = encabezado.startsWith('Bearer ') ? encabezado.slice(7) : '';
-  if (!token) {
-    return res.status(401).json({ mensaje: 'No autorizado' });
-  }
-
   try {
-    const datos = jwt.verify(token, process.env.JWT_SECRET);
-    const usuario = await buscarPorId(datos.id);
+    const usuario = await leerSesion(req);
     if (!usuario) {
+      return res.status(401).json({ mensaje: 'No autorizado' });
+    }
+    if (!usuario.id) {
       return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     }
 
@@ -266,17 +301,29 @@ export const login = async (req, res) => {
     const email = normalizarCorreo(req.body.email);
     const password = String(req.body.password || '');
 
+    const ip = ipDe(req);
+    if (
+      cupoLleno({ nombre: 'login-ip', clave: ip, maximo: 120, ventanaMs: VENTANA_CORTA })
+      || (email && cupoLleno({ nombre: 'login-correo', clave: email, maximo: 8, ventanaMs: VENTANA_CORTA }))
+    ) {
+      return rechazarCupo(res);
+    }
+
     if (!email || !password) {
       return res.status(400).json({ mensaje: 'Email y contraseña son obligatorios' });
     }
 
-    const usuario = await buscarPorEmail(email);
-    if (!usuario) {
-      return res.status(401).json({ mensaje: 'Credenciales inválidas' });
-    }
+    const anotarFallo = () => {
+      anotarIntento({ nombre: 'login-ip', clave: ip, ventanaMs: VENTANA_CORTA });
+      if (email) {
+        anotarIntento({ nombre: 'login-correo', clave: email, ventanaMs: VENTANA_CORTA });
+      }
+    };
 
-    const coincide = await bcrypt.compare(password, usuario.password);
-    if (!coincide) {
+    const usuario = await buscarPorEmail(email);
+    const coincide = await bcrypt.compare(password, usuario?.password || hashDeRelleno);
+    if (!usuario || !coincide) {
+      anotarFallo();
       return res.status(401).json({ mensaje: 'Credenciales inválidas' });
     }
 
@@ -287,11 +334,19 @@ export const login = async (req, res) => {
       });
     }
 
+    olvidarIntentos({ nombre: 'login-correo', clave: email });
+    tocarActividad(usuario.id);
     const token = jwt.sign(
       { id: usuario.id, rol: usuario.rol, nombre: usuario.nombre },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }
     );
+    await registrarBitacora({
+      usuarioId: usuario.id,
+      accion: 'login',
+      detalle: 'Inicio de sesión',
+      ip,
+    });
 
     res.status(200).json({
       token,
