@@ -13,6 +13,7 @@ import checkinRoutes from './routes/checkin.routes.js';
 import abordajeRoutes from './routes/abordaje.routes.js';
 import personalRoutes from './routes/personal.routes.js';
 import mantenimientoRoutes from './routes/mantenimiento.routes.js';
+import bitacoraRoutes from './routes/bitacora.routes.js';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ app.use('/api/checkin', checkinRoutes);
 app.use('/api/abordaje', abordajeRoutes);
 app.use('/api/personal', personalRoutes);
 app.use('/api/mantenimiento', mantenimientoRoutes);
+app.use('/api/bitacora', bitacoraRoutes);
 
 app.get('/api/salud', async (req, res) => {
   try {
