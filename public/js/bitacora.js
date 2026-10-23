@@ -9,6 +9,9 @@ const ETIQUETAS = {
   pago: 'Pago',
   cancelacion: 'Cancelación',
   restablecer: 'Contraseña',
+  checkin: 'Check-in',
+  abordaje: 'Abordaje',
+  vuelo: 'Vuelo',
 };
 
 const COLORES = {
@@ -16,6 +19,9 @@ const COLORES = {
   pago: 'bg-emerald-50 text-emerald-700',
   cancelacion: 'bg-amber-50 text-amber-700',
   restablecer: 'bg-slate-100 text-slate-700',
+  checkin: 'bg-sky-50 text-sky-700',
+  abordaje: 'bg-indigo-50 text-indigo-700',
+  vuelo: 'bg-teal-50 text-teal-700',
 };
 
 let registros = [];
@@ -54,8 +60,7 @@ const cargarBitacora = async () => {
   const cuerpo = document.getElementById('cuerpo-bitacora');
   try {
     const respuesta = await fetch('/api/bitacora', { headers: autorizacion() });
-    if (respuesta.status === 401) {
-      cerrarSesionInvalida('/bitacora.html');
+    if (await cerrarSiSesionRechazada(respuesta, '/bitacora.html')) {
       return;
     }
     if (respuesta.status === 403) {
