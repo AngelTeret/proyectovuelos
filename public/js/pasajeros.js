@@ -713,6 +713,9 @@ const rellenarContacto = async () => {
   }
   try {
     const respuesta = await fetch('/api/auth/perfil', { headers: autorizacion() });
+    if (await cerrarSiSesionRechazada(respuesta, '/pasajeros.html')) {
+      return;
+    }
     if (!respuesta.ok) {
       return;
     }

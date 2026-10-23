@@ -13,7 +13,7 @@ import {
 } from '../models/usuario.model.js';
 import { registrarBitacora } from '../models/bitacora.model.js';
 import { anotarIntento, cupoLleno, ipDe, MENSAJE_CUPO, olvidarIntentos } from '../middlewares/cupo.js';
-import { leerSesion } from '../middlewares/sesion.js';
+import { leerSesion, respuestaDeSesion } from '../middlewares/sesion.js';
 import { tocarActividad } from '../utils/actividadSesion.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 import { enviarBoleto } from '../services/emailService.js';
@@ -289,8 +289,8 @@ export const perfil = async (req, res) => {
       saldo_virtual: usuario.saldo_virtual,
     });
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return res.status(401).json({ mensaje: 'Sesión no válida' });
+    if (respuestaDeSesion(res, error)) {
+      return;
     }
     responderErrorInterno(res, error);
   }

@@ -10,7 +10,7 @@ import {
 } from '../models/reserva.model.js';
 import { registrarBitacora } from '../models/bitacora.model.js';
 import { ipDe } from '../middlewares/cupo.js';
-import { leerSesion } from '../middlewares/sesion.js';
+import { leerSesion, respuestaDeSesion } from '../middlewares/sesion.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 import { crearPdfFactura } from '../utils/boletoPdf.js';
 import { enviarBoleto } from '../services/emailService.js';
@@ -166,8 +166,8 @@ export const obtenerHistorialUsuario = async (req, res) => {
     const historial = await obtenerHistorialPorUsuario(sesion.id);
     res.status(200).json(historial);
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return res.status(401).json({ mensaje: 'Sesión no válida' });
+    if (respuestaDeSesion(res, error)) {
+      return;
     }
     responderErrorInterno(res, error);
   }
@@ -219,8 +219,8 @@ export const cancelarReserva = async (req, res) => {
       correo_enviado: correoEnviado,
     });
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return res.status(401).json({ mensaje: 'Sesión no válida' });
+    if (respuestaDeSesion(res, error)) {
+      return;
     }
     if (error.codigo === 404 || error.codigo === 400) {
       return res.status(error.codigo).json({ mensaje: error.message });
@@ -257,8 +257,8 @@ const facturaDisponible = async (req) => {
 };
 
 const responderErrorBoleto = (res, error) => {
-  if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError' || error.codigo === 401) {
-    return res.status(401).json({ mensaje: error.codigo === 401 ? error.message : 'Sesión no válida' });
+  if (respuestaDeSesion(res, error)) {
+    return;
   }
   if (error.codigo === 404 || error.codigo === 400) {
     return res.status(error.codigo).json({ mensaje: error.message });

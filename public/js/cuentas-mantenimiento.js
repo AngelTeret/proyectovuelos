@@ -84,8 +84,7 @@ const pintarCuentas = (cuentas) => {
 
 const cargarCuentas = async () => {
   const respuesta = await fetch('/api/personal/mantenimiento', { headers: autorizacion() });
-  if (respuesta.status === 401) {
-    cerrarSesionInvalida('/cuentas-mantenimiento.html');
+  if (await cerrarSiSesionRechazada(respuesta, '/cuentas-mantenimiento.html')) {
     return;
   }
   const data = await respuesta.json().catch(() => []);

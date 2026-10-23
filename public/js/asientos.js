@@ -404,8 +404,7 @@ const elegirAsiento = async (boton, asientos) => {
       }),
     });
     const data = await respuesta.json().catch(() => ({}));
-    if (respuesta.status === 401) {
-      cerrarSesionInvalida('/asientos.html');
+    if (await cerrarSiSesionRechazada(respuesta, '/asientos.html')) {
       return;
     }
     if (!respuesta.ok) {

@@ -39,8 +39,7 @@ const pedir = async (ruta, metodo = 'GET', cuerpo) => {
     headers: cuerpo ? { ...autorizacion(), 'Content-Type': 'application/json' } : autorizacion(),
     body: cuerpo ? JSON.stringify(cuerpo) : undefined,
   });
-  if (respuesta.status === 401) {
-    cerrarSesionInvalida(`${window.location.pathname}${window.location.search}`);
+  if (await cerrarSiSesionRechazada(respuesta, `${window.location.pathname}${window.location.search}`)) {
     return null;
   }
   const data = await respuesta.json().catch(() => ({}));

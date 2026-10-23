@@ -13,18 +13,32 @@ export const leerSesion = async (req) => {
   if (!actividadVigente(datos.id, datos.iat)) {
     const error = new Error('jwt expired');
     error.name = 'TokenExpiredError';
+    error.motivo = 'inactiva';
     throw error;
   }
   return buscarPorId(datos.id);
 };
 
-const rechazarToken = (res, error) => {
+export const respuestaDeSesion = (res, error) => {
+  if (error?.motivo === 'inactiva') {
+    res.status(401).json({
+      mensaje: 'Cerramos tu sesión tras 1 hora sin actividad.',
+      motivo: 'inactiva',
+    });
+    return true;
+  }
   if (error?.name === 'JsonWebTokenError' || error?.name === 'TokenExpiredError') {
     res.status(401).json({ mensaje: 'Sesión no válida' });
     return true;
   }
+  if (error?.codigo === 401) {
+    res.status(401).json({ mensaje: error.message });
+    return true;
+  }
   return false;
 };
+
+const rechazarToken = (res, error) => respuestaDeSesion(res, error);
 
 export const exigirSesion = async (req, res, next) => {
   try {

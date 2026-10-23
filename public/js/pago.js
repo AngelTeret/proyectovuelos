@@ -17,6 +17,9 @@ const cargarSaldo = async () => {
     const respuesta = await fetch('/api/auth/perfil', {
       headers: autorizacion(),
     });
+    if (await cerrarSiSesionRechazada(respuesta, '/pago.html')) {
+      return;
+    }
     if (!respuesta.ok) {
       saldo.textContent = '0.00';
       return;
@@ -247,6 +250,11 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify(payload),
       });
       const data = await respuesta.json();
+
+      if (respuesta.status === 401) {
+        cerrarSesionInvalida('/pago.html', data.motivo);
+        return;
+      }
 
       if (respuesta.status === 201) {
         pagoConfirmado = true;

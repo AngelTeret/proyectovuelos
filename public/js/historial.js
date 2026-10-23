@@ -144,8 +144,7 @@ const cancelarReserva = async (reserva, boton) => {
       headers: autorizacion(),
     });
     const data = await respuesta.json().catch(() => ({}));
-    if (respuesta.status === 401) {
-      cerrarSesionInvalida('/mis-vuelos.html');
+    if (await cerrarSiSesionRechazada(respuesta, '/mis-vuelos.html')) {
       return;
     }
     if (!respuesta.ok) {
@@ -291,8 +290,7 @@ const cargarHistorial = async (conservarPestana = false) => {
     const respuesta = await fetch('/api/reservas/mi-historial', {
       headers: autorizacion(),
     });
-    if (respuesta.status === 401) {
-      cerrarSesionInvalida('/mis-vuelos.html');
+    if (await cerrarSiSesionRechazada(respuesta, '/mis-vuelos.html')) {
       return;
     }
     if (!respuesta.ok) {

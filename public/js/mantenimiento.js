@@ -28,8 +28,7 @@ const pedir = async (url, metodo = 'GET') => {
     method: metodo,
     headers: autorizacion(),
   });
-  if (respuesta.status === 401) {
-    cerrarSesionInvalida(`/mantenimiento.html${window.location.search}`);
+  if (await cerrarSiSesionRechazada(respuesta, `/mantenimiento.html${window.location.search}`)) {
     return null;
   }
   const data = await respuesta.json().catch(() => ({}));

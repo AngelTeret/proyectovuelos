@@ -82,8 +82,7 @@ const pintarDespacho = (cuentas) => {
 
 const cargarDespacho = async () => {
   const respuesta = await fetch('/api/personal/despacho', { headers: autorizacion() });
-  if (respuesta.status === 401) {
-    cerrarSesionInvalida('/personal.html');
+  if (await cerrarSiSesionRechazada(respuesta, '/personal.html')) {
     return;
   }
   const data = await respuesta.json().catch(() => []);

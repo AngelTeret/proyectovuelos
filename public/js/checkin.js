@@ -420,8 +420,7 @@ const pedir = async (metodo, cuerpo) => {
     headers: { ...autorizacion(), 'Content-Type': 'application/json' },
     body: JSON.stringify({ codigo_pnr: pnr, ...cuerpo }),
   });
-  if (respuesta.status === 401) {
-    cerrarSesionInvalida(`${window.location.pathname}${window.location.search}`);
+  if (await cerrarSiSesionRechazada(respuesta, `${window.location.pathname}${window.location.search}`)) {
     return null;
   }
   const data = await respuesta.json().catch(() => ({}));
@@ -533,8 +532,7 @@ const cargar = async () => {
   }
   try {
     const respuesta = await fetch(`/api/checkin/elegibilidad/${pnr}`, { headers: autorizacion() });
-    if (respuesta.status === 401) {
-      cerrarSesionInvalida(`${window.location.pathname}${window.location.search}`);
+    if (await cerrarSiSesionRechazada(respuesta, `${window.location.pathname}${window.location.search}`)) {
       return;
     }
     const data = await respuesta.json().catch(() => ({}));
