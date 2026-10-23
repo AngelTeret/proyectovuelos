@@ -8,6 +8,8 @@ import {
 import { enviarBoleto } from '../services/emailService.js';
 import { generarTemplateCheckin } from '../services/ticketTemplate.js';
 import { crearPdfBoletos } from '../utils/boletoVueloPdf.js';
+import { registrarBitacora } from '../models/bitacora.model.js';
+import { ipDe } from '../middlewares/cupo.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 
 const responder = (res, error) => {
@@ -83,6 +85,12 @@ export const crearCheckin = async (req, res) => {
       asientos: req.body?.asientos,
     });
     const enviaraCorreo = resultado.creados > 0 && Boolean(resultado.email);
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: 'checkin',
+      detalle: `Check-in de la reserva ${resultado.codigo_pnr || ''}`.trim(),
+      ip: ipDe(req),
+    });
     res.status(200).json({
       ...sinInternos(resultado),
       correo_enviado: enviaraCorreo,

@@ -73,18 +73,22 @@ const actualizar = async (id, datos) => {
 };
 
 const eliminar = async (id) => conTransaccion(async (connection) => {
-  const [reservas] = await connection.query(
-    'SELECT id FROM reservas WHERE vuelo_id = ?',
+  const [vuelos] = await connection.query(
+    'SELECT id FROM vuelos WHERE id = ? FOR UPDATE',
     [id]
   );
-  const reservaIds = reservas.map((reserva) => reserva.id);
+  if (vuelos.length === 0) {
+    return { affectedRows: 0 };
+  }
 
-  if (reservaIds.length > 0) {
-    await connection.query(
-      'DELETE FROM idempotencia_pagos WHERE reserva_id IN (?)',
-      [reservaIds]
-    );
-    await connection.query('DELETE FROM reservas WHERE vuelo_id = ?', [id]);
+  const [reservas] = await connection.query(
+    'SELECT id FROM reservas WHERE vuelo_id = ? LIMIT 1',
+    [id]
+  );
+  if (reservas.length > 0) {
+    const error = new Error('Este vuelo ya tiene reservas y no se puede eliminar.');
+    error.codigo = 400;
+    throw error;
   }
 
   await connection.query('DELETE FROM asientos WHERE vuelo_id = ?', [id]);

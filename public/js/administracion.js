@@ -193,8 +193,17 @@ const eliminarVuelo = async (id) => {
     });
     const data = await respuesta.json();
 
+    if (respuesta.status === 401) {
+      cerrarSesionInvalida('/administracion.html', data.motivo);
+      return;
+    }
+
     if (!respuesta.ok) {
-      Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje || 'No se pudo eliminar el vuelo' });
+      Swal.fire({
+        icon: respuesta.status === 400 ? 'warning' : 'error',
+        title: respuesta.status === 400 ? 'No se puede eliminar' : 'No se pudo eliminar',
+        text: data.mensaje || 'No se pudo eliminar el vuelo',
+      });
       return;
     }
 
@@ -414,6 +423,11 @@ document.addEventListener('DOMContentLoaded', () => {
         body: datos,
       });
       const data = await respuesta.json();
+
+      if (respuesta.status === 401) {
+        cerrarSesionInvalida('/administracion.html', data.motivo);
+        return;
+      }
 
       if (!respuesta.ok) {
         restaurarGuardar();

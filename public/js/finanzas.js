@@ -30,8 +30,7 @@ const cargarReservas = async () => {
   const cuerpo = document.getElementById('cuerpo-reservas');
   try {
     const respuesta = await fetch('/api/reservas', { headers: autorizacion() });
-    if (respuesta.status === 401) {
-      cerrarSesionInvalida('/finanzas.html');
+    if (await cerrarSiSesionRechazada(respuesta, '/finanzas.html')) {
       return;
     }
     if (!respuesta.ok) {

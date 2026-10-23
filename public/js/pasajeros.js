@@ -692,6 +692,17 @@ const cargarFechaVuelo = async () => {
   }
   const vuelos = await respuesta.json();
   const vuelo = vuelos.find((item) => Number(item.id) === Number(busqueda.vuelo_id));
+  if (busqueda.vuelo_id && (!vuelo || !vueloEnVenta(vuelo))) {
+    abandonarReserva();
+    localStorage.removeItem('busquedaVuelo');
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Este vuelo ya no se puede comprar',
+      text: 'El check-in cierra una hora antes de la salida.',
+    });
+    window.location.replace('/index.html');
+    return;
+  }
   fechaVuelo = vuelo?.fecha_salida || '';
 };
 
@@ -702,6 +713,9 @@ const rellenarContacto = async () => {
   }
   try {
     const respuesta = await fetch('/api/auth/perfil', { headers: autorizacion() });
+    if (await cerrarSiSesionRechazada(respuesta, '/pasajeros.html')) {
+      return;
+    }
     if (!respuesta.ok) {
       return;
     }

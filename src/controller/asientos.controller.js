@@ -72,7 +72,12 @@ export const bloquearAsiento = async (req, res) => {
     if (error.message === 'El asiento ya no está disponible o no existe') {
       return res.status(409).json({ mensaje: 'Ese asiento acaba de ser reservado. Elige otro.' });
     }
-    if (error.message === 'No se puede reservar más de 4 asientos') {
+    if (
+      error.message === 'No se puede reservar más de 4 asientos'
+      || error.message === 'El vuelo no existe'
+      || error.message === 'Este vuelo ya salió.'
+      || error.message.startsWith('Este vuelo ya no se puede comprar')
+    ) {
       return res.status(400).json({ mensaje: error.message });
     }
     responderErrorInterno(res, error);

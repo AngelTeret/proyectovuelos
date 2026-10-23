@@ -160,6 +160,18 @@ const partesGuatemala = (valor) => {
   return partesDeInstante(fecha);
 };
 
+const MINUTOS_CIERRE_VENTA = 60;
+const ESTADOS_EN_VENTA = new Set(['programado', 'retrasado', 'abordando']);
+
+const vueloEnVenta = (vuelo) => {
+  const estado = String(vuelo?.estado || '').toLowerCase();
+  const salida = new Date(vuelo?.fecha_salida).getTime();
+  if (!ESTADOS_EN_VENTA.has(estado) || Number.isNaN(salida)) {
+    return false;
+  }
+  return salida - Date.now() > MINUTOS_CIERRE_VENTA * 60 * 1000;
+};
+
 const fechaCalendario = (valor) => {
   const partes = partesGuatemala(valor);
   if (!partes) {
@@ -199,6 +211,15 @@ const limpiarDatosPersonales = () => {
 
 const CLAVES_SESION = ['token', 'rol', 'nombre', 'usuario_id'];
 const MINUTOS_INACTIVIDAD = 60;
+const MINUTOS_AVISO = 5;
+let temporizadorCierre = 0;
+let temporizadorAviso = 0;
+let avisoVisible = false;
+
+const limpiarTemporizadores = () => {
+  window.clearTimeout(temporizadorCierre);
+  window.clearTimeout(temporizadorAviso);
+};
 
 const olvidarSesionDurable = () => {
   CLAVES_SESION.forEach((clave) => localStorage.removeItem(clave));
@@ -236,6 +257,7 @@ const guardarDatosSesion = ({ token, rol, nombre, usuarioId }) => {
 };
 
 const cerrarDatosSesion = () => {
+  limpiarTemporizadores();
   CLAVES_SESION.forEach((clave) => {
     localStorage.removeItem(clave);
     sessionStorage.removeItem(clave);
@@ -248,16 +270,31 @@ const autorizacion = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const cerrarSesionInvalida = (destino) => {
+const cerrarSesionInvalida = (destino, motivo) => {
   const pagina = destino || `${window.location.pathname}${window.location.search}`;
   cerrarDatosSesion();
   if (pagina.startsWith('/') && !pagina.startsWith('//') && !pagina.startsWith('/login.html')) {
     localStorage.setItem('redirectAfterLogin', pagina);
   }
-  sessionStorage.setItem('avisoSesion', 'invalida');
+  sessionStorage.setItem('avisoSesion', motivo === 'inactiva' ? 'inactiva' : 'invalida');
   if (!location.pathname.endsWith('/login.html')) {
     window.location.replace('/login.html');
   }
+};
+
+const cerrarSiSesionRechazada = async (respuesta, destino) => {
+  if (respuesta?.status !== 401) {
+    return false;
+  }
+  let motivo = '';
+  try {
+    const data = await respuesta.clone().json();
+    motivo = data?.motivo || '';
+  } catch (error) {
+    motivo = '';
+  }
+  cerrarSesionInvalida(destino, motivo);
+  return true;
 };
 
 const descargarArchivo = async (url, boton, nombreReserva) => {
@@ -270,8 +307,7 @@ const descargarArchivo = async (url, boton, nombreReserva) => {
     const respuesta = await fetch(url, {
       headers: autorizacion(),
     });
-    if (respuesta.status === 401) {
-      cerrarSesionInvalida();
+    if (await cerrarSiSesionRechazada(respuesta)) {
       return;
     }
     if (!respuesta.ok) {
@@ -326,6 +362,7 @@ Object.assign(window, {
   olvidarCopiasDurables,
   abandonarReserva,
   partesGuatemala,
+  vueloEnVenta,
   fechaCalendario,
   formatearDia,
   formatearSalida,
@@ -340,6 +377,7 @@ Object.assign(window, {
   guardarDatosSesion,
   cerrarDatosSesion,
   cerrarSesionInvalida,
+  cerrarSiSesionRechazada,
   descargarBoleto,
   descargarArchivo,
 });
@@ -353,23 +391,89 @@ const cerrarPorInactividad = () => {
   }
 };
 
-const vencerSesionSiInactiva = () => {
-  if (!sessionStorage.getItem('token')) {
+const milisegundos = (minutos) => minutos * 60 * 1000;
+const marcaSesion = () => Number(sessionStorage.getItem('sesionActiva') || 0);
+const enLogin = () => location.pathname.endsWith('/login.html');
+
+const renovarMarca = () => {
+  sessionStorage.setItem('sesionActiva', String(Date.now()));
+  avisoVisible = false;
+  programarAvisos();
+};
+
+const mostrarAvisoInactividad = () => {
+  if (avisoVisible || !sessionStorage.getItem('token') || enLogin() || typeof Swal === 'undefined') {
     return;
   }
-  const marca = Number(sessionStorage.getItem('sesionActiva') || 0);
-  if (!marca) {
-    sessionStorage.setItem('sesionActiva', String(Date.now()));
-    return;
-  }
-  if (Date.now() - marca > MINUTOS_INACTIVIDAD * 60 * 1000) {
+  const restante = marcaSesion() + milisegundos(MINUTOS_INACTIVIDAD) - Date.now();
+  if (restante <= 0) {
     cerrarPorInactividad();
+    return;
+  }
+  if (restante > milisegundos(MINUTOS_AVISO)) {
+    return;
+  }
+  avisoVisible = true;
+  Swal.fire({
+    icon: 'info',
+    title: 'Tu sesión está por cerrarse',
+    text: 'Si no usas la página, se cierra en 5 minutos.',
+    confirmButtonText: 'Seguir conectado',
+    allowOutsideClick: false,
+  }).then((resultado) => {
+    avisoVisible = false;
+    if (resultado.isConfirmed && sessionStorage.getItem('token')) {
+      renovarMarca();
+    }
+  });
+};
+
+const programarAvisos = () => {
+  limpiarTemporizadores();
+  if (!sessionStorage.getItem('token') || enLogin()) {
+    return;
+  }
+  const marca = marcaSesion();
+  if (!marca) {
+    renovarMarca();
+    return;
+  }
+  const ahora = Date.now();
+  const vence = marca + milisegundos(MINUTOS_INACTIVIDAD);
+  const avisa = vence - milisegundos(MINUTOS_AVISO);
+  if (ahora >= vence) {
+    cerrarPorInactividad();
+    return;
+  }
+  temporizadorCierre = window.setTimeout(revisarSesion, vence - ahora);
+  if (ahora >= avisa) {
+    mostrarAvisoInactividad();
+  } else {
+    temporizadorAviso = window.setTimeout(mostrarAvisoInactividad, avisa - ahora);
   }
 };
 
-let ultimaActividad = 0;
-const tocarActividad = () => {
+const revisarSesion = () => {
   if (!sessionStorage.getItem('token')) {
+    return;
+  }
+  const marca = marcaSesion();
+  if (!marca) {
+    if (!enLogin()) {
+      renovarMarca();
+    }
+    return;
+  }
+  if (Date.now() - marca >= milisegundos(MINUTOS_INACTIVIDAD)) {
+    cerrarPorInactividad();
+    return;
+  }
+  programarAvisos();
+};
+
+let ultimaActividad = 0;
+const tocarActividad = (evento) => {
+  if (!sessionStorage.getItem('token') || evento?.target?.closest?.('.swal2-container')) {
     return;
   }
   const ahora = Date.now();
@@ -377,16 +481,23 @@ const tocarActividad = () => {
     return;
   }
   ultimaActividad = ahora;
-  sessionStorage.setItem('sesionActiva', String(ahora));
+  renovarMarca();
 };
 
-vencerSesionSiInactiva();
+revisarSesion();
 ['pointerdown', 'keydown', 'input'].forEach((evento) => {
   window.addEventListener(evento, tocarActividad, { passive: true });
 });
+window.addEventListener('focus', revisarSesion);
+window.addEventListener('pageshow', revisarSesion);
+document.addEventListener('resume', revisarSesion);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    vencerSesionSiInactiva();
+    revisarSesion();
   }
 });
-window.setInterval(vencerSesionSiInactiva, 30000);
+window.setInterval(() => {
+  if (document.visibilityState === 'visible') {
+    revisarSesion();
+  }
+}, 15000);

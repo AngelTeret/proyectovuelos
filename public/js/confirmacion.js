@@ -96,8 +96,7 @@ const cargarConfirmacion = async () => {
     const respuesta = await fetch(`/api/reservas/${reservaId}/factura`, {
       headers: autorizacion(),
     });
-    if (respuesta.status === 401) {
-      cerrarSesionInvalida('/confirmacion.html');
+    if (await cerrarSiSesionRechazada(respuesta, '/confirmacion.html')) {
       return;
     }
     const data = await respuesta.json().catch(() => ({}));

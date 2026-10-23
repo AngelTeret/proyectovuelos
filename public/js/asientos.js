@@ -404,11 +404,21 @@ const elegirAsiento = async (boton, asientos) => {
       }),
     });
     const data = await respuesta.json().catch(() => ({}));
-    if (respuesta.status === 401) {
-      cerrarSesionInvalida('/asientos.html');
+    if (await cerrarSiSesionRechazada(respuesta, '/asientos.html')) {
       return;
     }
     if (!respuesta.ok) {
+      if (/ya no se puede comprar|ya salió/i.test(data.mensaje || '')) {
+        abandonarReserva();
+        localStorage.removeItem('busquedaVuelo');
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Este vuelo ya no se puede comprar',
+          text: data.mensaje,
+        });
+        window.location.replace('/index.html');
+        return;
+      }
       await cargarAsientos();
       Swal.fire({
         icon: 'error',

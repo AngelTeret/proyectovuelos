@@ -3,6 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import Vuelo from '../models/vuelo.model.js';
 import { actualizarCargosDelVuelo, generarAsientosParaVuelo } from '../models/asiento.model.js';
+import { registrarBitacora } from '../models/bitacora.model.js';
+import { ipDe } from '../middlewares/cupo.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 
 const IMAGEN_POR_DEFECTO = '/imagenes/avion-fondo.webp';
@@ -102,6 +104,12 @@ export const crearVuelo = async (req, res) => {
       duracion_minutos: duracion,
     });
     await generarAsientosParaVuelo(resultado.insertId, capacidad, precio_base);
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: 'vuelo',
+      detalle: `Vuelo ${resultado.insertId} creado`,
+      ip: ipDe(req),
+    });
     res.status(201).json({ mensaje: 'Vuelo creado correctamente', id: resultado.insertId });
   } catch (error) {
     responderErrorInterno(res, error);
@@ -153,6 +161,12 @@ export const actualizarVuelo = async (req, res) => {
       await borrarImagenSiNoSeUsa(actual.imagen_url);
     }
 
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: 'vuelo',
+      detalle: `Vuelo ${req.params.id} actualizado`,
+      ip: ipDe(req),
+    });
     res.status(200).json({ mensaje: 'Vuelo actualizado correctamente' });
   } catch (error) {
     responderErrorInterno(res, error);
@@ -172,8 +186,17 @@ export const eliminarVuelo = async (req, res) => {
       await borrarImagenSiNoSeUsa(actual.imagen_url);
     }
 
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: 'vuelo',
+      detalle: `Vuelo ${req.params.id} eliminado`,
+      ip: ipDe(req),
+    });
     res.status(200).json({ mensaje: 'Vuelo eliminado correctamente' });
   } catch (error) {
+    if (error.codigo === 400) {
+      return res.status(400).json({ mensaje: error.message });
+    }
     responderErrorInterno(res, error);
   }
 };

@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
 import pool from '../config/db.js';
 import { fechaCalendario } from '../utils/fecha.js';
-import { evaluarCheckin } from '../utils/checkinVentana.js';
+import { evaluarCheckin, motivoVentaCerrada } from '../utils/checkinVentana.js';
 import { anularCheckinsDeReserva } from './checkin.model.js';
 import { marcarSalidas } from './abordaje.model.js';
+import { calcularReembolso } from '../utils/reembolso.js';
 import { salidaReal, sumarRetraso } from '../utils/horarioVuelo.js';
 import { conTransaccion } from '../utils/transaccion.js';
 
@@ -139,7 +140,7 @@ const crearReservaGrupo = async (datos) => {
     usuario_id,
     equipaje_extra_kg = 0,
     costo_servicios_extra = 0.00,
-    metodo_pago = 'tarjeta',
+    metodo_pago = 'saldo',
     llave_idempotencia,
     bloqueo_llave,
   } = datos;
@@ -203,11 +204,20 @@ const crearReservaGrupo = async (datos) => {
     });
 
     const [filasVuelo] = await connection.query(
-      'SELECT precio_base, fecha_salida, retraso_minutos FROM vuelos WHERE id = ? FOR UPDATE',
+      `SELECT precio_base, fecha_salida, retraso_minutos, estado,
+              TIMESTAMPDIFF(SECOND, NOW(), ${salidaReal()}) AS segundos
+       FROM vuelos WHERE id = ? FOR UPDATE`,
       [vuelo_id]
     );
     if (filasVuelo.length === 0) {
       throw new Error('El vuelo no existe');
+    }
+    const ventaCerrada = motivoVentaCerrada({
+      estado: filasVuelo[0].estado,
+      segundosParaSalida: filasVuelo[0].segundos,
+    });
+    if (ventaCerrada) {
+      throw errorCliente(ventaCerrada);
     }
     const precioBase = parseFloat(filasVuelo[0].precio_base ?? 0);
     const diaDelVuelo = sumarRetraso(filasVuelo[0].fecha_salida, filasVuelo[0].retraso_minutos) || filasVuelo[0].fecha_salida;
@@ -335,7 +345,10 @@ const crearReservaGrupo = async (datos) => {
 
     const principal = sentados.find((item) => item.asientoId);
     const codigoPnr = generarCodigoPnr();
-    const metodo = metodo_pago === 'saldo' ? 'saldo' : 'tarjeta';
+    if (metodo_pago !== 'saldo') {
+      throw errorCliente('El pago solo se puede hacer con la billetera virtual.');
+    }
+    const metodo = 'saldo';
     const [resultadoReserva] = await connection.query(
       'INSERT INTO reservas (codigo_pnr, pasajero_id, vuelo_id, asiento_id, estado_pago, metodo_pago, monto_total, usuario_id, equipaje_extra_kg, costo_servicios_extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [codigoPnr, idsPasajero[0], vuelo_id, principal.asientoId, 'aprobado', metodo, montoTotal, usuario_id, equipaje_extra_kg, metodo === 'saldo' ? 0 : costo_servicios_extra]
@@ -385,7 +398,7 @@ export const crearReservaTransaccion = async (datos) => {
     pasajero_id,
     equipaje_extra_kg = 0,
     costo_servicios_extra = 0.00,
-    metodo_pago = 'tarjeta',
+    metodo_pago = 'saldo',
     llave_idempotencia,
     bloqueo_llave,
   } = datos;
@@ -483,7 +496,10 @@ export const crearReservaTransaccion = async (datos) => {
     const codigoPnr = generarCodigoPnr();
 
     const estadoPago = 'aprobado';
-    const metodo = metodo_pago === 'saldo' ? 'saldo' : 'tarjeta';
+    if (metodo_pago !== 'saldo') {
+      throw errorCliente('El pago solo se puede hacer con la billetera virtual.');
+    }
+    const metodo = 'saldo';
     const [resultadoReserva] = await connection.query(
       'INSERT INTO reservas (codigo_pnr, pasajero_id, vuelo_id, asiento_id, estado_pago, metodo_pago, monto_total, usuario_id, equipaje_extra_kg, costo_servicios_extra) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [codigoPnr, idPasajero, vuelo_id, asiento_id, estadoPago, metodo, montoTotal, usuario_id, equipaje_extra_kg, metodo === 'saldo' ? 0 : costo_servicios_extra]
@@ -795,9 +811,16 @@ export const actualizarPago = async (id, usuarioId) => {
     }
 
     const { monto_total, usuario_id } = reserva;
+    const [usuariosBloqueados] = await connection.query(
+      'SELECT saldo_virtual FROM usuarios WHERE id = ? FOR UPDATE',
+      [usuario_id]
+    );
+    if (usuariosBloqueados.length === 0 || parseFloat(usuariosBloqueados[0].saldo_virtual) < parseFloat(monto_total)) {
+      throw errorDeReserva('Saldo insuficiente', 400);
+    }
 
     await connection.query(
-      "UPDATE reservas SET estado_pago = 'aprobado' WHERE id = ?",
+      "UPDATE reservas SET estado_pago = 'aprobado', metodo_pago = 'saldo' WHERE id = ?",
       [id]
     );
     await emitirFactura(connection, id, monto_total);
@@ -816,28 +839,13 @@ export const actualizarPago = async (id, usuarioId) => {
   });
 };
 
-const SEGUNDOS_DIA = 24 * 60 * 60;
-const SEGUNDOS_DOS_DIAS = 2 * SEGUNDOS_DIA;
-
 const errorDeReserva = (mensaje, codigo) => {
   const error = new Error(mensaje);
   error.codigo = codigo;
   return error;
 };
 
-export const calcularReembolso = (monto, segundos) => {
-  const total = Math.round(Number(monto) * 100) / 100;
-  const restante = Number(segundos);
-  if (!Number.isFinite(total) || total < 0 || !Number.isFinite(restante) || restante <= 0) {
-    return { permitido: false, motivo: 'salio', parcial: false, reembolso: 0 };
-  }
-  if (restante < SEGUNDOS_DIA) {
-    return { permitido: false, motivo: 'cercano', parcial: false, reembolso: 0 };
-  }
-  const parcial = restante <= SEGUNDOS_DOS_DIAS;
-  const reembolso = parcial ? Math.round((total / 2) * 100) / 100 : total;
-  return { permitido: true, motivo: parcial ? 'parcial' : 'total', parcial, reembolso };
-};
+export { calcularReembolso };
 
 export const cancelarReservaUsuario = async ({ reservaId, usuarioId }) => {
   return conTransaccion(async (connection) => {

@@ -5,12 +5,6 @@ if (!tokenDeSesion()) {
 
 olvidarCopiasDurables();
 
-const metodoSeleccionado = () => document.querySelector('input[name="metodo_pago"]:checked')?.value || 'saldo';
-
-const mostrarFormularioTarjeta = () => {
-  document.getElementById('formulario-tarjeta').classList.toggle('hidden', metodoSeleccionado() !== 'tarjeta');
-};
-
 const cargarSaldo = async () => {
   const saldo = document.getElementById('saldo-disponible');
   const token = tokenDeSesion();
@@ -23,6 +17,9 @@ const cargarSaldo = async () => {
     const respuesta = await fetch('/api/auth/perfil', {
       headers: autorizacion(),
     });
+    if (await cerrarSiSesionRechazada(respuesta, '/pago.html')) {
+      return;
+    }
     if (!respuesta.ok) {
       saldo.textContent = '0.00';
       return;
@@ -136,14 +133,9 @@ const iniciarReloj = async () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  mostrarFormularioTarjeta();
   cargarSaldo();
   mostrarTotal();
   iniciarReloj();
-
-  document.querySelectorAll('input[name="metodo_pago"]').forEach((radio) => {
-    radio.addEventListener('change', mostrarFormularioTarjeta);
-  });
 
   document.getElementById('btnVolver').addEventListener('click', async (evento) => {
     evento.preventDefault();
@@ -224,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const asiento = leerJsonTemporal('datosAsiento');
     const guardados = leerJsonTemporal('datosAsientos');
     const asientosElegidos = Array.isArray(guardados) && guardados.length ? guardados : (asiento.asientoId ? [asiento] : []);
-    const metodo = metodoSeleccionado();
+    const metodo = 'saldo';
 
     if (!asientosElegidos.length || !Array.isArray(pasajero.viajeros) || !pasajero.viajeros.length) {
       Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Por favor completa todos los campos' });
@@ -259,6 +251,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await respuesta.json();
 
+      if (respuesta.status === 401) {
+        cerrarSesionInvalida('/pago.html', data.motivo);
+        return;
+      }
+
       if (respuesta.status === 201) {
         pagoConfirmado = true;
         if (relojBloqueo) {
@@ -284,7 +281,21 @@ document.addEventListener('DOMContentLoaded', () => {
         Swal.fire({
           icon: 'error',
           title: 'Saldo insuficiente',
-          text: 'Tu saldo virtual no es suficiente para cubrir esta tarifa. Por favor, usa una tarjeta de crédito.',
+          text: 'Tu saldo virtual no es suficiente para cubrir esta tarifa.',
+        });
+        return;
+      }
+
+      if (/ya no se puede comprar|ya salió/i.test(data.mensaje || '')) {
+        pagoConfirmado = true;
+        abandonarReserva();
+        localStorage.removeItem('busquedaVuelo');
+        Swal.fire({
+          icon: 'warning',
+          title: 'Este vuelo ya no se puede comprar',
+          text: data.mensaje,
+        }).then(() => {
+          window.location.replace('/index.html');
         });
         return;
       }

@@ -5,6 +5,21 @@ export const CIERRA_SEGUNDOS = MINUTOS_CIERRE * 60;
 
 const ESTADOS_ABIERTOS = new Set(['programado', 'retrasado', 'abordando']);
 
+export const motivoVentaCerrada = ({ estado, segundosParaSalida }) => {
+  const estadoNormalizado = String(estado || '').toLowerCase();
+  const segundos = Number(segundosParaSalida);
+  if (!ESTADOS_ABIERTOS.has(estadoNormalizado)) {
+    return 'Este vuelo ya no se puede comprar.';
+  }
+  if (!Number.isFinite(segundos) || segundos <= 0) {
+    return 'Este vuelo ya salió.';
+  }
+  if (segundos <= CIERRA_SEGUNDOS) {
+    return 'Este vuelo ya no se puede comprar. El check-in cierra una hora antes de la salida.';
+  }
+  return '';
+};
+
 export const evaluarCheckin = ({ estadoPago, estadoVuelo, segundosParaSalida }) => {
   if (estadoPago === 'reembolsado') {
     return { abierto: false, motivo: 'cancelada', mensaje: 'La reserva fue cancelada.' };

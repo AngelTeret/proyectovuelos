@@ -1,4 +1,3 @@
-import jwt from 'jsonwebtoken';
 import {
   crearReservaTransaccion,
   obtenerTodas,
@@ -9,6 +8,9 @@ import {
   actualizarPago,
   cancelarReservaUsuario,
 } from '../models/reserva.model.js';
+import { registrarBitacora } from '../models/bitacora.model.js';
+import { ipDe } from '../middlewares/cupo.js';
+import { leerSesion, respuestaDeSesion } from '../middlewares/sesion.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 import { crearPdfFactura } from '../utils/boletoPdf.js';
 import { enviarBoleto } from '../services/emailService.js';
@@ -63,14 +65,7 @@ const enviarAvisoCancelacion = async (reservaId, resultado) => {
   }
 };
 
-const usuarioDesdeToken = (req) => {
-  const encabezado = req.headers.authorization || '';
-  const token = encabezado.startsWith('Bearer ') ? encabezado.slice(7) : '';
-  if (!token) {
-    return null;
-  }
-  return jwt.verify(token, process.env.JWT_SECRET);
-};
+const usuarioDesdeToken = (req) => leerSesion(req);
 
 export const obtenerReservas = async (req, res) => {
   try {
@@ -101,7 +96,10 @@ export const crearReserva = async (req, res) => {
       asientos,
     } = req.body;
 
-    const metodo = metodo_pago === 'saldo' ? 'saldo' : 'tarjeta';
+    if (metodo_pago !== 'saldo') {
+      return res.status(400).json({ mensaje: 'El pago solo se puede hacer con la billetera virtual.' });
+    }
+    const metodo = 'saldo';
     const usuarioCobro = req.usuario.id;
 
     const llave_idempotencia = req.headers['idempotency-key'];
@@ -127,6 +125,12 @@ export const crearReserva = async (req, res) => {
     });
 
     const correoEnviado = await enviarFactura(reserva.id);
+    await registrarBitacora({
+      usuarioId: usuarioCobro,
+      accion: 'pago',
+      detalle: `Reserva ${reserva.id} pagada con billetera`,
+      ip: ipDe(req),
+    });
 
     res.status(201).json({
       codigo_pnr: reserva.codigo_pnr,
@@ -154,7 +158,7 @@ export const crearReserva = async (req, res) => {
 
 export const obtenerHistorialUsuario = async (req, res) => {
   try {
-    const sesion = usuarioDesdeToken(req);
+    const sesion = await usuarioDesdeToken(req);
     if (!sesion?.id) {
       return res.status(401).json({ mensaje: 'Inicia sesión para ver tu historial' });
     }
@@ -162,8 +166,8 @@ export const obtenerHistorialUsuario = async (req, res) => {
     const historial = await obtenerHistorialPorUsuario(sesion.id);
     res.status(200).json(historial);
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return res.status(401).json({ mensaje: 'Sesión no válida' });
+    if (respuestaDeSesion(res, error)) {
+      return;
     }
     responderErrorInterno(res, error);
   }
@@ -189,7 +193,7 @@ export const consultarReserva = async (req, res) => {
 
 export const cancelarReserva = async (req, res) => {
   try {
-    const sesion = usuarioDesdeToken(req);
+    const sesion = await usuarioDesdeToken(req);
     if (!sesion?.id) {
       return res.status(401).json({ mensaje: 'Inicia sesión para cancelar la reserva' });
     }
@@ -200,6 +204,12 @@ export const cancelarReserva = async (req, res) => {
     }
 
     const resultado = await cancelarReservaUsuario({ reservaId, usuarioId: sesion.id });
+    await registrarBitacora({
+      usuarioId: sesion.id,
+      accion: 'cancelacion',
+      detalle: `Reserva ${reservaId} reembolsada por ${resultado.reembolso}`,
+      ip: ipDe(req),
+    });
     const correoEnviado = await enviarAvisoCancelacion(reservaId, resultado);
     res.status(200).json({
       mensaje: 'Reserva cancelada',
@@ -209,8 +219,8 @@ export const cancelarReserva = async (req, res) => {
       correo_enviado: correoEnviado,
     });
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return res.status(401).json({ mensaje: 'Sesión no válida' });
+    if (respuestaDeSesion(res, error)) {
+      return;
     }
     if (error.codigo === 404 || error.codigo === 400) {
       return res.status(error.codigo).json({ mensaje: error.message });
@@ -220,7 +230,7 @@ export const cancelarReserva = async (req, res) => {
 };
 
 const facturaDisponible = async (req) => {
-  const sesion = usuarioDesdeToken(req);
+  const sesion = await usuarioDesdeToken(req);
   if (!sesion?.id) {
     const error = new Error('Inicia sesión para ver tu factura');
     error.codigo = 401;
@@ -247,8 +257,8 @@ const facturaDisponible = async (req) => {
 };
 
 const responderErrorBoleto = (res, error) => {
-  if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError' || error.codigo === 401) {
-    return res.status(401).json({ mensaje: error.codigo === 401 ? error.message : 'Sesión no válida' });
+  if (respuestaDeSesion(res, error)) {
+    return;
   }
   if (error.codigo === 404 || error.codigo === 400) {
     return res.status(error.codigo).json({ mensaje: error.message });
