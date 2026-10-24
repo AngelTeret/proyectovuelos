@@ -8,7 +8,13 @@ import { calcularReembolso } from '../utils/reembolso.js';
 import { salidaReal, sumarRetraso } from '../utils/horarioVuelo.js';
 import { conTransaccion } from '../utils/transaccion.js';
 
-const paises = new Set(JSON.parse(readFileSync(new URL('../../public/js/codigosTelefono.json', import.meta.url), 'utf8')).map((item) => item.pais));
+const nacionalidadPorTexto = new Map();
+JSON.parse(readFileSync(new URL('../../public/js/codigosTelefono.json', import.meta.url), 'utf8')).forEach((item) => {
+  nacionalidadPorTexto.set(item.nacionalidad, item.nacionalidad);
+  nacionalidadPorTexto.set(item.pais, item.nacionalidad);
+});
+
+const nacionalidadOficial = (valor) => nacionalidadPorTexto.get(String(valor ?? '').trim()) || '';
 const letrasNombre = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '\-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
 
 const errorCliente = (mensaje) => {
@@ -165,7 +171,7 @@ const crearReservaGrupo = async (datos) => {
       apellido: String(viajero.apellido ?? '').trim(),
       documento_identidad: String(viajero.documento_identidad ?? '').trim(),
       fecha_nacimiento: String(viajero.fecha_nacimiento ?? '').trim(),
-      nacionalidad: String(viajero.nacionalidad ?? '').trim(),
+      nacionalidad: nacionalidadOficial(viajero.nacionalidad),
     }));
 
     const adultos = limpios.filter((viajero) => viajero.tipo === 'adulto').length;
@@ -198,7 +204,7 @@ const crearReservaGrupo = async (datos) => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(viajero.fecha_nacimiento)) {
         throw errorCliente('Ingresa la fecha de nacimiento');
       }
-      if (!paises.has(viajero.nacionalidad)) {
+      if (!viajero.nacionalidad) {
         throw errorCliente('Elige una nacionalidad válida');
       }
     });

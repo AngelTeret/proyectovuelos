@@ -253,7 +253,11 @@ const desplazarAnios = (iso, anios) => {
   return new Date(Date.UTC(anio + anios, mes - 1, dia)).toISOString().slice(0, 10);
 };
 
-const paisOficial = (texto) => catalogoPaises.find((item) => sinAcentos(item.pais) === sinAcentos(String(texto || '').trim()))?.pais || '';
+const nacionalidadOficial = (texto) => {
+  const consulta = sinAcentos(String(texto || '').trim());
+  const item = catalogoPaises.find((pais) => sinAcentos(pais.nacionalidad) === consulta || sinAcentos(pais.pais) === consulta);
+  return item?.nacionalidad || '';
+};
 
 const prepararNacionalidad = (tarjeta, indice) => {
   const input = tarjeta.querySelector('[data-campo="nacionalidad"]');
@@ -269,17 +273,19 @@ const prepararNacionalidad = (tarjeta, indice) => {
 
   const pintar = (filtro) => {
     const consulta = sinAcentos(filtro.trim());
-    const coincidencias = catalogoPaises.filter((item) => sinAcentos(item.pais).includes(consulta));
+    const coincidencias = catalogoPaises
+      .filter((item) => !consulta || sinAcentos(`${item.nacionalidad} ${item.pais}`).includes(consulta))
+      .sort((a, b) => a.nacionalidad.localeCompare(b.nacionalidad, 'es'));
     lista.innerHTML = coincidencias.length
-      ? coincidencias.map((item) => `<li role="option" class="cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-blue-50" data-valor="${escapar(item.pais)}">${escapar(item.pais)}</li>`).join('')
+      ? coincidencias.map((item) => `<li role="option" class="cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-blue-50" data-valor="${escapar(item.nacionalidad)}">${escapar(item.nacionalidad)}</li>`).join('')
       : '<li class="px-3 py-2 text-sm text-slate-400">Sin resultados</li>';
     lista.classList.remove('hidden');
     input.setAttribute('aria-expanded', 'true');
     indiceActivo = -1;
   };
 
-  const elegir = (pais) => {
-    input.value = pais;
+  const elegir = (nacionalidad) => {
+    input.value = nacionalidad;
     cerrar();
     validarCampo(tarjeta, 'nacionalidad');
     guardarBorrador();
@@ -303,7 +309,7 @@ const prepararNacionalidad = (tarjeta, indice) => {
     elegir(opcion.dataset.valor);
   });
   input.addEventListener('blur', () => {
-    const oficial = paisOficial(input.value);
+    const oficial = nacionalidadOficial(input.value);
     input.value = oficial;
     cerrar();
     validarCampo(tarjeta, 'nacionalidad');
@@ -405,7 +411,7 @@ const mensajeCampo = (tarjeta, campo) => {
   }
   if (campo === 'nacionalidad') {
     if (!texto) return 'Elige una nacionalidad';
-    return paisOficial(texto) ? '' : 'Elige un país de la lista';
+    return nacionalidadOficial(texto) ? '' : 'Elige una nacionalidad de la lista';
   }
   if (campo === 'nacimiento') {
     return mensajeNacimiento(tarjeta.dataset.tipo, input.value);
@@ -498,7 +504,7 @@ const pintarViajeros = (previos = []) => {
         <label>
           <span class="mb-1.5 block text-xs font-medium text-slate-600">Nacionalidad <span class="text-red-500">*</span></span>
           <div class="relative">
-            <input data-campo="nacionalidad" type="text" autocomplete="off" placeholder="Busca un país" role="combobox" aria-expanded="false" aria-controls="lista-nacionalidad-${indice}" value="${escapar(tarjeta.datos.nacionalidad || '')}" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400">
+            <input data-campo="nacionalidad" type="text" autocomplete="off" placeholder="Busca una nacionalidad" role="combobox" aria-expanded="false" aria-controls="lista-nacionalidad-${indice}" value="${escapar(nacionalidadOficial(tarjeta.datos.nacionalidad) || tarjeta.datos.nacionalidad || '')}" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-400">
             <ul id="lista-nacionalidad-${indice}" data-lista="nacionalidad" role="listbox" class="absolute z-20 mt-1 hidden max-h-48 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-lg"></ul>
           </div>
           <p data-error="nacionalidad" class="mt-1 hidden text-xs text-red-600"></p>
