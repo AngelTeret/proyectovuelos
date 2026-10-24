@@ -1,6 +1,6 @@
 if (!tokenDeSesion()) {
   localStorage.setItem('redirectAfterLogin', window.location.pathname);
-  window.location.replace('/login.html');
+  window.location.replace('/login');
 } else {
 
 olvidarCopiasDurables();
@@ -17,7 +17,7 @@ const cargarSaldo = async () => {
     const respuesta = await fetch('/api/auth/perfil', {
       headers: autorizacion(),
     });
-    if (await cerrarSiSesionRechazada(respuesta, '/pago.html')) {
+    if (await cerrarSiSesionRechazada(respuesta, '/pago')) {
       return;
     }
     if (!respuesta.ok) {
@@ -95,14 +95,14 @@ const liberarPantalla = async () => {
   });
   borrarTemporal('datosAsiento');
   borrarTemporal('datosAsientos');
-  window.location.replace('/asientos.html');
+  window.location.replace('/asientos');
 };
 
 const iniciarReloj = async () => {
   const asiento = leerJsonTemporal('datosAsiento');
   const llave = leerTextoTemporal('bloqueoLlave');
   if (!asiento.asientoId || !llave) {
-    window.location.replace('/asientos.html');
+    window.location.replace('/asientos');
     return;
   }
 
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       borrarTemporal('datosAsiento');
       borrarTemporal('datosAsientos');
-      window.location.replace('/asientos.html');
+      window.location.replace('/asientos');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo liberar el asiento' });
     } finally {
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await respuesta.json();
 
       if (respuesta.status === 401) {
-        cerrarSesionInvalida('/pago.html', data.motivo);
+        cerrarSesionInvalida('/pago', data.motivo);
         return;
       }
 
@@ -270,10 +270,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.id) {
           sessionStorage.setItem('reservaConfirmada', String(data.id));
           sessionStorage.setItem('correoEnviado', data.correo_enviado ? '1' : '0');
-          window.location.replace('/confirmacion.html');
+          window.location.replace('/confirmacion');
           return;
         }
-        window.location.replace('/mis-vuelos.html');
+        window.location.replace('/mis-vuelos');
         return;
       }
 
@@ -295,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
           title: 'Este vuelo ya no se puede comprar',
           text: data.mensaje,
         }).then(() => {
-          window.location.replace('/index.html');
+          window.location.replace('/');
         });
         return;
       }
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
         Swal.fire({ icon: 'error', title: 'Oops...', text: data.mensaje }).then(() => {
           borrarTemporal('datosAsiento');
           borrarTemporal('datosAsientos');
-          window.location.replace('/asientos.html');
+          window.location.replace('/asientos');
         });
         return;
       }

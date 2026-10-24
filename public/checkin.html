@@ -7,7 +7,7 @@
     ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
     if (!sessionStorage.getItem('token')) {
       localStorage.setItem('redirectAfterLogin', location.pathname + location.search);
-      location.replace('/login.html');
+      location.replace('/login');
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -64,13 +64,13 @@
               <button type="button" id="btn-confirmar" class="hidden h-11 rounded-lg bg-emerald-800 px-4 text-sm font-semibold text-white hover:bg-emerald-900">Confirmar check-in</button>
               <button type="button" id="btn-guardar" class="hidden h-11 rounded-lg border border-emerald-800 bg-white px-4 text-sm font-semibold text-emerald-900 hover:bg-emerald-50">Guardar cambios</button>
               <button type="button" id="btn-descargar" class="hidden h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Descargar boletos</button>
-              <a href="/mis-vuelos.html" class="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Volver a mis vuelos</a>
+              <a href="/mis-vuelos" class="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Volver a mis vuelos</a>
             </div>
           </div>
         </article>
         <div id="error-checkin" class="hidden max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm">
           <p id="mensaje-error" class="text-sm text-slate-600">No se pudo abrir el check-in.</p>
-          <a href="/mis-vuelos.html" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Ver mis vuelos</a>
+          <a href="/mis-vuelos" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Ver mis vuelos</a>
         </div>
       </main>
     </div>

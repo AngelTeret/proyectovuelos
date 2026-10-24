@@ -13,29 +13,29 @@ const iconosNav = {
 };
 
 const paginaActual = () => {
-  const ruta = location.pathname.split('/').pop() || 'index.html';
-  if (ruta === 'administracion.html') {
+  const ruta = location.pathname.split('/').pop() || '/';
+  if (ruta === 'administracion') {
     return 'administracion';
   }
-  if (ruta === 'personal.html') {
+  if (ruta === 'personal') {
     return 'puerta';
   }
-  if (ruta === 'cuentas-mantenimiento.html') {
+  if (ruta === 'cuentas-mantenimiento') {
     return 'mantenimiento';
   }
-  if (ruta === 'mantenimiento.html') {
+  if (ruta === 'mantenimiento') {
     return 'asientos';
   }
-  if (ruta === 'abordaje.html') {
+  if (ruta === 'abordaje') {
     return 'abordaje';
   }
-  if (ruta === 'finanzas.html') {
+  if (ruta === 'finanzas') {
     return 'finanzas';
   }
-  if (ruta === 'bitacora.html') {
+  if (ruta === 'bitacora') {
     return 'bitacora';
   }
-  if (ruta === 'mis-vuelos.html' || ruta === 'confirmacion.html' || ruta === 'checkin.html') {
+  if (ruta === 'mis-vuelos' || ruta === 'confirmacion' || ruta === 'checkin') {
     return 'mis-vuelos';
   }
   return 'inicio';
@@ -67,19 +67,19 @@ const pintarMenu = () => {
   const actual = paginaActual();
   marco.insertAdjacentHTML('afterbegin', `
     <aside id="menu-lateral" class="flex w-[232px] shrink-0 flex-col border-r border-slate-100 bg-white px-4 py-5">
-      <a href="${rolDeSesion() === 'despacho' ? 'abordaje.html' : rolDeSesion() === 'mantenimiento' ? 'mantenimiento.html' : 'index.html'}" class="mb-8 block px-1"><img src="/imagenes/logotipo.svg" alt="Quetzal Airlines" class="h-11 w-auto max-w-full"></a>
+      <a href="${rolDeSesion() === 'despacho' ? '/abordaje' : rolDeSesion() === 'mantenimiento' ? '/mantenimiento' : '/'}" class="mb-8 block px-1"><img src="/imagenes/logotipo.svg" alt="Quetzal Airlines" class="h-11 w-auto max-w-full"></a>
       <nav class="flex flex-1 flex-col gap-1" aria-label="Principal">
-        <a href="index.html" class="${claseNav('inicio', actual)}">${iconosNav.inicio}Inicio</a>
-        <a href="mis-vuelos.html" class="${claseNav('mis-vuelos', actual)}">${iconosNav.vuelos}Mis vuelos</a>
-        <a href="administracion.html" class="${claseNav('administracion', actual)}">${iconosNav.administracion}Administración</a>
-        <a href="personal.html" class="${claseNav('puerta', actual)}">${iconosNav.puerta}Puerta</a>
-        <a href="cuentas-mantenimiento.html" class="${claseNav('mantenimiento', actual)}">${iconosNav.mantenimiento}Mantenimiento</a>
-        <a href="abordaje.html" class="${claseNav('abordaje', actual)}">${iconosNav.abordaje}Abordaje</a>
-        <a href="mantenimiento.html" class="${claseNav('asientos', actual)}">${iconosNav.asientos}Asientos</a>
-        <a href="finanzas.html" class="${claseNav('finanzas', actual)}">${iconosNav.finanzas}Finanzas</a>
-        <a href="bitacora.html" class="${claseNav('bitacora', actual)}">${iconosNav.bitacora}Bitácora</a>
+        <a href="/" class="${claseNav('inicio', actual)}">${iconosNav.inicio}Inicio</a>
+        <a href="/mis-vuelos" class="${claseNav('mis-vuelos', actual)}">${iconosNav.vuelos}Mis vuelos</a>
+        <a href="/administracion" class="${claseNav('administracion', actual)}">${iconosNav.administracion}Administración</a>
+        <a href="/personal" class="${claseNav('puerta', actual)}">${iconosNav.puerta}Puerta</a>
+        <a href="/cuentas-mantenimiento" class="${claseNav('mantenimiento', actual)}">${iconosNav.mantenimiento}Mantenimiento</a>
+        <a href="/abordaje" class="${claseNav('abordaje', actual)}">${iconosNav.abordaje}Abordaje</a>
+        <a href="/mantenimiento" class="${claseNav('asientos', actual)}">${iconosNav.asientos}Asientos</a>
+        <a href="/finanzas" class="${claseNav('finanzas', actual)}">${iconosNav.finanzas}Finanzas</a>
+        <a href="/bitacora" class="${claseNav('bitacora', actual)}">${iconosNav.bitacora}Bitácora</a>
         <div class="mt-auto flex flex-col gap-1 border-t border-slate-100 pt-4">
-          <a id="btn-iniciar-sesion" href="/login.html" class="hidden flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50">${iconosNav.entrar}Iniciar Sesión</a>
+          <a id="btn-iniciar-sesion" href="/login" class="hidden flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50">${iconosNav.entrar}Iniciar Sesión</a>
           <button id="btn-cerrar-sesion" type="button" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-500 hover:bg-slate-50">${iconosNav.salir}Cerrar Sesión</button>
         </div>
       </nav>
@@ -155,17 +155,17 @@ if (rolDeSesion() !== 'admin' && rolDeSesion() !== 'mantenimiento') {
 
 if (rolDeSesion() === 'despacho') {
   document.querySelectorAll('.oculto-despacho').forEach((enlace) => enlace.remove());
-  const pagina = location.pathname.split('/').pop() || 'index.html';
-  if (pagina !== 'abordaje.html') {
-    location.replace('/abordaje.html');
+  const pagina = location.pathname.split('/').pop() || '/';
+  if (pagina !== 'abordaje') {
+    location.replace('/abordaje');
   }
 }
 
 if (rolDeSesion() === 'mantenimiento') {
   document.querySelectorAll('.oculto-mantenimiento').forEach((enlace) => enlace.remove());
-  const pagina = location.pathname.split('/').pop() || 'index.html';
-  if (pagina !== 'mantenimiento.html') {
-    location.replace('/mantenimiento.html');
+  const pagina = location.pathname.split('/').pop() || '/';
+  if (pagina !== 'mantenimiento') {
+    location.replace('/mantenimiento');
   }
 }
 
@@ -187,7 +187,7 @@ if (cerrarSesion) {
       limpiarDatosPersonales();
     }
     cerrarDatosSesion();
-    window.location.replace('/index.html');
+    window.location.replace('/');
   });
 }
 
@@ -318,7 +318,7 @@ const prepararMenu = () => {
   barra.prepend(abrirMenu);
 
   const marcaMovil = document.createElement('a');
-  marcaMovil.href = '/index.html';
+  marcaMovil.href = '/';
   marcaMovil.className = 'marca-movil';
   marcaMovil.innerHTML = '<img src="/imagenes/isotipo.svg" alt="Quetzal Airlines">';
   abrirMenu.insertAdjacentElement('afterend', marcaMovil);

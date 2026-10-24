@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import express from 'express';
@@ -55,7 +56,26 @@ app.use(cors({
   },
 }));
 app.use(express.json({ limit: '100kb' }));
-app.use(express.static(path.join(__dirname, '../public')));
+
+const carpetaPublica = path.resolve(__dirname, '../public');
+
+app.use((req, res, next) => {
+  if ((req.method !== 'GET' && req.method !== 'HEAD') || !req.path.endsWith('.html')) {
+    next();
+    return;
+  }
+  const archivo = path.resolve(carpetaPublica, req.path.slice(1));
+  const dentro = archivo.startsWith(`${carpetaPublica}${path.sep}`);
+  if (!dentro || !existsSync(archivo)) {
+    next();
+    return;
+  }
+  const consulta = req.originalUrl.slice(req.path.length);
+  const destino = req.path === '/index.html' ? '/' : req.path.slice(0, -5);
+  res.redirect(301, `${destino}${consulta}`);
+});
+
+app.use(express.static(carpetaPublica, { extensions: ['html'] }));
 app.use('/api/vuelos', vuelosRoutes);
 app.use('/api/asientos', asientosRoutes);
 app.use('/api/reservas', reservasRoutes);

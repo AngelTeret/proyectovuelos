@@ -1,7 +1,7 @@
 if (!tokenDeSesion()) {
-  window.location.replace('/login.html');
+  window.location.replace('/login');
 } else if (rolDeSesion() !== 'admin') {
-  window.location.replace('/index.html');
+  window.location.replace('/');
 }
 
 const ETIQUETAS = {
@@ -60,11 +60,11 @@ const cargarBitacora = async () => {
   const cuerpo = document.getElementById('cuerpo-bitacora');
   try {
     const respuesta = await fetch('/api/bitacora', { headers: autorizacion() });
-    if (await cerrarSiSesionRechazada(respuesta, '/bitacora.html')) {
+    if (await cerrarSiSesionRechazada(respuesta, '/bitacora')) {
       return;
     }
     if (respuesta.status === 403) {
-      window.location.replace('/index.html');
+      window.location.replace('/');
       return;
     }
     if (!respuesta.ok) {

@@ -7,7 +7,7 @@
     ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
     if (!sessionStorage.getItem('token')) {
       localStorage.setItem('redirectAfterLogin', location.pathname + location.search);
-      location.replace('/login.html');
+      location.replace('/login');
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -44,7 +44,7 @@
           <div id="vuelos" class="mt-6 grid gap-3"></div>
         </section>
         <section id="detalle-vuelo" class="hidden">
-          <a href="/mantenimiento.html" class="text-sm font-semibold text-slate-500 hover:text-slate-800">Volver a los vuelos</a>
+          <a href="/mantenimiento" class="text-sm font-semibold text-slate-500 hover:text-slate-800">Volver a los vuelos</a>
           <h1 id="ruta-vuelo" class="mt-4 text-xl font-bold text-slate-900 sm:text-2xl"></h1>
           <p id="salida-vuelo" class="mt-1 text-sm text-slate-500"></p>
           <p class="mt-4 text-sm text-slate-600">Pulsa un asiento libre para dejarlo fuera de servicio. El vendido no se toca.</p>

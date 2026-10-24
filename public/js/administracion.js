@@ -1,7 +1,7 @@
 if (!tokenDeSesion()) {
-  window.location.replace('/login.html');
+  window.location.replace('/login');
 } else if (rolDeSesion() !== 'admin') {
-  window.location.replace('/index.html');
+  window.location.replace('/');
 }
 
 const miniatura = (url) => {
@@ -194,7 +194,7 @@ const eliminarVuelo = async (id) => {
     const data = await respuesta.json();
 
     if (respuesta.status === 401) {
-      cerrarSesionInvalida('/administracion.html', data.motivo);
+      cerrarSesionInvalida('/administracion', data.motivo);
       return;
     }
 
@@ -425,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await respuesta.json();
 
       if (respuesta.status === 401) {
-        cerrarSesionInvalida('/administracion.html', data.motivo);
+        cerrarSesionInvalida('/administracion', data.motivo);
         return;
       }
 

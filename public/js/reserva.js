@@ -2,7 +2,7 @@ const valor = (id) => document.getElementById(id).value.trim();
 
 document.getElementById('btnVolver').addEventListener('click', (evento) => {
   evento.preventDefault();
-  window.location.href = '/index.html';
+  window.location.href = '/';
 });
 
 document.getElementById('btnContinuar').addEventListener('click', (evento) => {
@@ -20,5 +20,5 @@ document.getElementById('btnContinuar').addEventListener('click', (evento) => {
   };
 
   guardarJsonTemporal('datosPasajeros', pasajero);
-  window.location.href = '/asientos.html';
+  window.location.href = '/asientos';
 });

@@ -6,8 +6,8 @@
   <script>
     ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
     if (!sessionStorage.getItem('token')) {
-      localStorage.setItem('redirectAfterLogin', '/mis-vuelos.html');
-      location.replace('/login.html');
+      localStorage.setItem('redirectAfterLogin', '/mis-vuelos');
+      location.replace('/login');
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -51,7 +51,7 @@
         </div>
         <div id="vacio" class="mt-6 hidden rounded-2xl bg-white p-8 text-center shadow-sm">
           <p class="text-sm text-slate-500">Todavía no tienes vuelos reservados.</p>
-          <a href="/index.html" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Buscar vuelos</a>
+          <a href="/" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Buscar vuelos</a>
         </div>
         <p id="error-historial" class="mt-6 hidden rounded-2xl bg-white p-8 text-center text-sm text-red-600 shadow-sm">No se pudo cargar tu historial.</p>
         <span class="hidden bg-emerald-50 text-emerald-700 bg-amber-50 text-amber-800 bg-red-50 text-red-700 bg-slate-100 text-slate-600"></span>

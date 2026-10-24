@@ -273,12 +273,12 @@ const autorizacion = () => {
 const cerrarSesionInvalida = (destino, motivo) => {
   const pagina = destino || `${window.location.pathname}${window.location.search}`;
   cerrarDatosSesion();
-  if (pagina.startsWith('/') && !pagina.startsWith('//') && !pagina.startsWith('/login.html')) {
+  if (pagina.startsWith('/') && !pagina.startsWith('//') && !pagina.startsWith('/login')) {
     localStorage.setItem('redirectAfterLogin', pagina);
   }
   sessionStorage.setItem('avisoSesion', motivo === 'inactiva' ? 'inactiva' : 'invalida');
-  if (!location.pathname.endsWith('/login.html')) {
-    window.location.replace('/login.html');
+  if (!location.pathname.endsWith('/login')) {
+    window.location.replace('/login');
   }
 };
 
@@ -386,14 +386,14 @@ const cerrarPorInactividad = () => {
   limpiarDatosPersonales();
   cerrarDatosSesion();
   sessionStorage.setItem('avisoSesion', 'inactiva');
-  if (!location.pathname.endsWith('/login.html')) {
-    location.replace('/login.html');
+  if (!location.pathname.endsWith('/login')) {
+    location.replace('/login');
   }
 };
 
 const milisegundos = (minutos) => minutos * 60 * 1000;
 const marcaSesion = () => Number(sessionStorage.getItem('sesionActiva') || 0);
-const enLogin = () => location.pathname.endsWith('/login.html');
+const enLogin = () => location.pathname.endsWith('/login');
 
 const renovarMarca = () => {
   sessionStorage.setItem('sesionActiva', String(Date.now()));

@@ -88,7 +88,7 @@ const pintarConfirmacion = (boleto) => {
 const cargarConfirmacion = async () => {
   const reservaId = sessionStorage.getItem('reservaConfirmada');
   if (!reservaId) {
-    window.location.replace('/mis-vuelos.html');
+    window.location.replace('/mis-vuelos');
     return;
   }
 
@@ -96,7 +96,7 @@ const cargarConfirmacion = async () => {
     const respuesta = await fetch(`/api/reservas/${reservaId}/factura`, {
       headers: autorizacion(),
     });
-    if (await cerrarSiSesionRechazada(respuesta, '/confirmacion.html')) {
+    if (await cerrarSiSesionRechazada(respuesta, '/confirmacion')) {
       return;
     }
     const data = await respuesta.json().catch(() => ({}));

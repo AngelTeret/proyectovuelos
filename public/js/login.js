@@ -80,15 +80,15 @@ document.getElementById('form-login').addEventListener('submit', async (evento) 
     });
 
     if (data.rol === 'admin') {
-      window.location.replace('/administracion.html');
+      window.location.replace('/administracion');
       return;
     }
     if (data.rol === 'despacho') {
-      window.location.replace('/abordaje.html');
+      window.location.replace('/abordaje');
       return;
     }
     if (data.rol === 'mantenimiento') {
-      window.location.replace('/mantenimiento.html');
+      window.location.replace('/mantenimiento');
       return;
     }
 
@@ -100,7 +100,7 @@ document.getElementById('form-login').addEventListener('submit', async (evento) 
     }
 
     localStorage.removeItem('redirectAfterLogin');
-    window.location.replace('/index.html');
+    window.location.replace('/');
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'Oops...', text: 'Credenciales incorrectas' });
   }

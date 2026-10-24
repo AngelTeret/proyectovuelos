@@ -1,7 +1,7 @@
 if (!tokenDeSesion()) {
-  window.location.replace('/login.html');
+  window.location.replace('/login');
 } else if (rolDeSesion() !== 'admin') {
-  window.location.replace('/index.html');
+  window.location.replace('/');
 }
 
 const listaDespacho = document.getElementById('lista-despacho');
@@ -82,7 +82,7 @@ const pintarDespacho = (cuentas) => {
 
 const cargarDespacho = async () => {
   const respuesta = await fetch('/api/personal/despacho', { headers: autorizacion() });
-  if (await cerrarSiSesionRechazada(respuesta, '/personal.html')) {
+  if (await cerrarSiSesionRechazada(respuesta, '/personal')) {
     return;
   }
   const data = await respuesta.json().catch(() => []);

@@ -36,9 +36,9 @@ const baseDe = (req) => {
   return configurada || `${req.protocol}://${req.get('host')}`;
 };
 
-const enlaceDe = (req, token) => `${baseDe(req)}/verificar.html?token=${token}`;
+const enlaceDe = (req, token) => `${baseDe(req)}/verificar?token=${token}`;
 
-const enlaceRestablecer = (req, token) => `${baseDe(req)}/restablecer.html?token=${token}`;
+const enlaceRestablecer = (req, token) => `${baseDe(req)}/restablecer?token=${token}`;
 
 const MENSAJE_OLVIDE = 'Si el correo tiene una cuenta confirmada, enviamos un enlace para elegir otra contraseña.';
 const VENTANA_CORREO = 60 * 60 * 1000;

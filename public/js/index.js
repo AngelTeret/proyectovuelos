@@ -45,7 +45,7 @@ const busquedaSoloIda = ({ origen, destino, salida, vuelo = null }) => ({
 const guardarBusqueda = (datos, redirigir) => {
   localStorage.setItem('busquedaVuelo', JSON.stringify(datos));
   if (redirigir) {
-    window.location.href = '/pasajeros.html';
+    window.location.href = '/pasajeros';
   }
 };
 

@@ -25,7 +25,7 @@ document.getElementById('form-registro').addEventListener('submit', async (event
         ? 'Te enviamos un enlace para confirmar la cuenta. El bono de Q15,000 se acredita cuando la confirmes.'
         : 'La cuenta quedó pendiente, pero no pudimos enviar el correo. Desde el inicio de sesión puedes pedir otro enlace.',
     }).then(() => {
-      window.location.replace('/login.html');
+      window.location.replace('/login');
     });
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'Oops...', text: 'No se pudo crear la cuenta' });

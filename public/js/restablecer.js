@@ -56,7 +56,7 @@ formulario.addEventListener('submit', async (evento) => {
     titulo.textContent = 'Contraseña actualizada';
     mensaje.textContent = data.mensaje;
     await Swal.fire({ icon: 'success', title: 'Listo', text: data.mensaje });
-    window.location.replace('/login.html');
+    window.location.replace('/login');
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: 'Intenta de nuevo.' });
   } finally {

@@ -10,13 +10,13 @@ const tieneVuelo = () => {
 
 const prepararEntrada = () => {
   if (!tieneVuelo()) {
-    location.replace('/index.html');
+    location.replace('/');
     return;
   }
   ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
   if (!sessionStorage.getItem('token')) {
-    localStorage.setItem('redirectAfterLogin', '/asientos.html');
-    location.replace('/login.html');
+    localStorage.setItem('redirectAfterLogin', '/asientos');
+    location.replace('/login');
   }
 };
 
@@ -404,7 +404,7 @@ const elegirAsiento = async (boton, asientos) => {
       }),
     });
     const data = await respuesta.json().catch(() => ({}));
-    if (await cerrarSiSesionRechazada(respuesta, '/asientos.html')) {
+    if (await cerrarSiSesionRechazada(respuesta, '/asientos')) {
       return;
     }
     if (!respuesta.ok) {
@@ -416,7 +416,7 @@ const elegirAsiento = async (boton, asientos) => {
           title: 'Este vuelo ya no se puede comprar',
           text: data.mensaje,
         });
-        window.location.replace('/index.html');
+        window.location.replace('/');
         return;
       }
       await cargarAsientos();
@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
   olvidarCopiasDurables();
   const sentados = viajerosSentados();
   if (!sentados.length) {
-    window.location.replace('/pasajeros.html');
+    window.location.replace('/pasajeros');
     return;
   }
   mostrarResumen();
@@ -469,11 +469,11 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     if (!tokenDeSesion()) {
-      localStorage.setItem('redirectAfterLogin', '/pago.html');
-      window.location.replace('/login.html');
+      localStorage.setItem('redirectAfterLogin', '/pago');
+      window.location.replace('/login');
       return;
     }
-    window.location.href = '/pago.html';
+    window.location.href = '/pago';
   });
 
   document.getElementById('btnVolver').addEventListener('click', async (evento) => {
@@ -489,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
       /* La reserva temporal vence sola si la liberación no responde. */
     }
     guardarSeleccion([]);
-    window.location.href = '/pasajeros.html';
+    window.location.href = '/pasajeros';
   });
 
   const mostrarMapa = () => {

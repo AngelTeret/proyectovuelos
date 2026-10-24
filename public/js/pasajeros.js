@@ -606,7 +606,7 @@ document.querySelectorAll('[data-delta]').forEach((boton) => {
 
 document.getElementById('btnVolver').addEventListener('click', (evento) => {
   evento.preventDefault();
-  window.location.href = '/index.html';
+  window.location.href = '/';
 });
 
 ['email', 'telefono'].forEach((id) => {
@@ -687,7 +687,7 @@ document.getElementById('form-pasajero').addEventListener('submit', (evento) => 
   });
   borrarTemporal('datosAsiento');
   borrarTemporal('datosAsientos');
-  window.location.href = '/asientos.html';
+  window.location.href = '/asientos';
 });
 
 const cargarFechaVuelo = async () => {
@@ -706,7 +706,7 @@ const cargarFechaVuelo = async () => {
       title: 'Este vuelo ya no se puede comprar',
       text: 'El check-in cierra una hora antes de la salida.',
     });
-    window.location.replace('/index.html');
+    window.location.replace('/');
     return;
   }
   fechaVuelo = vuelo?.fecha_salida || '';
@@ -719,7 +719,7 @@ const rellenarContacto = async () => {
   }
   try {
     const respuesta = await fetch('/api/auth/perfil', { headers: autorizacion() });
-    if (await cerrarSiSesionRechazada(respuesta, '/pasajeros.html')) {
+    if (await cerrarSiSesionRechazada(respuesta, '/pasajeros')) {
       return;
     }
     if (!respuesta.ok) {

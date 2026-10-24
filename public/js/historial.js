@@ -144,7 +144,7 @@ const cancelarReserva = async (reserva, boton) => {
       headers: autorizacion(),
     });
     const data = await respuesta.json().catch(() => ({}));
-    if (await cerrarSiSesionRechazada(respuesta, '/mis-vuelos.html')) {
+    if (await cerrarSiSesionRechazada(respuesta, '/mis-vuelos')) {
       return;
     }
     if (!respuesta.ok) {
@@ -237,12 +237,12 @@ const pintarGrupo = () => {
     const avisoCheckin = nodo.querySelector('[data-checkin-aviso]');
     if (checkinListo) {
       checkin.textContent = 'Ver boletos';
-      checkin.href = `/checkin.html?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
+      checkin.href = `/checkin?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
       checkin.classList.remove('hidden');
       checkin.classList.add('inline-flex');
     } else if (reserva.checkin_abierto) {
       checkin.textContent = 'Hacer check-in';
-      checkin.href = `/checkin.html?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
+      checkin.href = `/checkin?pnr=${encodeURIComponent(reserva.codigo_pnr || '')}`;
       checkin.classList.remove('hidden');
       checkin.classList.add('inline-flex');
     } else if (reserva.checkin_motivo === 'pronto' || reserva.checkin_motivo === 'cerrado') {
@@ -290,7 +290,7 @@ const cargarHistorial = async (conservarPestana = false) => {
     const respuesta = await fetch('/api/reservas/mi-historial', {
       headers: autorizacion(),
     });
-    if (await cerrarSiSesionRechazada(respuesta, '/mis-vuelos.html')) {
+    if (await cerrarSiSesionRechazada(respuesta, '/mis-vuelos')) {
       return;
     }
     if (!respuesta.ok) {

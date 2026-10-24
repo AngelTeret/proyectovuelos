@@ -1,9 +1,9 @@
 if (!tokenDeSesion()) {
-  window.location.replace('/login.html');
+  window.location.replace('/login');
 } else if (rolDeSesion() === 'mantenimiento') {
-  window.location.replace('/mantenimiento.html');
+  window.location.replace('/mantenimiento');
 } else if (rolDeSesion() !== 'admin') {
-  window.location.replace('/index.html');
+  window.location.replace('/');
 }
 
 const listaCuentas = document.getElementById('lista-cuentas');
@@ -84,7 +84,7 @@ const pintarCuentas = (cuentas) => {
 
 const cargarCuentas = async () => {
   const respuesta = await fetch('/api/personal/mantenimiento', { headers: autorizacion() });
-  if (await cerrarSiSesionRechazada(respuesta, '/cuentas-mantenimiento.html')) {
+  if (await cerrarSiSesionRechazada(respuesta, '/cuentas-mantenimiento')) {
     return;
   }
   const data = await respuesta.json().catch(() => []);

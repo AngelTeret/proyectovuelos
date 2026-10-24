@@ -1,7 +1,7 @@
 if (!tokenDeSesion()) {
-  window.location.replace('/login.html');
+  window.location.replace('/login');
 } else if (rolDeSesion() !== 'admin' && rolDeSesion() !== 'despacho') {
-  window.location.replace('/index.html');
+  window.location.replace('/');
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -99,7 +99,7 @@ const pintarVuelos = (vuelos) => {
     return;
   }
   lista.innerHTML = vuelos.map((vuelo) => `
-    <a href="/abordaje.html?vuelo=${vuelo.id}" class="block rounded-2xl bg-white p-5 shadow-sm hover:bg-slate-50">
+    <a href="/abordaje?vuelo=${vuelo.id}" class="block rounded-2xl bg-white p-5 shadow-sm hover:bg-slate-50">
       <p class="text-sm font-semibold text-emerald-800">${escapar(nombreEstadoVuelo[vuelo.estado] || vuelo.estado)}</p>
       <p class="mt-1 text-lg font-bold text-slate-900">${escapar(vuelo.origen)} → ${escapar(vuelo.destino)}</p>
       <p class="mt-1 text-sm text-slate-500">${escapar([formatearSalida(vuelo.fecha_salida), retrasoVisible(vuelo.retraso_minutos), duracionVisible(vuelo.duracion_minutos)].filter(Boolean).join(' · '))}</p>

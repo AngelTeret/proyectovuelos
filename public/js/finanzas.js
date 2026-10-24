@@ -1,7 +1,7 @@
 if (!tokenDeSesion()) {
-  window.location.replace('/login.html');
+  window.location.replace('/login');
 } else if (rolDeSesion() !== 'admin') {
-  window.location.replace('/index.html');
+  window.location.replace('/');
 }
 
 const pintarReservas = (reservas) => {
@@ -30,7 +30,7 @@ const cargarReservas = async () => {
   const cuerpo = document.getElementById('cuerpo-reservas');
   try {
     const respuesta = await fetch('/api/reservas', { headers: autorizacion() });
-    if (await cerrarSiSesionRechazada(respuesta, '/finanzas.html')) {
+    if (await cerrarSiSesionRechazada(respuesta, '/finanzas')) {
       return;
     }
     if (!respuesta.ok) {

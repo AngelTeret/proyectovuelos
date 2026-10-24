@@ -6,8 +6,8 @@
   <script>
     ['token', 'rol', 'nombre', 'usuario_id'].forEach((clave) => localStorage.removeItem(clave));
     if (!sessionStorage.getItem('token')) {
-      localStorage.setItem('redirectAfterLogin', '/confirmacion.html');
-      location.replace('/login.html');
+      localStorage.setItem('redirectAfterLogin', '/confirmacion');
+      location.replace('/login');
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -92,7 +92,7 @@
                 </div>
                 <div class="flex flex-col gap-2 sm:flex-row">
                   <button type="button" id="btn-boleto" class="h-11 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Descargar factura</button>
-                  <a href="/mis-vuelos.html" class="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver mis vuelos</a>
+                  <a href="/mis-vuelos" class="inline-flex h-11 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Ver mis vuelos</a>
                 </div>
               </div>
             </div>
@@ -100,7 +100,7 @@
         </div>
         <div id="error-confirmacion" class="hidden max-w-xl rounded-2xl bg-white p-8 text-center shadow-sm">
           <p id="mensaje-error" class="text-sm text-slate-600">No se pudo mostrar la factura.</p>
-          <a href="/mis-vuelos.html" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Ver mis vuelos</a>
+          <a href="/mis-vuelos" class="mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Ver mis vuelos</a>
         </div>
       </main>
     </div>

@@ -1,7 +1,7 @@
 if (!tokenDeSesion()) {
-  window.location.replace('/login.html');
+  window.location.replace('/login');
 } else if (rolDeSesion() !== 'admin' && rolDeSesion() !== 'mantenimiento') {
-  window.location.replace('/index.html');
+  window.location.replace('/');
 }
 
 const params = new URLSearchParams(window.location.search);
@@ -28,7 +28,7 @@ const pedir = async (url, metodo = 'GET') => {
     method: metodo,
     headers: autorizacion(),
   });
-  if (await cerrarSiSesionRechazada(respuesta, `/mantenimiento.html${window.location.search}`)) {
+  if (await cerrarSiSesionRechazada(respuesta, `/mantenimiento${window.location.search}`)) {
     return null;
   }
   const data = await respuesta.json().catch(() => ({}));
@@ -46,7 +46,7 @@ const pintarVuelos = (vuelos) => {
     return;
   }
   lista.innerHTML = vuelos.map((vuelo) => `
-    <a href="/mantenimiento.html?vuelo=${vuelo.id}" class="block rounded-2xl bg-white p-5 shadow-sm hover:bg-slate-50">
+    <a href="/mantenimiento?vuelo=${vuelo.id}" class="block rounded-2xl bg-white p-5 shadow-sm hover:bg-slate-50">
       <p class="text-lg font-bold text-slate-900">${escapar(vuelo.origen)} → ${escapar(vuelo.destino)}</p>
       <p class="mt-1 text-sm text-slate-500">${escapar([formatearSalida(vuelo.fecha_salida), duracionVisible(vuelo.duracion_minutos)].filter(Boolean).join(' · '))}</p>
       <p class="mt-3 text-sm text-slate-700">${escapar(resumenAsientos(vuelo))}</p>
