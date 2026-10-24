@@ -83,7 +83,7 @@ const guiaDe = (vuelo) => {
     return 'Paso 2. Cuando la persona muestre su boleto, búscalo y pulsa Ya entró. Quien no hizo check-in no tiene boleto y no entra. Cuando ya no vaya a entrar nadie más, cierra la puerta.';
   }
   if (vuelo.estado === 'Cerrado') {
-    return 'La puerta ya cerró. Quien tenía boleto y no entró quedó como que no se presentó. Quien nunca hizo check-in sigue aparte: no tenía boleto. El avión figura en vuelo cuando llega la hora de salida.';
+    return 'La puerta ya cerró y nadie más puede entrar.';
   }
   if (vuelo.estado === 'En Curso') {
     return 'El avión ya salió. Quien tenía boleto y no entró quedó como que no se presentó.';
