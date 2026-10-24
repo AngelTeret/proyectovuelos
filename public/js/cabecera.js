@@ -136,9 +136,30 @@ const nombreDeSesion = () => {
   }
 };
 
+const nombrePresentable = (valor) => {
+  const limpio = String(valor || '').trim().replace(/\s+/g, ' ');
+  if (!limpio) {
+    return '';
+  }
+  const menores = new Set(['de', 'del', 'la', 'las', 'los', 'y']);
+  return limpio.toLocaleLowerCase('es').split(' ').map((palabra, indice) => {
+    if (indice > 0 && menores.has(palabra)) {
+      return palabra;
+    }
+    return palabra.charAt(0).toLocaleUpperCase('es') + palabra.slice(1);
+  }).join(' ');
+};
+
 const nombreUsuario = document.getElementById('nombre-usuario');
 if (nombreUsuario) {
-  nombreUsuario.textContent = nombreDeSesion();
+  const presentable = nombrePresentable(nombreDeSesion());
+  const corto = document.createElement('span');
+  corto.className = 'nombre-corto';
+  corto.textContent = presentable.split(' ')[0] || '';
+  const completo = document.createElement('span');
+  completo.className = 'nombre-completo';
+  completo.textContent = presentable;
+  nombreUsuario.replaceChildren(corto, completo);
 }
 
 if (rolDeSesion() !== 'admin') {
@@ -181,24 +202,69 @@ if (iniciarSesion && cerrarSesion) {
   cerrarSesion.classList.toggle('hidden', !autenticado);
 }
 
+const salirDeLaCuenta = () => {
+  if (typeof limpiarDatosPersonales === 'function') {
+    limpiarDatosPersonales();
+  }
+  cerrarDatosSesion();
+  window.location.replace('/');
+};
+
 if (cerrarSesion) {
-  cerrarSesion.addEventListener('click', () => {
-    if (typeof limpiarDatosPersonales === 'function') {
-      limpiarDatosPersonales();
-    }
-    cerrarDatosSesion();
-    window.location.replace('/');
-  });
+  cerrarSesion.addEventListener('click', salirDeLaCuenta);
+}
+
+const barraSesion = document.querySelector('body > div > div > header');
+if (barraSesion && nombreUsuario) {
+  const autenticado = Boolean(tokenDeSesion());
+  const accionMovil = document.createElement(autenticado ? 'button' : 'a');
+  accionMovil.id = 'sesion-movil';
+  accionMovil.textContent = autenticado ? 'Cerrar sesión' : 'Iniciar sesión';
+  if (autenticado) {
+    accionMovil.type = 'button';
+    accionMovil.addEventListener('click', salirDeLaCuenta);
+  } else {
+    accionMovil.href = '/login';
+  }
+  nombreUsuario.insertAdjacentElement('afterend', accionMovil);
 }
 
 const estiloMenu = document.createElement('style');
 estiloMenu.textContent = `
-  .marca-movil { display: none; }
+  .marca-movil,
+  #sesion-movil { display: none; }
+  #sesion-movil {
+    align-items: center;
+    flex-shrink: 0;
+    height: 2.75rem;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #2563eb;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+  }
   #nombre-usuario {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #64748b;
+  }
+  #nombre-usuario .nombre-completo { display: none; }
+  @media (min-width: 768px) {
+    #nombre-usuario {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    #nombre-usuario .nombre-corto { display: none; }
+    #nombre-usuario .nombre-completo { display: inline; }
   }
   body > div > div > header {
     justify-content: space-between !important;
@@ -253,6 +319,7 @@ estiloMenu.textContent = `
       margin-left: 0.25rem;
     }
     .marca-movil img { height: 2rem; width: auto; }
+    #sesion-movil { display: inline-flex; }
     #menu-lateral {
       position: fixed;
       top: 0;
