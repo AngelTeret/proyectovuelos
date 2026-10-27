@@ -6,9 +6,9 @@ import {
   listarEquipo,
   quitarEquipo,
 } from '../models/usuario.model.js';
+import { correoValido } from '../utils/correo.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 
-const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PUESTOS = new Set(['despacho', 'mantenimiento']);
 
 const idCuenta = (valor) => {
@@ -26,7 +26,7 @@ const datosCuenta = (body, exigirClave) => {
   if (nombre.length > 100) {
     return { error: 'El nombre no puede pasar de 100 caracteres' };
   }
-  if (!CORREO.test(email) || email.length > 100) {
+  if (!correoValido(email)) {
     return { error: 'Ingresa un correo electrónico válido' };
   }
   if (password && password.length < 8) {

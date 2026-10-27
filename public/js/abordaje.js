@@ -33,21 +33,7 @@ const mostrar = (id) => {
   document.getElementById(id).classList.remove('hidden');
 };
 
-const pedir = async (ruta, metodo = 'GET', cuerpo) => {
-  const respuesta = await fetch(ruta, {
-    method: metodo,
-    headers: cuerpo ? { ...autorizacion(), 'Content-Type': 'application/json' } : autorizacion(),
-    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
-  });
-  if (await cerrarSiSesionRechazada(respuesta, `${window.location.pathname}${window.location.search}`)) {
-    return null;
-  }
-  const data = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) {
-    throw new Error(data.mensaje || 'Intenta de nuevo.');
-  }
-  return data;
-};
+const pedir = (ruta, metodo = 'GET', cuerpo) => pedirJson(ruta, { metodo, cuerpo });
 
 const frasePersonas = (cantidad, una, varias) => `${cantidad} ${Number(cantidad) === 1 ? una : varias}`;
 

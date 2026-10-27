@@ -183,18 +183,6 @@ const editarVuelo = (id) => {
   abrirModal();
 };
 
-const avisarExito = (titulo) => {
-  Swal.fire({
-    toast: true,
-    position: 'top-end',
-    icon: 'success',
-    title: titulo,
-    showConfirmButton: false,
-    timer: 2500,
-    timerProgressBar: true,
-  });
-};
-
 const eliminarVuelo = async (id) => {
   const resultado = await Swal.fire({
     title: '¿Estás seguro?',
@@ -232,7 +220,7 @@ const eliminarVuelo = async (id) => {
       return;
     }
 
-    avisarExito('Vuelo eliminado');
+    mostrarExito('Vuelo eliminado');
     await cargarVuelos();
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'Oops...', text: error.message });
@@ -462,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       cerrarModal();
-      avisarExito(id ? 'Vuelo actualizado' : 'Vuelo creado');
+      mostrarExito(id ? 'Vuelo actualizado' : 'Vuelo creado');
       await cargarVuelos();
     } catch (error) {
       restaurarGuardar();

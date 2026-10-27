@@ -15,15 +15,12 @@ import { registrarBitacora } from '../models/bitacora.model.js';
 import { anotarIntento, cupoLleno, ipDe, MENSAJE_CUPO, olvidarIntentos } from '../middlewares/cupo.js';
 import { leerSesion, respuestaDeSesion } from '../middlewares/sesion.js';
 import { tocarActividad } from '../utils/actividadSesion.js';
+import { correoValido } from '../utils/correo.js';
 import { responderErrorInterno } from '../utils/errorInterno.js';
 import { enviarBoleto } from '../services/emailService.js';
 import { generarTemplateRestablecer, generarTemplateVerificacion } from '../services/ticketTemplate.js';
 
-const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
 const normalizarCorreo = (valor) => String(valor || '').trim().toLowerCase();
-
-const correoValido = (email) => CORREO.test(email) && email.length <= 100;
 
 const nuevoToken = () => {
   const token = randomBytes(32).toString('hex');

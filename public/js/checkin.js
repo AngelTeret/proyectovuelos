@@ -414,21 +414,10 @@ const validarMaletas = () => {
   return true;
 };
 
-const pedir = async (metodo, cuerpo) => {
-  const respuesta = await fetch('/api/checkin', {
-    method: metodo,
-    headers: { ...autorizacion(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ codigo_pnr: pnr, ...cuerpo }),
-  });
-  if (await cerrarSiSesionRechazada(respuesta, `${window.location.pathname}${window.location.search}`)) {
-    return null;
-  }
-  const data = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) {
-    throw new Error(data.mensaje || 'Intenta de nuevo.');
-  }
-  return data;
-};
+const pedir = (metodo, cuerpo) => pedirJson('/api/checkin', {
+  metodo,
+  cuerpo: { codigo_pnr: pnr, ...cuerpo },
+});
 
 const confirmar = async () => {
   const boton = document.getElementById('btn-confirmar');

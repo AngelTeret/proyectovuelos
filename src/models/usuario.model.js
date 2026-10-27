@@ -2,21 +2,6 @@ import pool from '../config/db.js';
 
 export const SALDO_BIENVENIDA = 15000;
 
-export const crearUsuario = async ({ nombre, email, password, rol = 'cliente', saldo_virtual = 0 }) => {
-  const [result] = await pool.query(
-    'INSERT INTO usuarios (nombre, email, password, rol, saldo_virtual) VALUES (?, ?, ?, ?, ?)',
-    [nombre, email, password, rol, saldo_virtual]
-  );
-
-  return {
-    id: result.insertId,
-    nombre,
-    email,
-    rol,
-    saldo_virtual,
-  };
-};
-
 export const buscarPorId = async (id) => {
   const [rows] = await pool.query(
     'SELECT id, nombre, email, rol, saldo_virtual FROM usuarios WHERE id = ?',

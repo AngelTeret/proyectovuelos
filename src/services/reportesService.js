@@ -1,6 +1,7 @@
 import pool from '../config/db.js';
 import { libroDeReporte } from './reporteExcel.js';
 import { salidaReal } from '../utils/horarioVuelo.js';
+import { dinero } from '../utils/precioAsiento.js';
 
 const POR_PAGINA = 20;
 const LIMITE_ARCHIVO = 5000;
@@ -17,8 +18,6 @@ export class ErrorReporte extends Error {
 }
 
 const numero = (valor) => Number(valor || 0);
-
-const dinero = (valor) => Math.round(numero(valor) * 100) / 100;
 
 const ocupacion = (confirmados, cupo, fuera) => {
   const vendibles = numero(cupo) - numero(fuera);
