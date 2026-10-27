@@ -130,6 +130,9 @@ document.getElementById('mapa').addEventListener('click', async (evento) => {
     );
     if (data) {
       pintarMapa(data.asientos || []);
+      mostrarExito(dejarFuera
+        ? `Asiento ${asiento.numero_asiento} fuera de servicio`
+        : `Asiento ${asiento.numero_asiento} otra vez a la venta`);
     }
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: error.message });

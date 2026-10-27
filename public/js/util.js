@@ -340,6 +340,18 @@ const descargarArchivo = async (url, boton, nombreReserva) => {
   }
 };
 
+const mostrarExito = (titulo) => {
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: titulo,
+    showConfirmButton: false,
+    timer: 2500,
+    timerProgressBar: true,
+  });
+};
+
 const descargarBoleto = (reservaId, boton) => descargarArchivo(
   `/api/reservas/${reservaId}/factura/pdf`,
   boton,
@@ -380,6 +392,7 @@ Object.assign(window, {
   cerrarSiSesionRechazada,
   descargarBoleto,
   descargarArchivo,
+  mostrarExito,
 });
 
 const cerrarPorInactividad = () => {

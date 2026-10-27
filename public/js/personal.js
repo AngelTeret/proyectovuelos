@@ -165,6 +165,7 @@ const eliminarCuenta = async (id, nombre) => {
       return;
     }
     await cargarDespacho();
+    mostrarExito('Cuenta eliminada');
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'No se pudo eliminar', text: error.message });
   }

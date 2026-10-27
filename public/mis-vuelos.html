@@ -41,6 +41,10 @@
         <p class="mt-1 text-sm text-slate-500">Reservas asociadas a tu cuenta.</p>
         <p id="estado-carga" class="mt-6 text-sm text-slate-500">Cargando tus vuelos...</p>
         <div id="panel-historial" class="mt-6 hidden">
+          <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <input id="buscar-mis-vuelos" type="search" placeholder="Código, ruta, asiento o fecha" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400 sm:max-w-sm">
+            <p id="conteo-mis-vuelos" class="hidden text-sm text-slate-500"></p>
+          </div>
           <div role="tablist" aria-label="Historial de vuelos" class="flex gap-2 overflow-x-auto pb-1">
             <button type="button" role="tab" id="tab-proximos" data-pestana="proximos" aria-selected="true" aria-controls="lista-vuelos" class="h-11 shrink-0 rounded-lg bg-blue-950 px-4 text-sm font-semibold text-white">Vuelos próximos</button>
             <button type="button" role="tab" id="tab-pasados" data-pestana="pasados" aria-selected="false" aria-controls="lista-vuelos" class="h-11 shrink-0 rounded-lg bg-white px-4 text-sm font-medium text-slate-500 hover:bg-slate-50">Vuelos pasados</button>

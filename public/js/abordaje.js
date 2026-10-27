@@ -213,6 +213,7 @@ document.getElementById('detalle-vuelo').addEventListener('click', async (evento
     }
     try {
       pintarDetalle(await pedir(`/api/abordaje/vuelos/${vueloId}/abordar`, 'POST', { codigo_boleto: abordar.dataset.abordar }));
+      mostrarExito(`${abordar.dataset.nombre || 'El pasajero'} ya entró`);
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'No se pudo marcar', text: error.message });
     }
@@ -230,6 +231,7 @@ document.getElementById('detalle-vuelo').addEventListener('click', async (evento
     }
     try {
       pintarDetalle(await pedir(`/api/abordaje/vuelos/${vueloId}/iniciar`, 'POST'));
+      mostrarExito('Abordaje iniciado');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'No se pudo iniciar', text: error.message });
     }
