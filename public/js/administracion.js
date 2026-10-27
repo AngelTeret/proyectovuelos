@@ -23,25 +23,42 @@ const aDatetimeLocal = (valor) => {
 
 let vuelosCargados = [];
 
-const pintarVuelos = (vuelos) => {
+const textoBusquedaVuelo = (vuelo) => {
+  const partes = partesGuatemala(vuelo.fecha_salida);
+  const corta = partes
+    ? `${String(partes.dia).padStart(2, '0')}/${String(partes.mes).padStart(2, '0')}/${partes.anio}`
+    : '';
+  return sinAcentos(`${vuelo.origen} ${vuelo.destino} ${formatearSalida(vuelo.fecha_salida)} ${fechaCalendario(vuelo.fecha_salida)} ${corta}`);
+};
+
+const pintarConteo = (visibles, total) => {
+  const nota = document.getElementById('conteo-vuelos');
+  const consulta = document.getElementById('buscar-vuelo').value.trim();
+  nota.textContent = consulta ? `${visibles} de ${total} vuelos` : '';
+  nota.classList.toggle('hidden', !consulta);
+};
+
+const pintarVuelos = (vuelos, buscando = false) => {
   const cuerpo = document.getElementById('cuerpo-vuelos');
+  pintarConteo(vuelos.length, vuelosCargados.length);
   if (vuelos.length === 0) {
-    cuerpo.innerHTML = '<tr><td colspan="10" class="px-5 py-8 text-center text-sm text-slate-500">No hay vuelos registrados.</td></tr>';
+    const mensaje = buscando ? 'No hay vuelos con ese dato.' : 'No hay vuelos registrados.';
+    cuerpo.innerHTML = `<tr><td colspan="10" class="px-5 py-8 text-center text-sm text-slate-500">${mensaje}</td></tr>`;
     return;
   }
 
   cuerpo.innerHTML = vuelos.map((vuelo) => `
     <tr class="hover:bg-slate-50">
-      <td class="px-5 py-4 font-medium text-slate-900">${escapar(vuelo.id)}</td>
-      <td class="px-5 py-4">${miniatura(vuelo.imagen_url)}</td>
-      <td class="px-5 py-4">${escapar(vuelo.origen)}</td>
-      <td class="px-5 py-4">${escapar(vuelo.destino)}</td>
-      <td class="px-5 py-4">${escapar(formatearSalida(vuelo.fecha_salida))}</td>
-      <td class="px-5 py-4">${escapar(textoDuracion(vuelo.duracion_minutos))}</td>
-      <td class="px-5 py-4">${escapar(Number(vuelo.retraso_minutos) > 0 ? textoDuracion(vuelo.retraso_minutos) : 'A tiempo')}</td>
-      <td class="px-5 py-4">${escapar(vuelo.capacidad_asientos)}</td>
-      <td class="px-5 py-4">${escapar(quetzales(vuelo.precio_base))}</td>
-      <td class="px-5 py-4">
+      <td data-etiqueta="Salida" class="px-5 py-4 font-medium text-slate-900">${escapar(formatearSalida(vuelo.fecha_salida))}</td>
+      <td data-etiqueta="Origen" class="px-5 py-4">${escapar(vuelo.origen)}</td>
+      <td data-etiqueta="Destino" class="px-5 py-4">${escapar(vuelo.destino)}</td>
+      <td data-etiqueta="Duración" class="px-5 py-4">${escapar(textoDuracion(vuelo.duracion_minutos))}</td>
+      <td data-etiqueta="Retraso" class="px-5 py-4">${escapar(Number(vuelo.retraso_minutos) > 0 ? textoDuracion(vuelo.retraso_minutos) : 'A tiempo')}</td>
+      <td data-etiqueta="Capacidad" class="px-5 py-4">${escapar(vuelo.capacidad_asientos)}</td>
+      <td data-etiqueta="Precio base" class="px-5 py-4">${escapar(quetzales(vuelo.precio_base))}</td>
+      <td data-etiqueta="Imagen" class="px-5 py-4">${miniatura(vuelo.imagen_url)}</td>
+      <td data-etiqueta="ID" class="px-5 py-4">${escapar(vuelo.id)}</td>
+      <td data-etiqueta="Acciones" class="px-5 py-4">
         <div class="flex items-center gap-2">
           <button type="button" data-accion="editar" data-vuelo-id="${vuelo.id}" class="rounded-lg px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50">Editar</button>
           <button type="button" data-accion="eliminar" data-vuelo-id="${vuelo.id}" class="rounded-lg px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">Eliminar</button>
@@ -65,7 +82,15 @@ const cargarVuelos = async () => {
     throw new Error('No se pudieron cargar los vuelos');
   }
   vuelosCargados = await respuesta.json();
-  pintarVuelos(vuelosCargados);
+  aplicarBusquedaVuelos();
+};
+
+const aplicarBusquedaVuelos = () => {
+  const consulta = sinAcentos(document.getElementById('buscar-vuelo').value.trim());
+  const visibles = consulta
+    ? vuelosCargados.filter((vuelo) => textoBusquedaVuelo(vuelo).includes(consulta))
+    : vuelosCargados;
+  pintarVuelos(visibles, Boolean(consulta));
 };
 
 let vistaTemporal = '';
@@ -158,18 +183,6 @@ const editarVuelo = (id) => {
   abrirModal();
 };
 
-const avisarExito = (titulo) => {
-  Swal.fire({
-    toast: true,
-    position: 'top-end',
-    icon: 'success',
-    title: titulo,
-    showConfirmButton: false,
-    timer: 2500,
-    timerProgressBar: true,
-  });
-};
-
 const eliminarVuelo = async (id) => {
   const resultado = await Swal.fire({
     title: '¿Estás seguro?',
@@ -207,7 +220,7 @@ const eliminarVuelo = async (id) => {
       return;
     }
 
-    avisarExito('Vuelo eliminado');
+    mostrarExito('Vuelo eliminado');
     await cargarVuelos();
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'Oops...', text: error.message });
@@ -349,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
   llenarCapacidades();
   bloquearFechasPasadas();
 
+  document.getElementById('buscar-vuelo').addEventListener('input', aplicarBusquedaVuelos);
   document.getElementById('btn-nuevo-vuelo').addEventListener('click', prepararNuevoVuelo);
   document.getElementById('btn-cancelar-vuelo').addEventListener('click', cerrarModal);
   document.getElementById('imagen-archivo').addEventListener('change', () => {
@@ -436,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       cerrarModal();
-      avisarExito(id ? 'Vuelo actualizado' : 'Vuelo creado');
+      mostrarExito(id ? 'Vuelo actualizado' : 'Vuelo creado');
       await cargarVuelos();
     } catch (error) {
       restaurarGuardar();

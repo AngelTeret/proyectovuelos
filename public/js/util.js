@@ -297,6 +297,25 @@ const cerrarSiSesionRechazada = async (respuesta, destino) => {
   return true;
 };
 
+const pedirJson = async (ruta, opciones = {}) => {
+  const metodo = opciones.metodo || 'GET';
+  const cuerpo = opciones.cuerpo;
+  const volver = opciones.volver || `${window.location.pathname}${window.location.search}`;
+  const respuesta = await fetch(ruta, {
+    method: metodo,
+    headers: cuerpo ? { ...autorizacion(), 'Content-Type': 'application/json' } : autorizacion(),
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+  });
+  if (await cerrarSiSesionRechazada(respuesta, volver)) {
+    return null;
+  }
+  const data = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) {
+    throw new Error(data.mensaje || 'Intenta de nuevo.');
+  }
+  return data;
+};
+
 const descargarArchivo = async (url, boton, nombreReserva) => {
   const texto = boton ? boton.textContent : '';
   if (boton) {
@@ -340,6 +359,18 @@ const descargarArchivo = async (url, boton, nombreReserva) => {
   }
 };
 
+const mostrarExito = (titulo) => {
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon: 'success',
+    title: titulo,
+    showConfirmButton: false,
+    timer: 2500,
+    timerProgressBar: true,
+  });
+};
+
 const descargarBoleto = (reservaId, boton) => descargarArchivo(
   `/api/reservas/${reservaId}/factura/pdf`,
   boton,
@@ -378,8 +409,10 @@ Object.assign(window, {
   cerrarDatosSesion,
   cerrarSesionInvalida,
   cerrarSiSesionRechazada,
+  pedirJson,
   descargarBoleto,
   descargarArchivo,
+  mostrarExito,
 });
 
 const cerrarPorInactividad = () => {

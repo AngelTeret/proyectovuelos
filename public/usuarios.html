@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <link rel="icon" href="/imagenes/isotipo.svg" type="image/svg+xml">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Cuentas de mantenimiento - Quetzal Airlines</title>
+  <title>Usuarios - Quetzal Airlines</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -28,28 +28,63 @@
       <header class="flex h-16 shrink-0 items-center justify-end border-b border-slate-100 bg-white px-6">
         <p id="nombre-usuario" class="text-sm font-semibold text-slate-800"></p>
       </header>
-      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Cuentas de mantenimiento</h1>
+      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-6 sm:px-8">
+        <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Usuarios</h1>
+        <p id="descripcion" class="mt-1 max-w-2xl text-sm text-slate-500">Cuentas del personal y clientes registrados.</p>
+
+        <div id="vistas" class="mt-5 flex gap-2" role="tablist" aria-label="Tipo de usuario">
+          <button type="button" role="tab" data-vista="personal" aria-selected="true" class="h-10 rounded-full px-4 text-sm font-semibold">Personal</button>
+          <button type="button" role="tab" data-vista="clientes" aria-selected="false" class="h-10 rounded-full px-4 text-sm font-semibold">Clientes</button>
+        </div>
+
+        <div class="mb-3 mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input id="buscar-usuarios" type="search" placeholder="Nombre o correo" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400 sm:max-w-xs">
+          <select id="filtro-puesto" class="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800">
+            <option value="">Todos los puestos</option>
+            <option value="despacho">Puerta</option>
+            <option value="mantenimiento">Mantenimiento</option>
+            <option value="admin">Administrador</option>
+          </select>
           <button id="btn-nueva-cuenta" type="button" class="h-11 shrink-0 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">+ Nueva cuenta</button>
         </div>
-        <section class="overflow-hidden rounded-2xl bg-white shadow-sm">
+        <p id="conteo-usuarios" class="mb-3 hidden text-sm text-slate-500"></p>
+
+        <section id="panel-personal" class="overflow-hidden rounded-2xl bg-white shadow-sm">
           <div class="overflow-x-auto">
-            <table class="w-full min-w-[520px] text-left text-sm">
+            <table class="tabla-movil w-full min-w-[640px] text-left text-sm">
               <thead class="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th class="px-5 py-3">Nombre</th>
                   <th class="px-5 py-3">Correo</th>
+                  <th class="px-5 py-3">Puesto</th>
                   <th class="px-5 py-3">Acciones</th>
                 </tr>
               </thead>
-              <tbody id="lista-cuentas" class="divide-y divide-slate-100 text-slate-700"></tbody>
+              <tbody id="lista-personal" class="divide-y divide-slate-100 text-slate-700"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="panel-clientes" class="hidden overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div class="overflow-x-auto">
+            <table class="tabla-movil w-full min-w-[720px] text-left text-sm">
+              <thead class="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th class="px-5 py-3">Nombre</th>
+                  <th class="px-5 py-3">Correo</th>
+                  <th class="px-5 py-3">Correo confirmado</th>
+                  <th class="px-5 py-3">Saldo</th>
+                  <th class="px-5 py-3">Reservas</th>
+                </tr>
+              </thead>
+              <tbody id="lista-clientes" class="divide-y divide-slate-100 text-slate-700"></tbody>
             </table>
           </div>
         </section>
       </main>
     </div>
   </div>
+
   <div id="modal-cuenta" class="fixed inset-0 z-50 hidden items-center justify-center overflow-y-auto bg-slate-900/50 p-4">
     <div class="my-auto w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl sm:p-6" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-cuenta">
       <h2 id="titulo-modal-cuenta" class="text-xl font-bold text-slate-900">Nueva cuenta</h2>
@@ -63,19 +98,26 @@
           <input id="cuenta-email" name="email" type="email" required maxlength="100" autocomplete="off" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
         </label>
         <label class="block">
+          <span class="mb-1.5 block text-xs font-medium text-slate-600">Puesto</span>
+          <select id="cuenta-rol" name="rol" required class="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+            <option value="despacho">Puerta</option>
+            <option value="mantenimiento">Mantenimiento</option>
+          </select>
+        </label>
+        <label class="block">
           <span class="mb-1.5 block text-xs font-medium text-slate-600">Contraseña</span>
           <input id="cuenta-password" name="password" type="password" minlength="8" maxlength="72" autocomplete="new-password" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
           <span id="nota-password" class="mt-1.5 hidden text-xs text-slate-500">Si la dejas vacía, la contraseña no cambia.</span>
         </label>
         <div class="flex items-center justify-end gap-3 pt-2">
-          <button id="btn-cancelar-cuenta" type="button" class="rounded-lg bg-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-300">Cancelar</button>
-          <button id="btn-guardar-cuenta" type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70">Crear cuenta</button>
+          <button id="btn-cancelar-cuenta" type="button" class="h-11 rounded-lg px-4 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar</button>
+          <button id="btn-guardar-cuenta" type="submit" class="h-11 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Crear cuenta</button>
         </div>
       </form>
     </div>
   </div>
   <script src="/js/util.js"></script>
   <script src="/js/cabecera.js"></script>
-  <script src="/js/cuentas-mantenimiento.js"></script>
+  <script src="/js/usuarios.js"></script>
 </body>
 </html>

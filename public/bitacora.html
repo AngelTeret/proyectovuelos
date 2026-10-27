@@ -29,13 +29,15 @@
         <p id="nombre-usuario" class="text-sm font-semibold text-slate-800"></p>
       </header>
 
-      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
+      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-6 sm:px-8">
         <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Bitácora</h1>
             <p class="mt-1 text-sm text-slate-500">Inicios de sesión, pagos, cancelaciones, contraseñas, check-in, abordaje y cambios de vuelos. Se muestran los 200 más recientes.</p>
           </div>
-          <label class="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <div class="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
+            <input id="buscar-bitacora" type="search" placeholder="Persona, correo o detalle" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400 sm:w-72">
+            <label class="flex items-center gap-2 text-sm font-medium text-slate-600">
             Acción
             <select id="filtro-accion" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800">
               <option value="">Todas</option>
@@ -47,12 +49,14 @@
               <option value="abordaje">Abordaje</option>
               <option value="vuelo">Vuelo</option>
             </select>
-          </label>
+            </label>
+          </div>
         </div>
+        <p id="conteo-bitacora" class="mb-3 hidden text-sm text-slate-500"></p>
 
         <section class="overflow-hidden rounded-2xl bg-white shadow-sm">
           <div class="overflow-x-auto">
-            <table class="w-full min-w-[760px] text-left text-sm">
+            <table class="tabla-movil w-full min-w-[760px] text-left text-sm">
               <thead class="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th class="px-5 py-3">Fecha</th>

@@ -1,10 +1,6 @@
 let vuelosCargados = [];
 
-const fechaISO = (valor) => fechaCalendario(valor);
-
 const hoyISO = () => fechaCalendario(new Date());
-
-const vueloVigente = (vuelo) => vueloEnVenta(vuelo);
 
 const llenarSelect = (select, lugares) => {
   const opciones = lugares.map((lugar) => `<option value="${escapar(lugar)}">${escapar(lugar)}</option>`);
@@ -17,7 +13,7 @@ const vuelosFiltrados = () => {
   const salida = document.getElementById('fecha-salida').value;
 
   return vuelosCargados.filter((vuelo) => {
-    if (!vueloVigente(vuelo)) {
+    if (!vueloEnVenta(vuelo)) {
       return false;
     }
     if (origen && vuelo.origen !== origen) {
@@ -26,7 +22,7 @@ const vuelosFiltrados = () => {
     if (destino && vuelo.destino !== destino) {
       return false;
     }
-    const fecha = fechaISO(vuelo.fecha_salida);
+    const fecha = fechaCalendario(vuelo.fecha_salida);
     return !(salida && fecha && fecha < salida);
   });
 };
@@ -61,9 +57,9 @@ const pintarDestinos = (vuelos, mensajeVacio = 'No hay vuelos disponibles.') => 
       <img src="${escapar(vuelo.imagen_url)}" alt="${escapar(vuelo.destino)}" class="h-full w-full object-cover">
       <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent"></div>
       <div class="absolute bottom-3 left-4 right-14 text-white">
-        <p class="text-base font-semibold">${escapar(vuelo.destino)}</p>
-        <p class="text-xs text-white/80">${escapar(vuelo.origen)} · desde ${quetzales(vuelo.precio_base)}</p>
-        <p class="text-xs text-white/90">Sale ${escapar(formatearDia(vuelo.fecha_salida))}</p>
+        <p class="text-base font-semibold">${escapar(formatearSalida(vuelo.fecha_salida))}</p>
+        <p class="text-sm text-white/95">${escapar(vuelo.origen)} → ${escapar(vuelo.destino)}</p>
+        <p class="text-xs text-white/80">Desde ${quetzales(vuelo.precio_base)}</p>
         ${retrasoVisible(vuelo.retraso_minutos) ? `<p class="text-xs text-amber-200">${escapar(retrasoVisible(vuelo.retraso_minutos))}</p>` : ''}
         ${duracionVisible(vuelo.duracion_minutos) ? `<p class="text-xs text-white/90">${escapar(duracionVisible(vuelo.duracion_minutos))}</p>` : ''}
       </div>
@@ -80,7 +76,7 @@ const pintarDestinos = (vuelos, mensajeVacio = 'No hay vuelos disponibles.') => 
         guardarBusqueda(busquedaSoloIda({
           origen: vuelo.origen,
           destino: vuelo.destino,
-          salida: fechaISO(vuelo.fecha_salida),
+          salida: fechaCalendario(vuelo.fecha_salida),
           vuelo,
         }), true);
       }
@@ -95,7 +91,7 @@ const cargarVuelos = async () => {
   }
   const vuelos = await respuesta.json();
   vuelosCargados = vuelos;
-  const vigentes = vuelos.filter(vueloVigente);
+  const vigentes = vuelos.filter(vueloEnVenta);
   const origenes = [...new Set(vigentes.map((vuelo) => vuelo.origen))];
   const destinos = [...new Set(vigentes.map((vuelo) => vuelo.destino))];
   llenarSelect(document.getElementById('origen'), origenes);

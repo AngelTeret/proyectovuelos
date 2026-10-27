@@ -23,20 +23,10 @@ const resumenAsientos = (vuelo) => {
   return partes.join(' · ');
 };
 
-const pedir = async (url, metodo = 'GET') => {
-  const respuesta = await fetch(url, {
-    method: metodo,
-    headers: autorizacion(),
-  });
-  if (await cerrarSiSesionRechazada(respuesta, `/mantenimiento${window.location.search}`)) {
-    return null;
-  }
-  const data = await respuesta.json().catch(() => ({}));
-  if (!respuesta.ok) {
-    throw new Error(data.mensaje || 'Intenta de nuevo.');
-  }
-  return data;
-};
+const pedir = (url, metodo = 'GET') => pedirJson(url, {
+  metodo,
+  volver: `/mantenimiento${window.location.search}`,
+});
 
 const pintarVuelos = (vuelos) => {
   const lista = document.getElementById('vuelos');
@@ -130,6 +120,9 @@ document.getElementById('mapa').addEventListener('click', async (evento) => {
     );
     if (data) {
       pintarMapa(data.asientos || []);
+      mostrarExito(dejarFuera
+        ? `Asiento ${asiento.numero_asiento} fuera de servicio`
+        : `Asiento ${asiento.numero_asiento} otra vez a la venta`);
     }
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'No se pudo guardar', text: error.message });

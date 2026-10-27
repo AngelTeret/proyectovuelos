@@ -182,12 +182,56 @@ const cancelarReserva = async (reserva, boton) => {
   }
 };
 
+const NOMBRES_PESTANA = {
+  proximos: 'Vuelos próximos',
+  pasados: 'Vuelos pasados',
+  cancelados: 'Cancelados',
+};
+
+const textoReserva = (reserva) => {
+  const partes = partesGuatemala(reserva.fecha_salida);
+  const corta = partes
+    ? `${String(partes.dia).padStart(2, '0')}/${String(partes.mes).padStart(2, '0')}/${partes.anio}`
+    : '';
+  const personas = Array.isArray(reserva.viajeros)
+    ? reserva.viajeros.map((persona) => `${persona.nombre || ''} ${persona.asiento || ''}`).join(' ')
+    : '';
+  return sinAcentos(`${personas} ${reserva.codigo_pnr || ''} ${reserva.numero_factura || ''} ${reserva.origen || ''} ${reserva.destino || ''} ${reserva.numero_asiento || ''} ${formatearSalida(reserva.fecha_salida)} ${fechaCalendario(reserva.fecha_salida)} ${corta}`);
+};
+
+const consultaActual = () => sinAcentos(document.getElementById('buscar-mis-vuelos')?.value.trim() || '');
+
+const coincideReserva = (reserva, consulta) => !consulta || textoReserva(reserva).includes(consulta);
+
+const aplicarBusqueda = () => {
+  const consulta = consultaActual();
+  if (consulta) {
+    const enActual = reservasGuardadas.some((reserva) => clasificar(reserva) === pestanaActiva && coincideReserva(reserva, consulta));
+    if (!enActual) {
+      const destino = ['proximos', 'pasados', 'cancelados'].find((pestana) => (
+        reservasGuardadas.some((reserva) => clasificar(reserva) === pestana && coincideReserva(reserva, consulta))
+      ));
+      if (destino) {
+        pestanaActiva = destino;
+      }
+    }
+  }
+  pintarGrupo();
+};
+
 const pintarGrupo = () => {
   const lista = document.getElementById('lista-vuelos');
   const aviso = document.getElementById('vacio-pestana');
   const plantilla = document.getElementById('plantilla-vuelo');
-  const visibles = reservasGuardadas.filter((reserva) => clasificar(reserva) === pestanaActiva);
+  const consulta = consultaActual();
+  const delGrupo = reservasGuardadas.filter((reserva) => clasificar(reserva) === pestanaActiva);
+  const visibles = delGrupo.filter((reserva) => coincideReserva(reserva, consulta));
   const grupo = grupos[pestanaActiva];
+  const nota = document.getElementById('conteo-mis-vuelos');
+  if (nota) {
+    nota.textContent = consulta ? `${visibles.length} de ${delGrupo.length} en ${NOMBRES_PESTANA[pestanaActiva]}` : '';
+    nota.classList.toggle('hidden', !consulta);
+  }
 
   document.querySelectorAll('[role="tab"]').forEach((boton) => {
     const activo = boton.dataset.pestana === pestanaActiva;
@@ -198,7 +242,17 @@ const pintarGrupo = () => {
   lista.replaceChildren();
   if (visibles.length === 0) {
     lista.classList.add('hidden');
-    aviso.textContent = grupo.vacio;
+    if (!consulta) {
+      aviso.textContent = grupo.vacio;
+    } else {
+      const otras = ['proximos', 'pasados', 'cancelados']
+        .filter((pestana) => pestana !== pestanaActiva)
+        .filter((pestana) => reservasGuardadas.some((reserva) => clasificar(reserva) === pestana && coincideReserva(reserva, consulta)))
+        .map((pestana) => NOMBRES_PESTANA[pestana]);
+      aviso.textContent = otras.length
+        ? `No hay reservas con ese dato aquí. Están en ${otras.join(' o ')}.`
+        : 'No hay reservas con ese dato.';
+    }
     aviso.classList.remove('hidden');
     return;
   }
@@ -212,8 +266,27 @@ const pintarGrupo = () => {
     const retrasado = pestanaActiva === 'proximos' && String(reserva.estado_vuelo || '').toLowerCase() === 'retrasado';
     etiqueta.textContent = retrasado ? 'Retrasado' : grupo.texto;
     etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${retrasado ? 'bg-amber-50 text-amber-800' : grupo.clase}`;
+    nodo.querySelector('[data-campo="salida"]').textContent = formatearSalida(reserva.fecha_salida);
     nodo.querySelector('[data-campo="ruta"]').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;
-    nodo.querySelector('[data-campo="salida"]').textContent = [formatearSalida(reserva.fecha_salida), retrasoVisible(reserva.retraso_minutos), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
+    const detalleSalida = nodo.querySelector('[data-campo="detalle-salida"]');
+    const extraSalida = [retrasoVisible(reserva.retraso_minutos), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
+    detalleSalida.textContent = extraSalida;
+    detalleSalida.classList.toggle('hidden', !extraSalida);
+    const viajeros = nodo.querySelector('[data-campo="viajeros"]');
+    const personas = Array.isArray(reserva.viajeros) ? reserva.viajeros : [];
+    viajeros.replaceChildren();
+    personas.forEach((persona) => {
+      const item = document.createElement('li');
+      item.className = 'text-sm font-medium text-slate-600';
+      const lugar = persona.asiento
+        ? `Asiento ${persona.asiento}`
+        : (persona.tipo === 'infante' ? 'En regazo, sin asiento' : 'Sin asiento');
+      item.textContent = `${persona.nombre} · ${lugar}`;
+      viajeros.appendChild(item);
+    });
+    viajeros.classList.toggle('hidden', personas.length === 0);
+    const bloqueAsiento = nodo.querySelector('[data-campo="asiento"]').closest('div');
+    bloqueAsiento.classList.toggle('hidden', personas.length > 0);
     nodo.querySelector('[data-campo="asiento"]').textContent = reserva.numero_asiento || '';
     nodo.querySelector('[data-campo="total"]').textContent = quetzales(reserva.monto_total);
     const abordaje = nodo.querySelector('[data-campo="abordaje"]');
@@ -270,6 +343,8 @@ document.querySelectorAll('[role="tab"]').forEach((boton) => {
     pintarGrupo();
   });
 });
+
+document.getElementById('buscar-mis-vuelos').addEventListener('input', aplicarBusqueda);
 
 const pintarHistorial = (reservas, conservarPestana = false) => {
   if (reservas.length === 0) {

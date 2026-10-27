@@ -307,9 +307,6 @@ export const descargarFactura = async (req, res) => {
   }
 };
 
-export const obtenerComprobante = obtenerFactura;
-export const descargarBoleto = descargarFactura;
-
 export const pagarReserva = async (req, res) => {
   try {
     const reservaId = Number(req.params.id);

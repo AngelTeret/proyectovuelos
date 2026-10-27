@@ -37,23 +37,18 @@ const marcarDisponibilidad = async (vueloId, llave) => {
   });
 };
 
-export const obtenerAsientosPorVuelo = async (req, res) => {
+const responderAsientos = async (req, res) => {
   try {
-    const asientos = await marcarDisponibilidad(req.params.id, llaveDe(req));
+    const vueloId = req.params.id || req.params.vuelo_id;
+    const asientos = await marcarDisponibilidad(vueloId, llaveDe(req));
     res.status(200).json(asientos);
   } catch (error) {
     responderErrorInterno(res, error);
   }
 };
 
-export const obtenerAsientosDeVuelo = async (req, res) => {
-  try {
-    const asientos = await marcarDisponibilidad(req.params.vuelo_id, llaveDe(req));
-    res.status(200).json(asientos);
-  } catch (error) {
-    responderErrorInterno(res, error);
-  }
-};
+export const obtenerAsientosPorVuelo = responderAsientos;
+export const obtenerAsientosDeVuelo = responderAsientos;
 
 export const bloquearAsiento = async (req, res) => {
   try {
