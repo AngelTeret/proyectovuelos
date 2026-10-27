@@ -141,42 +141,6 @@ const rolPersonal = (rol) => {
   return rol;
 };
 
-export const listarPersonal = async (rol) => {
-  const [filas] = await pool.query(
-    `SELECT id, nombre, email
-     FROM usuarios
-     WHERE rol = ?
-     ORDER BY nombre, id`,
-    [rolPersonal(rol)]
-  );
-  return filas;
-};
-
-export const actualizarPersonal = async ({ id, nombre, email, password, rol }) => {
-  const campos = ['nombre = ?', 'email = ?'];
-  const valores = [nombre, email];
-  if (password) {
-    campos.push('password = ?');
-    valores.push(password);
-  }
-  valores.push(id, rolPersonal(rol));
-  const [resultado] = await pool.query(
-    `UPDATE usuarios
-     SET ${campos.join(', ')}
-     WHERE id = ? AND rol = ?`,
-    valores
-  );
-  return resultado.affectedRows === 1;
-};
-
-export const eliminarPersonal = async (id, rol) => {
-  const [resultado] = await pool.query(
-    'DELETE FROM usuarios WHERE id = ? AND rol = ?',
-    [id, rolPersonal(rol)]
-  );
-  return resultado.affectedRows === 1;
-};
-
 export const crearPersonal = async ({ nombre, email, password, rol }) => {
   const papel = rolPersonal(rol);
   const [resultado] = await pool.query(
@@ -192,13 +156,59 @@ export const crearPersonal = async ({ nombre, email, password, rol }) => {
   };
 };
 
-export const listarPersonalDespacho = () => listarPersonal('despacho');
+export const listarEquipo = async () => {
+  const [filas] = await pool.query(
+    `SELECT id, nombre, email, rol
+     FROM usuarios
+     WHERE rol IN ('admin', 'despacho', 'mantenimiento')
+     ORDER BY FIELD(rol, 'admin', 'despacho', 'mantenimiento'), nombre, id`
+  );
+  return filas;
+};
 
-export const actualizarPersonalDespacho = (datos) => actualizarPersonal({ ...datos, rol: 'despacho' });
+export const listarClientes = async () => {
+  const [filas] = await pool.query(
+    `SELECT u.id, u.nombre, u.email, u.email_verificado, u.saldo_virtual,
+            (SELECT COUNT(*) FROM reservas r WHERE r.usuario_id = u.id) AS reservas
+     FROM usuarios u
+     WHERE u.rol = 'cliente'
+     ORDER BY u.nombre, u.id`
+  );
+  return filas.map((fila) => ({
+    id: fila.id,
+    nombre: fila.nombre,
+    email: fila.email,
+    email_verificado: Number(fila.email_verificado) === 1,
+    saldo: Number(fila.saldo_virtual) || 0,
+    reservas: Number(fila.reservas) || 0,
+  }));
+};
 
-export const eliminarPersonalDespacho = (id) => eliminarPersonal(id, 'despacho');
+export const guardarEquipo = async ({ id, nombre, email, password, rol }) => {
+  const papel = rolPersonal(rol);
+  const campos = ['nombre = ?', 'email = ?', 'rol = ?'];
+  const valores = [nombre, email, papel];
+  if (password) {
+    campos.push('password = ?');
+    valores.push(password);
+  }
+  valores.push(id);
+  const [resultado] = await pool.query(
+    `UPDATE usuarios
+     SET ${campos.join(', ')}
+     WHERE id = ? AND rol IN ('despacho', 'mantenimiento')`,
+    valores
+  );
+  return resultado.affectedRows === 1;
+};
 
-export const crearPersonalDespacho = (datos) => crearPersonal({ ...datos, rol: 'despacho' });
+export const quitarEquipo = async (id) => {
+  const [resultado] = await pool.query(
+    `DELETE FROM usuarios WHERE id = ? AND rol IN ('despacho', 'mantenimiento')`,
+    [id]
+  );
+  return resultado.affectedRows === 1;
+};
 
 export const actualizarSaldo = async (id, saldo) => {
   const [result] = await pool.query(

@@ -18,11 +18,8 @@ const paginaActual = () => {
   if (ruta === 'administracion') {
     return 'administracion';
   }
-  if (ruta === 'personal') {
-    return 'puerta';
-  }
-  if (ruta === 'cuentas-mantenimiento') {
-    return 'mantenimiento';
+  if (ruta === 'usuarios') {
+    return 'usuarios';
   }
   if (ruta === 'mantenimiento') {
     return 'asientos';
@@ -47,7 +44,7 @@ const paginaActual = () => {
 
 const claseNav = (id, actual) => {
   const activo = id === actual;
-  const extra = id === 'administracion' || id === 'finanzas' || id === 'reportes' || id === 'bitacora' || id === 'puerta' || id === 'mantenimiento'
+  const extra = id === 'administracion' || id === 'finanzas' || id === 'reportes' || id === 'bitacora' || id === 'usuarios'
     ? ' solo-admin'
     : id === 'abordaje'
       ? ' solo-personal'
@@ -76,8 +73,7 @@ const pintarMenu = () => {
         <a href="/" class="${claseNav('inicio', actual)}">${iconosNav.inicio}Inicio</a>
         <a href="/mis-vuelos" class="${claseNav('mis-vuelos', actual)}">${iconosNav.vuelos}Mis vuelos</a>
         <a href="/administracion" class="${claseNav('administracion', actual)}">${iconosNav.administracion}Administración</a>
-        <a href="/personal" class="${claseNav('puerta', actual)}">${iconosNav.puerta}Puerta</a>
-        <a href="/cuentas-mantenimiento" class="${claseNav('mantenimiento', actual)}">${iconosNav.mantenimiento}Mantenimiento</a>
+        <a href="/usuarios" class="${claseNav('usuarios', actual)}">${iconosNav.puerta}Usuarios</a>
         <a href="/abordaje" class="${claseNav('abordaje', actual)}">${iconosNav.abordaje}Abordaje</a>
         <a href="/mantenimiento" class="${claseNav('asientos', actual)}">${iconosNav.asientos}Asientos</a>
         <a href="/finanzas" class="${claseNav('finanzas', actual)}">${iconosNav.finanzas}Finanzas</a>
