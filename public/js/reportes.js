@@ -102,7 +102,7 @@ const pintarTabla = (reporte) => {
   } else {
     cuerpo.innerHTML = reporte.filas.map((fila) => `
       <tr class="hover:bg-slate-50">
-        ${columnas.map((columna) => `<td class="px-5 py-4">${escapar(textoCelda(columna, fila))}</td>`).join('')}
+        ${columnas.map((columna) => `<td data-etiqueta="${escapar(columna.titulo)}" class="px-5 py-4">${escapar(textoCelda(columna, fila))}</td>`).join('')}
       </tr>`).join('');
   }
 

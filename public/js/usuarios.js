@@ -47,8 +47,8 @@
     document.getElementById('filtro-puesto').classList.toggle('hidden', !esPersonal);
     document.getElementById('btn-nueva-cuenta').classList.toggle('hidden', !esPersonal);
     document.getElementById('descripcion').textContent = esPersonal
-      ? 'Cuentas de puerta y de mantenimiento. El administrador se ve, pero no se modifica aquí.'
-      : 'Personas que crearon su cuenta. Aquí solo se consultan.';
+      ? 'Cuentas de puerta y de mantenimiento.'
+      : 'Personas que crearon su cuenta.';
     document.getElementById('buscar-usuarios').placeholder = esPersonal
       ? 'Nombre, correo o puesto'
       : 'Nombre o correo';
@@ -120,18 +120,18 @@
       const acciones = editable
         ? `<button type="button" data-accion="editar" data-cuenta-id="${Number(cuenta.id)}" class="rounded-lg px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50">Editar</button>
            <button type="button" data-accion="eliminar" data-cuenta-id="${Number(cuenta.id)}" data-nombre="${escapar(cuenta.nombre)}" data-rol="${escapar(cuenta.rol)}" class="rounded-lg px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">Eliminar</button>`
-        : '<span class="text-xs text-slate-400">No se modifica aquí</span>';
+        : '<span class="text-xs text-slate-400">No se puede editar</span>';
       return `
         <tr class="hover:bg-slate-50">
-          <td class="px-5 py-4">
+          <td data-etiqueta="Nombre" class="px-5 py-4">
             <div class="flex items-center gap-3">
               <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700">${escapar(inicialDe(cuenta.nombre))}</span>
               <span class="font-medium text-slate-900">${escapar(cuenta.nombre)}</span>
             </div>
           </td>
-          <td class="px-5 py-4">${escapar(cuenta.email)}</td>
-          <td class="px-5 py-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${COLORES_PUESTO[cuenta.rol] || 'bg-slate-100 text-slate-700'}">${escapar(PUESTOS[cuenta.rol] || cuenta.rol)}</span></td>
-          <td class="px-5 py-4"><div class="flex items-center gap-2">${acciones}</div></td>
+          <td data-etiqueta="Correo" class="px-5 py-4">${escapar(cuenta.email)}</td>
+          <td data-etiqueta="Puesto" class="px-5 py-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${COLORES_PUESTO[cuenta.rol] || 'bg-slate-100 text-slate-700'}">${escapar(PUESTOS[cuenta.rol] || cuenta.rol)}</span></td>
+          <td data-etiqueta="Acciones" class="px-5 py-4"><div class="flex items-center gap-2">${acciones}</div></td>
         </tr>`;
     }).join('');
   };
@@ -149,16 +149,16 @@
     }
     cuerpo.innerHTML = visibles.map((cuenta) => `
       <tr class="hover:bg-slate-50">
-        <td class="px-5 py-4">
+        <td data-etiqueta="Nombre" class="px-5 py-4">
           <div class="flex items-center gap-3">
             <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">${escapar(inicialDe(cuenta.nombre))}</span>
             <span class="font-medium text-slate-900">${escapar(cuenta.nombre)}</span>
           </div>
         </td>
-        <td class="px-5 py-4">${escapar(cuenta.email)}</td>
-        <td class="px-5 py-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${cuenta.email_verificado ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}">${cuenta.email_verificado ? 'Sí' : 'No'}</span></td>
-        <td class="px-5 py-4">${escapar(quetzales(cuenta.saldo))}</td>
-        <td class="px-5 py-4">${Number(cuenta.reservas) || 0}</td>
+        <td data-etiqueta="Correo" class="px-5 py-4">${escapar(cuenta.email)}</td>
+        <td data-etiqueta="Correo confirmado" class="px-5 py-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${cuenta.email_verificado ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}">${cuenta.email_verificado ? 'Sí' : 'No'}</span></td>
+        <td data-etiqueta="Saldo" class="px-5 py-4">${escapar(quetzales(cuenta.saldo))}</td>
+        <td data-etiqueta="Reservas" class="px-5 py-4">${Number(cuenta.reservas) || 0}</td>
       </tr>
     `).join('');
   };

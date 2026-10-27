@@ -23,12 +23,12 @@ const pintarReservas = (reservas, buscando = false) => {
 
   cuerpo.innerHTML = reservas.map((reserva) => `
     <tr class="hover:bg-slate-50">
-      <td class="px-5 py-4 font-medium text-slate-900">${escapar(reserva.codigo_pnr)}</td>
-      <td class="px-5 py-4">${escapar(reserva.nombre_cliente)}</td>
-      <td class="px-5 py-4">${escapar(reserva.origen)} → ${escapar(reserva.destino)}</td>
-      <td class="px-5 py-4">${escapar(reserva.numero_asiento)}</td>
-      <td class="px-5 py-4">${escapar(formatearFecha(reserva.fecha_creacion))}</td>
-      <td class="px-5 py-4 font-medium text-slate-900">${escapar(quetzales(reserva.total_pagado))}</td>
+      <td data-etiqueta="PNR" class="px-5 py-4 font-medium text-slate-900">${escapar(reserva.codigo_pnr)}</td>
+      <td data-etiqueta="Cliente" class="px-5 py-4">${escapar(reserva.nombre_cliente)}</td>
+      <td data-etiqueta="Ruta" class="px-5 py-4">${escapar(reserva.origen)} → ${escapar(reserva.destino)}</td>
+      <td data-etiqueta="Asiento" class="px-5 py-4">${escapar(reserva.numero_asiento)}</td>
+      <td data-etiqueta="Compra" class="px-5 py-4">${escapar(formatearFecha(reserva.fecha_creacion))}</td>
+      <td data-etiqueta="Total" class="px-5 py-4 font-medium text-slate-900">${escapar(quetzales(reserva.total_pagado))}</td>
     </tr>
   `).join('');
 };

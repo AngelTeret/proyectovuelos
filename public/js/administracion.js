@@ -49,16 +49,16 @@ const pintarVuelos = (vuelos, buscando = false) => {
 
   cuerpo.innerHTML = vuelos.map((vuelo) => `
     <tr class="hover:bg-slate-50">
-      <td class="px-5 py-4 font-medium text-slate-900">${escapar(vuelo.id)}</td>
-      <td class="px-5 py-4">${miniatura(vuelo.imagen_url)}</td>
-      <td class="px-5 py-4">${escapar(vuelo.origen)}</td>
-      <td class="px-5 py-4">${escapar(vuelo.destino)}</td>
-      <td class="px-5 py-4">${escapar(formatearSalida(vuelo.fecha_salida))}</td>
-      <td class="px-5 py-4">${escapar(textoDuracion(vuelo.duracion_minutos))}</td>
-      <td class="px-5 py-4">${escapar(Number(vuelo.retraso_minutos) > 0 ? textoDuracion(vuelo.retraso_minutos) : 'A tiempo')}</td>
-      <td class="px-5 py-4">${escapar(vuelo.capacidad_asientos)}</td>
-      <td class="px-5 py-4">${escapar(quetzales(vuelo.precio_base))}</td>
-      <td class="px-5 py-4">
+      <td data-etiqueta="Salida" class="px-5 py-4 font-medium text-slate-900">${escapar(formatearSalida(vuelo.fecha_salida))}</td>
+      <td data-etiqueta="Origen" class="px-5 py-4">${escapar(vuelo.origen)}</td>
+      <td data-etiqueta="Destino" class="px-5 py-4">${escapar(vuelo.destino)}</td>
+      <td data-etiqueta="Duración" class="px-5 py-4">${escapar(textoDuracion(vuelo.duracion_minutos))}</td>
+      <td data-etiqueta="Retraso" class="px-5 py-4">${escapar(Number(vuelo.retraso_minutos) > 0 ? textoDuracion(vuelo.retraso_minutos) : 'A tiempo')}</td>
+      <td data-etiqueta="Capacidad" class="px-5 py-4">${escapar(vuelo.capacidad_asientos)}</td>
+      <td data-etiqueta="Precio base" class="px-5 py-4">${escapar(quetzales(vuelo.precio_base))}</td>
+      <td data-etiqueta="Imagen" class="px-5 py-4">${miniatura(vuelo.imagen_url)}</td>
+      <td data-etiqueta="ID" class="px-5 py-4">${escapar(vuelo.id)}</td>
+      <td data-etiqueta="Acciones" class="px-5 py-4">
         <div class="flex items-center gap-2">
           <button type="button" data-accion="editar" data-vuelo-id="${vuelo.id}" class="rounded-lg px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50">Editar</button>
           <button type="button" data-accion="eliminar" data-vuelo-id="${vuelo.id}" class="rounded-lg px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">Eliminar</button>

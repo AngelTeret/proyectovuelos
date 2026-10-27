@@ -61,11 +61,11 @@ const pintarBitacora = () => {
     const color = COLORES[fila.accion] || 'bg-slate-100 text-slate-700';
     return `
       <tr class="hover:bg-slate-50">
-        <td class="px-5 py-4 whitespace-nowrap">${escapar(formatearFecha(fila.creado_en))}</td>
-        <td class="px-5 py-4"><p class="font-medium text-slate-900">${nombre}</p>${correo}</td>
-        <td class="px-5 py-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${color}">${escapar(etiquetaDe(fila.accion))}</span></td>
-        <td class="px-5 py-4">${escapar(fila.detalle)}</td>
-        <td class="px-5 py-4 whitespace-nowrap text-slate-500">${escapar(fila.ip || '')}</td>
+        <td data-etiqueta="Fecha" class="px-5 py-4 whitespace-nowrap">${escapar(formatearFecha(fila.creado_en))}</td>
+        <td data-etiqueta="Quién" class="px-5 py-4"><p class="font-medium text-slate-900">${nombre}</p>${correo}</td>
+        <td data-etiqueta="Acción" class="px-5 py-4"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${color}">${escapar(etiquetaDe(fila.accion))}</span></td>
+        <td data-etiqueta="Detalle" class="px-5 py-4">${escapar(fila.detalle)}</td>
+        <td data-etiqueta="Dirección" class="px-5 py-4 whitespace-nowrap text-slate-500">${escapar(fila.ip || '')}</td>
       </tr>
     `;
   }).join('');

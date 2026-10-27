@@ -310,6 +310,35 @@ estiloMenu.textContent = `
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
   }
+  @media (max-width: 1279px) {
+    table.tabla-movil { min-width: 0; }
+    table.tabla-movil thead { display: none; }
+    table.tabla-movil,
+    table.tabla-movil tbody,
+    table.tabla-movil tr,
+    table.tabla-movil td { display: block; width: auto; }
+    table.tabla-movil tr {
+      padding: 0.85rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    table.tabla-movil td {
+      padding: 0.28rem 1.25rem;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    table.tabla-movil td::before {
+      content: attr(data-etiqueta);
+      display: block;
+      margin-bottom: 0.15rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    table.tabla-movil td[colspan] { padding: 2rem 1.25rem; text-align: center; }
+    table.tabla-movil td[colspan]::before { content: none; }
+  }
   @media (max-width: 767px) {
     #btn-menu,
     #btn-cerrar-menu { display: inline-flex; }

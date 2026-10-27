@@ -266,7 +266,12 @@ const pintarGrupo = () => {
     const retrasado = pestanaActiva === 'proximos' && String(reserva.estado_vuelo || '').toLowerCase() === 'retrasado';
     etiqueta.textContent = retrasado ? 'Retrasado' : grupo.texto;
     etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${retrasado ? 'bg-amber-50 text-amber-800' : grupo.clase}`;
+    nodo.querySelector('[data-campo="salida"]').textContent = formatearSalida(reserva.fecha_salida);
     nodo.querySelector('[data-campo="ruta"]').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;
+    const detalleSalida = nodo.querySelector('[data-campo="detalle-salida"]');
+    const extraSalida = [retrasoVisible(reserva.retraso_minutos), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
+    detalleSalida.textContent = extraSalida;
+    detalleSalida.classList.toggle('hidden', !extraSalida);
     const viajeros = nodo.querySelector('[data-campo="viajeros"]');
     const personas = Array.isArray(reserva.viajeros) ? reserva.viajeros : [];
     viajeros.replaceChildren();
@@ -280,7 +285,8 @@ const pintarGrupo = () => {
       viajeros.appendChild(item);
     });
     viajeros.classList.toggle('hidden', personas.length === 0);
-    nodo.querySelector('[data-campo="salida"]').textContent = [formatearSalida(reserva.fecha_salida), retrasoVisible(reserva.retraso_minutos), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
+    const bloqueAsiento = nodo.querySelector('[data-campo="asiento"]').closest('div');
+    bloqueAsiento.classList.toggle('hidden', personas.length > 0);
     nodo.querySelector('[data-campo="asiento"]').textContent = reserva.numero_asiento || '';
     nodo.querySelector('[data-campo="total"]').textContent = quetzales(reserva.monto_total);
     const abordaje = nodo.querySelector('[data-campo="abordaje"]');

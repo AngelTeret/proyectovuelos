@@ -36,7 +36,7 @@
         <p id="nombre-usuario" class="text-sm font-semibold text-slate-800"></p>
       </header>
 
-      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
+      <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-6 sm:px-8">
         <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Mis vuelos</h1>
         <p class="mt-1 text-sm text-slate-500">Reservas asociadas a tu cuenta.</p>
         <p id="estado-carga" class="mt-6 text-sm text-slate-500">Cargando tus vuelos...</p>
@@ -72,13 +72,11 @@
         </div>
         <span data-campo="estado" class="rounded-full px-2.5 py-1 text-xs font-medium"></span>
       </div>
-      <p data-campo="ruta" class="mt-4 text-lg font-semibold text-slate-900"></p>
+      <p data-campo="salida" class="mt-4 text-lg font-semibold text-slate-900"></p>
+      <p data-campo="ruta" class="mt-1 text-sm font-medium text-slate-600"></p>
+      <p data-campo="detalle-salida" class="mt-1 hidden text-sm text-slate-500"></p>
       <ul data-campo="viajeros" class="mt-2 hidden list-none space-y-1"></ul>
-      <dl class="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-        <div>
-          <dt class="text-xs text-slate-400">Salida</dt>
-          <dd data-campo="salida" class="mt-0.5 font-medium text-slate-800"></dd>
-        </div>
+      <dl class="mt-3 grid grid-cols-2 gap-3 text-sm">
         <div>
           <dt class="text-xs text-slate-400">Asiento</dt>
           <dd data-campo="asiento" class="mt-0.5 font-medium text-slate-800"></dd>
