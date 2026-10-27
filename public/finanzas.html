@@ -30,12 +30,17 @@
       </header>
 
       <main id="app-content" class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
-        <h1 class="mb-6 text-xl font-bold text-slate-900 sm:text-2xl">Control de Ingresos y Reservas</h1>
-
-        <section class="mb-6 max-w-sm rounded-2xl bg-white p-6 shadow-sm">
-          <p class="text-sm font-medium text-slate-500">Ingresos Totales</p>
-          <p id="total-ingresos" class="mt-2 text-3xl font-bold text-green-600">Q 0.00</p>
-        </section>
+        <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Control de Ingresos y Reservas</h1>
+            <section class="mt-6 max-w-sm rounded-2xl bg-white p-6 shadow-sm">
+              <p class="text-sm font-medium text-slate-500">Ingresos Totales</p>
+              <p id="total-ingresos" class="mt-2 text-3xl font-bold text-green-600">Q 0.00</p>
+            </section>
+          </div>
+          <input id="buscar-reserva" type="search" placeholder="Código, cliente o ruta" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400 sm:w-72">
+        </div>
+        <p id="conteo-reservas" class="mb-3 hidden text-sm text-slate-500"></p>
 
         <section class="overflow-hidden rounded-2xl bg-white shadow-sm">
           <div class="overflow-x-auto">

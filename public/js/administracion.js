@@ -23,10 +23,27 @@ const aDatetimeLocal = (valor) => {
 
 let vuelosCargados = [];
 
-const pintarVuelos = (vuelos) => {
+const textoBusquedaVuelo = (vuelo) => {
+  const partes = partesGuatemala(vuelo.fecha_salida);
+  const corta = partes
+    ? `${String(partes.dia).padStart(2, '0')}/${String(partes.mes).padStart(2, '0')}/${partes.anio}`
+    : '';
+  return sinAcentos(`${vuelo.origen} ${vuelo.destino} ${formatearSalida(vuelo.fecha_salida)} ${fechaCalendario(vuelo.fecha_salida)} ${corta}`);
+};
+
+const pintarConteo = (visibles, total) => {
+  const nota = document.getElementById('conteo-vuelos');
+  const consulta = document.getElementById('buscar-vuelo').value.trim();
+  nota.textContent = consulta ? `${visibles} de ${total} vuelos` : '';
+  nota.classList.toggle('hidden', !consulta);
+};
+
+const pintarVuelos = (vuelos, buscando = false) => {
   const cuerpo = document.getElementById('cuerpo-vuelos');
+  pintarConteo(vuelos.length, vuelosCargados.length);
   if (vuelos.length === 0) {
-    cuerpo.innerHTML = '<tr><td colspan="10" class="px-5 py-8 text-center text-sm text-slate-500">No hay vuelos registrados.</td></tr>';
+    const mensaje = buscando ? 'No hay vuelos con ese dato.' : 'No hay vuelos registrados.';
+    cuerpo.innerHTML = `<tr><td colspan="10" class="px-5 py-8 text-center text-sm text-slate-500">${mensaje}</td></tr>`;
     return;
   }
 
@@ -65,7 +82,15 @@ const cargarVuelos = async () => {
     throw new Error('No se pudieron cargar los vuelos');
   }
   vuelosCargados = await respuesta.json();
-  pintarVuelos(vuelosCargados);
+  aplicarBusquedaVuelos();
+};
+
+const aplicarBusquedaVuelos = () => {
+  const consulta = sinAcentos(document.getElementById('buscar-vuelo').value.trim());
+  const visibles = consulta
+    ? vuelosCargados.filter((vuelo) => textoBusquedaVuelo(vuelo).includes(consulta))
+    : vuelosCargados;
+  pintarVuelos(visibles, Boolean(consulta));
 };
 
 let vistaTemporal = '';
@@ -349,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
   llenarCapacidades();
   bloquearFechasPasadas();
 
+  document.getElementById('buscar-vuelo').addEventListener('input', aplicarBusquedaVuelos);
   document.getElementById('btn-nuevo-vuelo').addEventListener('click', prepararNuevoVuelo);
   document.getElementById('btn-cancelar-vuelo').addEventListener('click', cerrarModal);
   document.getElementById('imagen-archivo').addEventListener('change', () => {

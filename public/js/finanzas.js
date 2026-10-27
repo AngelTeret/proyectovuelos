@@ -4,13 +4,20 @@ if (!tokenDeSesion()) {
   window.location.replace('/');
 }
 
-const pintarReservas = (reservas) => {
-  const total = reservas.reduce((suma, reserva) => suma + Number(reserva.total_pagado || 0), 0);
+let reservasCargadas = [];
+
+const pintarReservas = (reservas, buscando = false) => {
+  const total = reservasCargadas.reduce((suma, reserva) => suma + Number(reserva.total_pagado || 0), 0);
   document.getElementById('total-ingresos').textContent = quetzales(total);
+  const nota = document.getElementById('conteo-reservas');
+  const consulta = document.getElementById('buscar-reserva').value.trim();
+  nota.textContent = consulta ? `${reservas.length} de ${reservasCargadas.length} reservas` : '';
+  nota.classList.toggle('hidden', !consulta);
 
   const cuerpo = document.getElementById('cuerpo-reservas');
   if (reservas.length === 0) {
-    cuerpo.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-sm text-slate-500">No hay reservas registradas.</td></tr>';
+    const mensaje = buscando ? 'No hay reservas con ese dato.' : 'No hay reservas registradas.';
+    cuerpo.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-sm text-slate-500">${mensaje}</td></tr>`;
     return;
   }
 
@@ -36,12 +43,20 @@ const cargarReservas = async () => {
     if (!respuesta.ok) {
       throw new Error('No se pudieron cargar las reservas');
     }
-    const reservas = await respuesta.json();
-    pintarReservas(reservas);
+    reservasCargadas = await respuesta.json();
+    aplicarBusquedaReservas();
   } catch (error) {
     document.getElementById('total-ingresos').textContent = 'Q 0.00';
     cuerpo.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-sm text-red-600">No se pudieron cargar las reservas.</td></tr>';
   }
+};
+
+const aplicarBusquedaReservas = () => {
+  const consulta = sinAcentos(document.getElementById('buscar-reserva').value.trim());
+  const visibles = consulta
+    ? reservasCargadas.filter((reserva) => sinAcentos(`${reserva.codigo_pnr} ${reserva.nombre_cliente} ${reserva.origen} ${reserva.destino}`).includes(consulta))
+    : reservasCargadas;
+  pintarReservas(visibles, Boolean(consulta));
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -49,5 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  document.getElementById('buscar-reserva').addEventListener('input', aplicarBusquedaReservas);
   cargarReservas();
 });

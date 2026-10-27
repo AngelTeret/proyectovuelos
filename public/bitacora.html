@@ -35,7 +35,9 @@
             <h1 class="text-xl font-bold text-slate-900 sm:text-2xl">Bitácora</h1>
             <p class="mt-1 text-sm text-slate-500">Inicios de sesión, pagos, cancelaciones, contraseñas, check-in, abordaje y cambios de vuelos. Se muestran los 200 más recientes.</p>
           </div>
-          <label class="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <div class="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
+            <input id="buscar-bitacora" type="search" placeholder="Persona, correo o detalle" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400 sm:w-72">
+            <label class="flex items-center gap-2 text-sm font-medium text-slate-600">
             Acción
             <select id="filtro-accion" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800">
               <option value="">Todas</option>
@@ -47,8 +49,10 @@
               <option value="abordaje">Abordaje</option>
               <option value="vuelo">Vuelo</option>
             </select>
-          </label>
+            </label>
+          </div>
         </div>
+        <p id="conteo-bitacora" class="mb-3 hidden text-sm text-slate-500"></p>
 
         <section class="overflow-hidden rounded-2xl bg-white shadow-sm">
           <div class="overflow-x-auto">

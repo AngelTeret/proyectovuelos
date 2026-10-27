@@ -30,11 +30,26 @@ const etiquetaDe = (accion) => ETIQUETAS[accion] || accion || 'Registro';
 
 const pintarBitacora = () => {
   const filtro = document.getElementById('filtro-accion').value;
-  const visibles = filtro ? registros.filter((fila) => fila.accion === filtro) : registros;
+  const consulta = sinAcentos(document.getElementById('buscar-bitacora').value.trim());
+  const visibles = registros.filter((fila) => {
+    if (filtro && fila.accion !== filtro) {
+      return false;
+    }
+    if (!consulta) {
+      return true;
+    }
+    const texto = sinAcentos(`${fila.nombre_usuario || ''} ${fila.email_usuario || ''} ${fila.detalle || ''} ${etiquetaDe(fila.accion)}`);
+    return texto.includes(consulta);
+  });
+  const nota = document.getElementById('conteo-bitacora');
+  const filtrando = Boolean(filtro || consulta);
+  nota.textContent = filtrando ? `${visibles.length} de ${registros.length} registros` : '';
+  nota.classList.toggle('hidden', !filtrando);
   const cuerpo = document.getElementById('cuerpo-bitacora');
 
   if (visibles.length === 0) {
-    cuerpo.innerHTML = '<tr><td colspan="5" class="px-5 py-8 text-center text-sm text-slate-500">No hay registros para mostrar.</td></tr>';
+    const mensaje = filtrando ? 'No hay registros con ese dato.' : 'No hay registros para mostrar.';
+    cuerpo.innerHTML = `<tr><td colspan="5" class="px-5 py-8 text-center text-sm text-slate-500">${mensaje}</td></tr>`;
     return;
   }
 
@@ -82,5 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   document.getElementById('filtro-accion').addEventListener('change', pintarBitacora);
+  document.getElementById('buscar-bitacora').addEventListener('input', pintarBitacora);
   cargarBitacora();
 });
