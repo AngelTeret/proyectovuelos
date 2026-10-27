@@ -42,7 +42,7 @@
         <p id="estado-carga" class="mt-6 text-sm text-slate-500">Cargando tus vuelos...</p>
         <div id="panel-historial" class="mt-6 hidden">
           <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <input id="buscar-mis-vuelos" type="search" placeholder="Código, ruta, asiento o fecha" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400 sm:max-w-sm">
+            <input id="buscar-mis-vuelos" type="search" placeholder="Nombre, código, ruta o asiento" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-400 sm:max-w-sm">
             <p id="conteo-mis-vuelos" class="hidden text-sm text-slate-500"></p>
           </div>
           <div role="tablist" aria-label="Historial de vuelos" class="flex gap-2 overflow-x-auto pb-1">
@@ -73,6 +73,7 @@
         <span data-campo="estado" class="rounded-full px-2.5 py-1 text-xs font-medium"></span>
       </div>
       <p data-campo="ruta" class="mt-4 text-lg font-semibold text-slate-900"></p>
+      <ul data-campo="viajeros" class="mt-2 hidden list-none space-y-1"></ul>
       <dl class="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
         <div>
           <dt class="text-xs text-slate-400">Salida</dt>

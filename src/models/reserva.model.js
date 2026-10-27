@@ -580,6 +580,29 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
         INNER JOIN asientos ax ON ax.id = rp.asiento_id
         WHERE rp.reserva_id = r.id
       ), a.numero_asiento) AS numero_asiento,
+      IFNULL((
+        SELECT CONCAT(
+          '[',
+          GROUP_CONCAT(
+            JSON_OBJECT(
+              'nombre', CONCAT(px.nombre, ' ', px.apellido),
+              'asiento', ax.numero_asiento,
+              'tipo', px.tipo
+            )
+            ORDER BY rp.orden
+            SEPARATOR ','
+          ),
+          ']'
+        )
+        FROM reserva_pasajeros rp
+        INNER JOIN pasajeros px ON px.id = rp.pasajero_id
+        LEFT JOIN asientos ax ON ax.id = rp.asiento_id
+        WHERE rp.reserva_id = r.id
+      ), JSON_ARRAY(JSON_OBJECT(
+        'nombre', CONCAT(p.nombre, ' ', p.apellido),
+        'asiento', a.numero_asiento,
+        'tipo', p.tipo
+      ))) AS viajeros,
       r.estado_pago,
       r.metodo_pago,
       r.monto_total,
@@ -612,6 +635,7 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
     FROM reservas r
     INNER JOIN vuelos v ON r.vuelo_id = v.id
     INNER JOIN asientos a ON r.asiento_id = a.id
+    INNER JOIN pasajeros p ON p.id = r.pasajero_id
     LEFT JOIN facturas f ON f.reserva_id = r.id
     WHERE r.usuario_id = ?
     ORDER BY r.fecha_creacion DESC`,
@@ -619,6 +643,20 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
   );
 
   return rows.map((fila) => {
+    let personas = [];
+    try {
+      const crudo = typeof fila.viajeros === 'string' ? JSON.parse(fila.viajeros) : fila.viajeros;
+      personas = Array.isArray(crudo) ? crudo : [];
+    } catch (error) {
+      personas = [];
+    }
+    const viajeros = personas
+      .filter((persona) => persona?.nombre)
+      .map((persona) => ({
+        nombre: persona.nombre,
+        asiento: persona.asiento || '',
+        tipo: persona.tipo || 'adulto',
+      }));
     const checkin = evaluarCheckin({
       estadoPago: fila.estado_pago,
       estadoVuelo: fila.estado_vuelo,
@@ -626,6 +664,7 @@ export const obtenerHistorialPorUsuario = async (usuarioId) => {
     });
     return {
       ...fila,
+      viajeros,
       boletos_emitidos: Number(fila.boletos_emitidos) || 0,
       abordados: Number(fila.abordados) || 0,
       ausentes: Number(fila.ausentes) || 0,

@@ -193,7 +193,10 @@ const textoReserva = (reserva) => {
   const corta = partes
     ? `${String(partes.dia).padStart(2, '0')}/${String(partes.mes).padStart(2, '0')}/${partes.anio}`
     : '';
-  return sinAcentos(`${reserva.codigo_pnr || ''} ${reserva.numero_factura || ''} ${reserva.origen || ''} ${reserva.destino || ''} ${reserva.numero_asiento || ''} ${formatearSalida(reserva.fecha_salida)} ${fechaCalendario(reserva.fecha_salida)} ${corta}`);
+  const personas = Array.isArray(reserva.viajeros)
+    ? reserva.viajeros.map((persona) => `${persona.nombre || ''} ${persona.asiento || ''}`).join(' ')
+    : '';
+  return sinAcentos(`${personas} ${reserva.codigo_pnr || ''} ${reserva.numero_factura || ''} ${reserva.origen || ''} ${reserva.destino || ''} ${reserva.numero_asiento || ''} ${formatearSalida(reserva.fecha_salida)} ${fechaCalendario(reserva.fecha_salida)} ${corta}`);
 };
 
 const consultaActual = () => sinAcentos(document.getElementById('buscar-mis-vuelos')?.value.trim() || '');
@@ -264,6 +267,19 @@ const pintarGrupo = () => {
     etiqueta.textContent = retrasado ? 'Retrasado' : grupo.texto;
     etiqueta.className = `rounded-full px-2.5 py-1 text-xs font-medium ${retrasado ? 'bg-amber-50 text-amber-800' : grupo.clase}`;
     nodo.querySelector('[data-campo="ruta"]').textContent = `${reserva.origen || ''} → ${reserva.destino || ''}`;
+    const viajeros = nodo.querySelector('[data-campo="viajeros"]');
+    const personas = Array.isArray(reserva.viajeros) ? reserva.viajeros : [];
+    viajeros.replaceChildren();
+    personas.forEach((persona) => {
+      const item = document.createElement('li');
+      item.className = 'text-sm font-medium text-slate-600';
+      const lugar = persona.asiento
+        ? `Asiento ${persona.asiento}`
+        : (persona.tipo === 'infante' ? 'En regazo, sin asiento' : 'Sin asiento');
+      item.textContent = `${persona.nombre} · ${lugar}`;
+      viajeros.appendChild(item);
+    });
+    viajeros.classList.toggle('hidden', personas.length === 0);
     nodo.querySelector('[data-campo="salida"]').textContent = [formatearSalida(reserva.fecha_salida), retrasoVisible(reserva.retraso_minutos), duracionVisible(reserva.duracion_minutos)].filter(Boolean).join(' · ');
     nodo.querySelector('[data-campo="asiento"]').textContent = reserva.numero_asiento || '';
     nodo.querySelector('[data-campo="total"]').textContent = quetzales(reserva.monto_total);
