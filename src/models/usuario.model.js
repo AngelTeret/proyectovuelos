@@ -4,7 +4,7 @@ export const SALDO_BIENVENIDA = 15000;
 
 export const buscarPorId = async (id) => {
   const [rows] = await pool.query(
-    'SELECT id, nombre, email, rol, saldo_virtual FROM usuarios WHERE id = ?',
+    'SELECT id, nombre, email, rol, saldo_virtual, email_verificado FROM usuarios WHERE id = ?',
     [id]
   );
   return rows[0] || null;
@@ -191,6 +191,30 @@ export const quitarEquipo = async (id) => {
   const [resultado] = await pool.query(
     `DELETE FROM usuarios WHERE id = ? AND rol IN ('despacho', 'mantenimiento')`,
     [id]
+  );
+  return resultado.affectedRows === 1;
+};
+
+export const actualizarNombre = async (id, nombre) => {
+  const [resultado] = await pool.query(
+    'UPDATE usuarios SET nombre = ? WHERE id = ?',
+    [nombre, id]
+  );
+  return resultado.affectedRows === 1;
+};
+
+export const buscarClavePorId = async (id) => {
+  const [rows] = await pool.query(
+    'SELECT id, password FROM usuarios WHERE id = ?',
+    [id]
+  );
+  return rows[0] || null;
+};
+
+export const actualizarClave = async (id, passwordHash) => {
+  const [resultado] = await pool.query(
+    'UPDATE usuarios SET password = ? WHERE id = ?',
+    [passwordHash, id]
   );
   return resultado.affectedRows === 1;
 };
