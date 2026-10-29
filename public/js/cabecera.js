@@ -229,6 +229,36 @@ if (barraSesion && nombreUsuario) {
   nombreUsuario.insertAdjacentElement('afterend', accionMovil);
 }
 
+if (nombreUsuario && tokenDeSesion() && rolDeSesion() === 'cliente') {
+  const saldo = document.createElement('p');
+  saldo.id = 'saldo-usuario';
+  saldo.textContent = 'Saldo';
+  nombreUsuario.insertAdjacentElement('afterend', saldo);
+  fetch('/api/auth/perfil', { headers: autorizacion() })
+    .then(async (respuesta) => {
+      if (await cerrarSiSesionRechazada(respuesta, `${location.pathname}${location.search}`)) {
+        return null;
+      }
+      if (!respuesta.ok) {
+        return null;
+      }
+      return respuesta.json();
+    })
+    .then((usuario) => {
+      if (!usuario) {
+        saldo.remove();
+        return;
+      }
+      const monto = quetzales(usuario.saldo_virtual);
+      saldo.textContent = monto;
+      saldo.setAttribute('aria-label', `Saldo disponible ${monto}`);
+      saldo.classList.add('listo');
+    })
+    .catch(() => {
+      saldo.remove();
+    });
+}
+
 const estiloMenu = document.createElement('style');
 estiloMenu.textContent = `
   .marca-movil,
@@ -257,6 +287,21 @@ estiloMenu.textContent = `
     color: #64748b;
   }
   #nombre-usuario .nombre-completo { display: none; }
+  #saldo-usuario {
+    display: none;
+    align-items: center;
+    flex-shrink: 0;
+    height: 1.6rem;
+    margin: 0;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #0f172a;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  #saldo-usuario.listo { display: inline-flex; }
   @media (min-width: 768px) {
     #nombre-usuario {
       font-size: 0.875rem;
@@ -265,6 +310,17 @@ estiloMenu.textContent = `
     }
     #nombre-usuario .nombre-corto { display: none; }
     #nombre-usuario .nombre-completo { display: inline; }
+    #saldo-usuario.listo {
+      height: 1.75rem;
+      padding: 0 0.65rem;
+      font-size: 0.75rem;
+    }
+    #saldo-usuario.listo::before {
+      content: 'Saldo';
+      margin-right: 0.35rem;
+      font-weight: 500;
+      color: #64748b;
+    }
   }
   body > div > div > header {
     justify-content: space-between !important;
