@@ -25,7 +25,7 @@ const cargarSaldo = async () => {
       return;
     }
     const usuario = await respuesta.json();
-    saldo.textContent = Number(usuario.saldo_virtual || 0).toFixed(2);
+    saldo.textContent = quetzales(usuario.saldo_virtual).slice(2);
     if (usuario.id) {
       guardarIdUsuario(usuario.id);
     }

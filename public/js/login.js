@@ -34,8 +34,30 @@ if (sessionStorage.getItem('avisoSesion') === 'invalida') {
   });
 }
 
+const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+const revisarCorreo = (avisarVacio) => {
+  const correo = document.getElementById('email').value.trim();
+  const nota = document.getElementById('nota-correo');
+  const valido = CORREO.test(correo) && correo.length <= 100;
+  let texto = '';
+  if (!valido && (correo.length > 0 || avisarVacio)) {
+    texto = correo.includes('@')
+      ? 'Después del @ escribe el dominio, por ejemplo gmail.com.'
+      : 'Falta el signo @. Ejemplo: nombre@gmail.com.';
+  }
+  nota.textContent = texto;
+  nota.classList.toggle('hidden', !texto);
+  return valido;
+};
+
+document.getElementById('email').addEventListener('input', () => revisarCorreo(false));
+
 document.getElementById('form-login').addEventListener('submit', async (evento) => {
   evento.preventDefault();
+  if (!revisarCorreo(true)) {
+    return;
+  }
 
   try {
     const respuesta = await fetch('/api/auth/login', {

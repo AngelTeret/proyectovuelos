@@ -121,6 +121,7 @@ const etiquetaAccion = (accion) => ({
   checkin: 'Check-in',
   abordaje: 'Abordaje',
   vuelo: 'Vuelo',
+  perfil: 'Perfil',
 }[accion] || accion || 'Registro');
 
 const reporteVuelos = async (periodo, limite, offset) => {

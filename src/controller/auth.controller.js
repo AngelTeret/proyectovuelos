@@ -4,6 +4,9 @@ import jwt from 'jsonwebtoken';
 import {
   aplicarRestablecer,
   buscarPorEmail,
+  actualizarClave,
+  actualizarNombre,
+  buscarClavePorId,
   confirmarCorreo,
   crearUsuarioPendiente,
   guardarRestablecer,
@@ -74,11 +77,14 @@ export const registro = async (req, res) => {
     if (!nombre || !email || !password) {
       return res.status(400).json({ mensaje: 'Nombre, email y contraseña son obligatorios' });
     }
+    if (nombre.length > 100) {
+      return res.status(400).json({ mensaje: 'El nombre no puede pasar de 100 caracteres' });
+    }
     if (!correoValido(email)) {
       return res.status(400).json({ mensaje: 'Ingresa un correo electrónico válido' });
     }
-    if (password.length < 8) {
-      return res.status(400).json({ mensaje: 'La contraseña debe tener al menos 8 caracteres' });
+    if (password.length < 8 || password.length > 72) {
+      return res.status(400).json({ mensaje: 'La contraseña debe tener de 8 a 72 caracteres' });
     }
 
     const { token, hash } = nuevoToken();
@@ -284,11 +290,78 @@ export const perfil = async (req, res) => {
       email: usuario.email,
       rol: usuario.rol,
       saldo_virtual: usuario.saldo_virtual,
+      email_verificado: Number(usuario.email_verificado) === 1,
     });
   } catch (error) {
     if (respuestaDeSesion(res, error)) {
       return;
     }
+    responderErrorInterno(res, error);
+  }
+};
+
+export const actualizarPerfil = async (req, res) => {
+  try {
+    const nombre = String(req.body.nombre || '').trim().replace(/\s+/g, ' ');
+    if (!nombre) {
+      return res.status(400).json({ mensaje: 'Escribe tu nombre' });
+    }
+    if (nombre.length > 100) {
+      return res.status(400).json({ mensaje: 'El nombre no puede pasar de 100 caracteres' });
+    }
+    const guardado = await actualizarNombre(req.usuario.id, nombre);
+    if (!guardado) {
+      return res.status(404).json({ mensaje: 'No se encontró la cuenta' });
+    }
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: 'perfil',
+      detalle: 'Nombre actualizado',
+      ip: ipDe(req),
+    });
+    res.status(200).json({ mensaje: 'Nombre actualizado', nombre });
+  } catch (error) {
+    responderErrorInterno(res, error);
+  }
+};
+
+export const cambiarContrasena = async (req, res) => {
+  try {
+    const actual = String(req.body.actual || '');
+    const nueva = String(req.body.nueva || '');
+    const repetir = String(req.body.repetir || '');
+    if (!actual || !nueva || !repetir) {
+      return res.status(400).json({ mensaje: 'Completa las tres contraseñas' });
+    }
+    if (nueva.length < 8 || nueva.length > 72) {
+      return res.status(400).json({ mensaje: 'La contraseña debe tener de 8 a 72 caracteres' });
+    }
+    if (nueva !== repetir) {
+      return res.status(400).json({ mensaje: 'La contraseña nueva no coincide' });
+    }
+    if (nueva === actual) {
+      return res.status(400).json({ mensaje: 'Elige una contraseña distinta a la actual' });
+    }
+
+    const cuenta = await buscarClavePorId(req.usuario.id);
+    const coincide = await bcrypt.compare(actual, cuenta?.password || hashDeRelleno);
+    if (!cuenta || !coincide) {
+      return res.status(400).json({ mensaje: 'La contraseña actual no es correcta' });
+    }
+
+    const passwordHash = await bcrypt.hash(nueva, 10);
+    const guardado = await actualizarClave(req.usuario.id, passwordHash);
+    if (!guardado) {
+      return res.status(404).json({ mensaje: 'No se encontró la cuenta' });
+    }
+    await registrarBitacora({
+      usuarioId: req.usuario.id,
+      accion: 'perfil',
+      detalle: 'Contraseña actualizada',
+      ip: ipDe(req),
+    });
+    res.status(200).json({ mensaje: 'Contraseña actualizada' });
+  } catch (error) {
     responderErrorInterno(res, error);
   }
 };

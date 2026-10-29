@@ -7,6 +7,7 @@ const iconosNav = {
   vuelos: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 0 1 0 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 0 1 0-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375Z"/></svg>',
   abordaje: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.125 1.125 0 1 1-2.25 0 1.125 1.125 0 0 1 2.25 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z"/></svg>',
   usuarios: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>',
+  perfil: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>',
   asientos: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"/></svg>',
   entrar: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m3.75-3 3-3m0 0-3-3m3 3H2.25"/></svg>',
   salir: '<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>',
@@ -35,6 +36,9 @@ const paginaActual = () => {
   if (ruta === 'bitacora') {
     return 'bitacora';
   }
+  if (ruta === 'perfil') {
+    return 'perfil';
+  }
   if (ruta === 'mis-vuelos' || ruta === 'confirmacion' || ruta === 'checkin') {
     return 'mis-vuelos';
   }
@@ -53,7 +57,9 @@ const claseNav = (id, actual) => {
           ? ' solo-sesion oculto-despacho oculto-mantenimiento'
           : id === 'inicio'
             ? ' oculto-despacho oculto-mantenimiento'
-            : '';
+            : id === 'perfil'
+              ? ' solo-sesion'
+              : '';
   const color = activo ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:bg-slate-50';
   return `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium ${color}${extra}`;
 };
@@ -79,6 +85,7 @@ const pintarMenu = () => {
         <a href="/reportes" class="${claseNav('reportes', actual)}">${iconosNav.reportes}Reportes</a>
         <a href="/bitacora" class="${claseNav('bitacora', actual)}">${iconosNav.bitacora}Bitácora</a>
         <div class="mt-auto flex flex-col gap-1 border-t border-slate-100 pt-4">
+          <a href="/perfil" class="${claseNav('perfil', actual)}">${iconosNav.perfil}Perfil</a>
           <a id="btn-iniciar-sesion" href="/login" class="hidden flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50">${iconosNav.entrar}Iniciar Sesión</a>
           <button id="btn-cerrar-sesion" type="button" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-500 hover:bg-slate-50">${iconosNav.salir}Cerrar Sesión</button>
         </div>
@@ -177,7 +184,7 @@ if (rolDeSesion() !== 'admin' && rolDeSesion() !== 'mantenimiento') {
 if (rolDeSesion() === 'despacho') {
   document.querySelectorAll('.oculto-despacho').forEach((enlace) => enlace.remove());
   const pagina = location.pathname.split('/').pop() || '/';
-  if (pagina !== 'abordaje') {
+  if (pagina !== 'abordaje' && pagina !== 'perfil') {
     location.replace('/abordaje');
   }
 }
@@ -185,7 +192,7 @@ if (rolDeSesion() === 'despacho') {
 if (rolDeSesion() === 'mantenimiento') {
   document.querySelectorAll('.oculto-mantenimiento').forEach((enlace) => enlace.remove());
   const pagina = location.pathname.split('/').pop() || '/';
-  if (pagina !== 'mantenimiento') {
+  if (pagina !== 'mantenimiento' && pagina !== 'perfil') {
     location.replace('/mantenimiento');
   }
 }
@@ -229,6 +236,36 @@ if (barraSesion && nombreUsuario) {
   nombreUsuario.insertAdjacentElement('afterend', accionMovil);
 }
 
+if (nombreUsuario && tokenDeSesion() && rolDeSesion() === 'cliente') {
+  const saldo = document.createElement('p');
+  saldo.id = 'saldo-usuario';
+  saldo.textContent = 'Saldo';
+  nombreUsuario.insertAdjacentElement('afterend', saldo);
+  fetch('/api/auth/perfil', { headers: autorizacion() })
+    .then(async (respuesta) => {
+      if (await cerrarSiSesionRechazada(respuesta, `${location.pathname}${location.search}`)) {
+        return null;
+      }
+      if (!respuesta.ok) {
+        return null;
+      }
+      return respuesta.json();
+    })
+    .then((usuario) => {
+      if (!usuario) {
+        saldo.remove();
+        return;
+      }
+      const monto = quetzales(usuario.saldo_virtual);
+      saldo.textContent = monto;
+      saldo.setAttribute('aria-label', `Saldo disponible ${monto}`);
+      saldo.classList.add('listo');
+    })
+    .catch(() => {
+      saldo.remove();
+    });
+}
+
 const estiloMenu = document.createElement('style');
 estiloMenu.textContent = `
   .marca-movil,
@@ -257,6 +294,21 @@ estiloMenu.textContent = `
     color: #64748b;
   }
   #nombre-usuario .nombre-completo { display: none; }
+  #saldo-usuario {
+    display: none;
+    align-items: center;
+    flex-shrink: 0;
+    height: 1.6rem;
+    margin: 0;
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #0f172a;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  #saldo-usuario.listo { display: inline-flex; }
   @media (min-width: 768px) {
     #nombre-usuario {
       font-size: 0.875rem;
@@ -265,6 +317,17 @@ estiloMenu.textContent = `
     }
     #nombre-usuario .nombre-corto { display: none; }
     #nombre-usuario .nombre-completo { display: inline; }
+    #saldo-usuario.listo {
+      height: 1.75rem;
+      padding: 0 0.65rem;
+      font-size: 0.75rem;
+    }
+    #saldo-usuario.listo::before {
+      content: 'Saldo';
+      margin-right: 0.35rem;
+      font-weight: 500;
+      color: #64748b;
+    }
   }
   body > div > div > header {
     justify-content: space-between !important;

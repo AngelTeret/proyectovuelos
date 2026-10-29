@@ -50,10 +50,11 @@
     <h1 class="text-center text-2xl font-bold text-slate-900">Iniciar sesión</h1>
     <p class="mt-2 text-center text-sm text-slate-500">Ingresa con tu correo y contraseña.</p>
 
-    <form id="form-login" class="mt-8 space-y-4">
+    <form id="form-login" class="mt-8 space-y-4" novalidate>
       <label class="block">
         <span class="mb-1.5 block text-xs font-medium text-slate-600">Email</span>
-        <input id="email" name="email" type="email" required autocomplete="email" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+        <input id="email" name="email" type="text" inputmode="email" required maxlength="100" autocomplete="email" spellcheck="false" class="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 outline-none focus:border-blue-400">
+        <p id="nota-correo" class="mt-1.5 hidden text-sm text-red-600"></p>
       </label>
       <label class="block">
         <span class="mb-1.5 block text-xs font-medium text-slate-600">Contraseña</span>

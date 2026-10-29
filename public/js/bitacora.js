@@ -12,6 +12,7 @@ const ETIQUETAS = {
   checkin: 'Check-in',
   abordaje: 'Abordaje',
   vuelo: 'Vuelo',
+  perfil: 'Perfil',
 };
 
 const COLORES = {
@@ -22,6 +23,7 @@ const COLORES = {
   checkin: 'bg-sky-50 text-sky-700',
   abordaje: 'bg-indigo-50 text-indigo-700',
   vuelo: 'bg-teal-50 text-teal-700',
+  perfil: 'bg-slate-100 text-slate-700',
 };
 
 let registros = [];

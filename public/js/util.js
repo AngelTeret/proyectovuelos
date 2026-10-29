@@ -6,7 +6,13 @@ const escapar = (texto) => String(texto ?? '')
   .replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;');
 
-const quetzales = (monto) => `Q ${Number(monto || 0).toFixed(2)}`;
+const quetzales = (monto) => {
+  const valor = Number(monto || 0);
+  const negativo = valor < 0;
+  const [entero, decimal] = Math.abs(valor).toFixed(2).split('.');
+  const miles = entero.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `Q ${negativo ? '-' : ''}${miles}.${decimal}`;
+};
 
 const textoDuracion = (minutos) => {
   const total = Number(minutos);
