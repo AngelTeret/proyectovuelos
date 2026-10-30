@@ -76,7 +76,14 @@ app.use((req, res, next) => {
   res.redirect(301, `${destino}${consulta}`);
 });
 
-app.use(express.static(carpetaPublica, { extensions: ['html'] }));
+app.use(express.static(carpetaPublica, {
+  extensions: ['html'],
+  setHeaders(res, archivo) {
+    if (archivo.endsWith('.html') || archivo.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'no-store');
+    }
+  },
+}));
 app.use('/api/vuelos', vuelosRoutes);
 app.use('/api/asientos', asientosRoutes);
 app.use('/api/reservas', reservasRoutes);
