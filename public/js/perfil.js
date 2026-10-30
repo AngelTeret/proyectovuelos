@@ -53,8 +53,7 @@ const cargar = async () => {
 
 document.getElementById('form-nombre').addEventListener('submit', async (evento) => {
   evento.preventDefault();
-  const formulario = evento.currentTarget;
-  const boton = formulario.querySelector('button[type="submit"]');
+  const boton = document.querySelector('#form-nombre button[type="submit"]');
   const nombre = document.getElementById('nombre').value.trim().replace(/\s+/g, ' ');
   if (!nombre || nombre.length > 100) {
     avisar('El nombre es obligatorio y no puede pasar de 100 caracteres.');
@@ -135,10 +134,24 @@ document.getElementById('nombre').addEventListener('input', revisarNombre);
   document.getElementById(id).addEventListener('input', revisarClave);
 });
 
+const limpiarClaves = () => {
+  ['clave-actual', 'clave-nueva', 'clave-repetir'].forEach((id) => {
+    const campo = document.getElementById(id);
+    campo.value = '';
+    campo.type = 'password';
+  });
+  document.querySelectorAll('#form-clave [data-ver-contrasena]').forEach((ojo) => {
+    ojo.setAttribute('aria-pressed', 'false');
+    ojo.setAttribute('aria-label', 'Mostrar contraseña');
+    ojo.querySelector('[data-icono="mostrar"]')?.classList.remove('hidden');
+    ojo.querySelector('[data-icono="ocultar"]')?.classList.add('hidden');
+  });
+  revisarClave();
+};
+
 document.getElementById('form-clave').addEventListener('submit', async (evento) => {
   evento.preventDefault();
-  const formulario = evento.currentTarget;
-  const boton = formulario.querySelector('button[type="submit"]');
+  const boton = document.querySelector('#form-clave button[type="submit"]');
   const actual = document.getElementById('clave-actual').value;
   const nueva = document.getElementById('clave-nueva').value;
   const repetir = document.getElementById('clave-repetir').value;
@@ -163,25 +176,13 @@ document.getElementById('form-clave').addEventListener('submit', async (evento) 
     if (!datos) {
       return;
     }
-    try {
-      formulario.reset();
-      formulario.querySelectorAll('[data-ver-contrasena]').forEach((ojo) => {
-        const campo = document.getElementById(ojo.dataset.verContrasena);
-        if (campo) {
-          campo.type = 'password';
-        }
-        ojo.setAttribute('aria-pressed', 'false');
-        ojo.setAttribute('aria-label', 'Mostrar contraseña');
-        ojo.querySelector('[data-icono="mostrar"]')?.classList.remove('hidden');
-        ojo.querySelector('[data-icono="ocultar"]')?.classList.add('hidden');
-      });
-      revisarClave();
-    } catch (error) {
-      console.error(error);
-    }
+    limpiarClaves();
     mostrarExito('Contraseña actualizada');
   } catch (error) {
-    avisar(error.message || 'No se pudo cambiar la contraseña.');
+    const texto = String(error?.message || '');
+    avisar(/cannot read properties|is not a function/i.test(texto)
+      ? 'No se pudo cambiar la contraseña.'
+      : (texto || 'No se pudo cambiar la contraseña.'));
   } finally {
     boton.disabled = false;
   }
